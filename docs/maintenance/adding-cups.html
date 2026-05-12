@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adding Cups — Cup Collector</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
+  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
+  h2:first-of-type { border-top: none; }
+  p { color: #333; margin-bottom: 0.8rem; }
+  ol, ul { padding-left: 1.25rem; } li { margin-bottom: 0.4rem; font-size: 0.92rem; }
+  pre { background: #1a2820; color: #a8d8b0; padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; }
+  code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
+  .callout { border-left: 3px solid #00704A; background: #e8f2ee; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
+  thead tr { background: #1E3932; color: white; }
+  th { text-align: left; padding: 0.55rem 0.85rem; }
+  td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #ece8e1; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { font-family: monospace; font-weight: 600; color: #2d5a3d; font-size: 0.82rem; }
+</style>
+</head>
+<body>
+
+<nav><a href="../index.html">← Docs home</a></nav>
+
+<h1>Adding Cups to the Catalog</h1>
+<p>The cup catalog is maintained in a spreadsheet and imported via a script. Here's the full workflow from updating the spreadsheet to having new cups appear in the app.</p>
+
+<h2>The two roles in this workflow</h2>
+<ul>
+  <li><strong>Curator</strong> (the collaborator) — maintains the spreadsheet, adds new cups, exports CSV</li>
+  <li><strong>Importer</strong> (the owner) — receives the CSV, runs the import script</li>
+</ul>
+<p>The same person can do both. The split exists because the spreadsheet lives in Google Sheets or Excel, and the import script runs in a terminal.</p>
+
+<h2>Step 1 (Curator) — Update the spreadsheet</h2>
+<p>The spreadsheet has one row per cup, one column per field. The column order matters — it must match the CSV format exactly:</p>
+
+<table>
+  <thead><tr><th>Column</th><th>Example</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>city</td><td>San Francisco</td><td>Required</td></tr>
+    <tr><td>region</td><td>California</td><td>State or province — leave blank if not applicable</td></tr>
+    <tr><td>country</td><td>United States</td><td>Required. Full name</td></tr>
+    <tr><td>country_code</td><td>US</td><td>Required. 2-letter ISO code</td></tr>
+    <tr><td>series</td><td>You Are Here</td><td>Required. Must be consistent — check existing entries</td></tr>
+    <tr><td>year</td><td>2021</td><td>Required. 4-digit year</td></tr>
+    <tr><td>lat</td><td>37.7749</td><td>City centroid latitude — find via Google Maps</td></tr>
+    <tr><td>lng</td><td>-122.4194</td><td>City centroid longitude</td></tr>
+    <tr><td>image_url</td><td>https://example.com/cup.jpg</td><td>Public image URL — downloaded and stored during import</td></tr>
+    <tr><td>notes</td><td>Limited edition 2021</td><td>Optional freeform notes</td></tr>
+  </tbody>
+</table>
+
+<h2>Step 2 (Curator) — Export as CSV</h2>
+<ol>
+  <li>In Google Sheets: File → Download → Comma Separated Values (.csv)</li>
+  <li>In Excel: File → Save As → CSV (Comma delimited)</li>
+  <li>Send or share the file with the importer.</li>
+</ol>
+
+<h2>Step 3 (Importer) — Run the import script</h2>
+
+<div class="callout">
+  <strong>Enter the dev shell first.</strong><br>
+  All commands must run inside <code>nix develop</code>. Never run <code>npx</code> or <code>ts-node</code> on the bare host.
+</div>
+
+<pre># 1. Enter the dev shell
+nix develop
+
+# 2. Preview what will change (no data is written)
+npx ts-node scripts/import-cups.ts --file /path/to/cups.csv --dry-run
+
+# 3. Review the output — check for unexpected creates or updates
+
+# 4. Apply the import
+npx ts-node scripts/import-cups.ts --file /path/to/cups.csv</pre>
+
+<p>The script is <strong>safe to re-run at any time</strong>. It uses upsert logic (match on city + series + year) — existing records are updated, new ones are created, nothing is duplicated.</p>
+
+<h2>Step 4 — Verify</h2>
+<ol>
+  <li>Open the PocketBase admin UI → Collections → cups — new entries should appear.</li>
+  <li>Open the app — new cups should appear in Browse and on the map (if they have lat/lng).</li>
+</ol>
+
+</body>
+</html>

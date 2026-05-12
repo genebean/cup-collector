@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deployment — Cup Collector Setup</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
+  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
+  h2:first-of-type { border-top: none; }
+  p { color: #333; margin-bottom: 0.8rem; }
+  ol, ul { padding-left: 1.25rem; } li { margin-bottom: 0.4rem; font-size: 0.92rem; }
+  pre { background: #1a2820; color: #a8d8b0; padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; }
+  code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
+  .callout { border-left: 3px solid #00704A; background: #e8f2ee; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
+  .warn { border-left-color: #E8833A; background: #fdf0e6; }
+</style>
+</head>
+<body>
+
+<nav><a href="../index.html">← Docs home</a></nav>
+
+<h1>Deployment</h1>
+<p>Cup Collector deploys via NixOS module. Everything — the Next.js app, PocketBase container, and nginx vhosts — is declared in your NixOS configuration.</p>
+
+<div class="callout warn">
+  <strong>All commands must run inside <code>nix develop</code>.</strong><br>
+  Never install Node, npm, or PocketBase directly on the host. The dev shell provides all tooling at pinned versions.
+</div>
+
+<h2>Step 1 — Add the flake input</h2>
+<p>In your NixOS config repo (<code>genebean/dots</code>), add Cup Collector as a flake input:</p>
+<pre># In flake.nix inputs block:
+cup-collector.url = "github:genebean/cup-collector";</pre>
+
+<h2>Step 2 — Import the module</h2>
+<p>In the relevant host's NixOS configuration:</p>
+<pre>{ inputs, config, ... }: {
+  imports = [ inputs.cup-collector.nixosModules.default ];
+
+  services.cupCollector = {
+    enable   = true;
+    domain   = "cups.yourdomain.com";
+    pbDomain = "pb.yourdomain.com";
+    # envFile points to your secrets file — managed by sops-nix or similar
+    envFile  = config.sops.secrets."cup-collector-env".path;
+    # Optional — these are the defaults:
+    # port    = 3000;
+    # pbPort  = 8090;
+    # dataDir = "/var/lib/cup-collector";
+  };
+}</pre>
+
+<h2>Step 3 — Create the secrets file</h2>
+<p>The <code>envFile</code> must contain all required environment variables. Create it using your secrets manager (sops-nix, agenix, etc.) with the contents from <code>.env.example</code>:</p>
+<pre>POCKETID_ISSUER_URL=https://id.yourdomain.com
+POCKETID_CLIENT_ID=cup-collector-abc123
+POCKETID_CLIENT_SECRET=your-client-secret
+AUTH_SECRET=generate-with-openssl-rand-base64-32
+NEXTAUTH_URL=https://cups.yourdomain.com
+POCKETBASE_URL=https://pb.yourdomain.com
+POCKETBASE_ADMIN_TOKEN=your-admin-token
+GOOGLE_PLACES_API_KEY=your-google-places-key</pre>
+
+<p>Generate <code>AUTH_SECRET</code> with:</p>
+<pre>openssl rand -base64 32</pre>
+
+<h2>Step 4 — Rebuild</h2>
+<pre>sudo nixos-rebuild switch --flake .#your-hostname</pre>
+
+<p>This will:</p>
+<ul>
+  <li>Build the Next.js app as a Nix package</li>
+  <li>Pull the PocketBase OCI image</li>
+  <li>Start both services</li>
+  <li>Configure nginx vhosts with Let's Encrypt certificates</li>
+</ul>
+
+<h2>Step 5 — Get the npmDepsHash</h2>
+<p>The first build will fail if <code>npmDepsHash</code> in <code>flake.nix</code> is a placeholder. Nix will print the correct hash in the error output. Copy it:</p>
+<pre># The error output will include a line like:
+#   got:    sha256-abc123...
+# Copy that value into flake.nix as npmDepsHash, then rebuild.</pre>
+
+<h2>Verify services are running</h2>
+<pre>systemctl status cup-collector
+systemctl status podman-cup-collector-pb  # or docker-cup-collector-pb</pre>
+
+<p>Check logs if something isn't working:</p>
+<pre>journalctl -u cup-collector -f
+journalctl -u podman-cup-collector-pb -f</pre>
+
+<h2>Common first-deployment issues</h2>
+<ul>
+  <li><strong>ACME certificate not issued</strong> — check that port 80 is open and DNS is pointing to your server. Let's Encrypt needs to reach <code>http://cups.yourdomain.com/.well-known/acme-challenge/</code>.</li>
+  <li><strong>PocketBase container won't start</strong> — check the data directory permissions: <code>ls -la /var/lib/cup-collector/</code>. The <code>pb_data</code> directory should exist and be writable by the container.</li>
+  <li><strong>Auth redirect error</strong> — double-check the <code>NEXTAUTH_URL</code> matches exactly what's in the PocketID redirect URI setting, including the protocol.</li>
+  <li><strong>npmDepsHash mismatch</strong> — run <code>nix build</code>, copy the hash from the error, update <code>flake.nix</code>, rebuild.</li>
+</ul>
+
+</body>
+</html>

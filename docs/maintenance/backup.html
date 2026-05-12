@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backups — Cup Collector</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
+  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
+  h2:first-of-type { border-top: none; }
+  p { color: #333; margin-bottom: 0.8rem; }
+  ul, ol { padding-left: 1.25rem; } li { margin-bottom: 0.4rem; font-size: 0.92rem; }
+  pre { background: #1a2820; color: #a8d8b0; padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; }
+  code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
+  .callout { border-left: 3px solid #E8833A; background: #fdf0e6; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
+  .info { border-left-color: #00704A; background: #e8f2ee; }
+</style>
+</head>
+<body>
+
+<nav><a href="../index.html">← Docs home</a></nav>
+
+<h1>Backups</h1>
+<p>There are two sources of data that need to be kept safe: the PocketBase data directory and the curator's spreadsheet.</p>
+
+<h2>What to back up</h2>
+
+<div class="callout">
+  <strong>The PocketBase data directory is the primary backup target.</strong><br>
+  Everything — your cup collection status, household record, and uploaded photos — lives here. If this is lost and not backed up, you lose all ownership data and any photos you've uploaded.
+</div>
+
+<p><strong>PocketBase data directory:</strong> <code>/var/lib/cup-collector/pb_data/</code></p>
+<p>This contains:</p>
+<ul>
+  <li>The SQLite database (<code>pb_data/data.db</code>) — all collection records, household config</li>
+  <li>Uploaded files (<code>pb_data/storage/</code>) — cup images from the catalog and any own photos</li>
+</ul>
+
+<p><strong>The curator's spreadsheet</strong> is the source of truth for the catalog. It lives outside this system (Google Sheets or local Excel). Keep it backed up separately — it can be used to re-import the catalog if the database is lost.</p>
+
+<h2>Backup method</h2>
+<p>If you're already backing up your homelab with Restic, Borgbackup, or a similar tool, add the PocketBase data directory to your backup paths:</p>
+<pre># Example Restic backup (adjust paths and repo for your setup)
+restic backup /var/lib/cup-collector/pb_data/</pre>
+
+<p>For a simple manual backup:</p>
+<pre>sudo tar -czf cup-collector-backup-$(date +%Y%m%d).tar.gz \
+  /var/lib/cup-collector/pb_data/</pre>
+
+<div class="callout info">
+  <strong>PocketBase has a built-in backup feature.</strong><br>
+  In the PocketBase admin UI → Settings → Backups, you can trigger a backup and download it as a zip file. This is a good option for occasional manual snapshots.
+</div>
+
+<h2>Suggested backup frequency</h2>
+<ul>
+  <li><strong>Daily</strong> — if you mark cups owned regularly</li>
+  <li><strong>Weekly</strong> — for less active periods</li>
+  <li><strong>After any catalog import</strong> — take a manual backup immediately after a successful import</li>
+</ul>
+
+<h2>Restoring</h2>
+<ol>
+  <li>Stop the PocketBase container: <code>sudo systemctl stop podman-cup-collector-pb</code></li>
+  <li>Replace the data directory with your backup:
+    <pre>sudo tar -xzf cup-collector-backup-YYYYMMDD.tar.gz -C /</pre>
+  </li>
+  <li>Start the container again: <code>sudo systemctl start podman-cup-collector-pb</code></li>
+  <li>Verify the admin UI at <code>https://pb.yourdomain.com/_/</code> shows your data.</li>
+</ol>
+
+<p>The Next.js app itself does not need to be backed up — it's rebuilt from source by Nix at any time. Only the PocketBase data directory is stateful.</p>
+
+</body>
+</html>

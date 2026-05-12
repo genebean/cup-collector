@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PocketID Setup — Cup Collector</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
+  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
+  h2:first-of-type { border-top: none; }
+  p { color: #333; margin-bottom: 0.8rem; }
+  ol, ul { padding-left: 1.25rem; } li { margin-bottom: 0.4rem; font-size: 0.92rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+  thead tr { background: #1E3932; color: white; }
+  th { text-align: left; padding: 0.6rem 0.85rem; }
+  td { padding: 0.6rem 0.85rem; border-bottom: 1px solid #ece8e1; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
+  .callout { border-left: 3px solid #00704A; background: #e8f2ee; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
+  .ascii { font-family: monospace; background: #1a2820; color: #a8d8b0; padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; white-space: pre; }
+</style>
+</head>
+<body>
+
+<nav><a href="../index.html">← Docs home</a></nav>
+
+<h1>PocketID Setup</h1>
+<p>Register Cup Collector in PocketID and add each household member. This must be done before the app will work — authentication depends on it.</p>
+
+<h2>Step 1 — Register the application</h2>
+<ol>
+  <li>Log in to your PocketID admin panel (e.g. <code>https://id.yourdomain.com</code> → Admin).</li>
+  <li>Navigate to <strong>Applications</strong> → <strong>Create Application</strong>.</li>
+  <li>Fill in the fields as follows:</li>
+</ol>
+
+<table>
+  <thead><tr><th>Field</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Application Name</td><td>Cup Collector</td></tr>
+    <tr><td>Redirect URI</td><td><code>https://cups.yourdomain.com/api/auth/callback/pocketid</code></td></tr>
+    <tr><td>Launch URL</td><td><code>https://cups.yourdomain.com</code></td></tr>
+    <tr><td>Logo / Icon</td><td>Upload <code>public/icons/icon-192.png</code> (192×192 PNG)</td></tr>
+    <tr><td>Post-logout redirect</td><td><code>https://cups.yourdomain.com</code></td></tr>
+  </tbody>
+</table>
+
+<ol start="4">
+  <li>Save the application. PocketID will generate a <strong>Client ID</strong> and <strong>Client Secret</strong>.</li>
+  <li>Copy both values — you'll need them for the <code>.env</code> secrets file.</li>
+</ol>
+
+<div class="ascii">PocketID Admin → Applications
+┌─────────────────────────────────────────────────────┐
+│  Application Name:  Cup Collector                   │
+│  Redirect URI:      https://cups.yourdomain.com/    │
+│                     api/auth/callback/pocketid      │
+│  Launch URL:        https://cups.yourdomain.com     │
+│  Logo:              [icon-192.png uploaded]         │
+│  Post-logout:       https://cups.yourdomain.com     │
+├─────────────────────────────────────────────────────┤
+│  ✓ Saved                                            │
+│  Client ID:     cup-collector-abc123                │
+│  Client Secret: ••••••••••••••••  [Copy]            │
+└─────────────────────────────────────────────────────┘</div>
+
+<h2>Step 2 — Add users to PocketID</h2>
+<p>Each person who will use Cup Collector needs a PocketID account. For each person:</p>
+<ol>
+  <li>In the PocketID admin panel, go to <strong>Users</strong> → <strong>Create User</strong>.</li>
+  <li>Enter their name, email, and set a temporary password (they can change it on first login).</li>
+  <li>Save. The user can now log in to PocketID.</li>
+</ol>
+
+<h2>Step 3 — Find each user's sub value</h2>
+<p>The household record in PocketBase uses each user's PocketID <code>sub</code> claim to determine their role. To find a user's <code>sub</code>:</p>
+<ol>
+  <li>In the PocketID admin panel, go to <strong>Users</strong>.</li>
+  <li>Click on the user. Their <strong>User ID</strong> field is their <code>sub</code>. Copy it.</li>
+  <li>Keep a note of each person's <code>sub</code> — you'll use them when creating the household record in PocketBase.</li>
+</ol>
+
+<div class="callout">
+  <strong>Alternative: read it from the session</strong><br>
+  After deploying the app, a user can log in and check their <code>sub</code> via Settings → the app shows their role. If you need the raw <code>sub</code> value, it also appears in the PocketBase admin UI once the user has logged in and a household has been created.
+</div>
+
+<h2>Step 4 — Verify the "My Apps" launch icon</h2>
+<p>PocketID shows registered applications in each user's "My Apps" panel with a clickable icon. To verify this is working:</p>
+<ol>
+  <li>Have a user log in to PocketID.</li>
+  <li>They should see a "Cup Collector" tile in their apps panel with the icon you uploaded.</li>
+  <li>Clicking the tile should open <code>https://cups.yourdomain.com</code>.</li>
+</ol>
+<p>If the icon doesn't appear, check that the Launch URL is saved correctly and that the icon image uploaded without errors.</p>
+
+</body>
+</html>

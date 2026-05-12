@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cup Collector — Docs</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
+  header { background: #1E3932; color: white; border-radius: 12px; padding: 2.5rem 2rem; margin-bottom: 2.5rem; }
+  header h1 { font-size: 2rem; font-weight: 700; margin: 0 0 0.4rem; }
+  header p { color: rgba(255,255,255,0.65); margin: 0; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .card { background: white; border: 1px solid #d8d0c4; border-radius: 10px; padding: 1.25rem; text-decoration: none; color: inherit; display: block; transition: box-shadow .15s; }
+  .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+  .card-icon { font-size: 1.75rem; margin-bottom: 0.6rem; }
+  .card-title { font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
+  .card-desc { font-size: 0.85rem; color: #6b6457; }
+  h2 { font-size: 1.15rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; }
+  ul { padding-left: 1.25rem; }
+  li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+  a { color: #00704A; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>☕ Cup Collector</h1>
+  <p>Track your Starbucks location cup collection — self-hosted, map-first, real-time sync.</p>
+</header>
+
+<h2>New to the app?</h2>
+<div class="cards">
+  <a class="card" href="using/getting-started.html">
+    <div class="card-icon">👋</div>
+    <div class="card-title">Getting Started</div>
+    <div class="card-desc">Install on your iPhone, log in, and learn the basics.</div>
+  </a>
+  <a class="card" href="using/traveling.html">
+    <div class="card-icon">✈️</div>
+    <div class="card-title">Using While Traveling</div>
+    <div class="card-desc">The core use case — finding cups you need and getting there.</div>
+  </a>
+  <a class="card" href="using/map-view.html">
+    <div class="card-icon">🗺️</div>
+    <div class="card-title">Map View</div>
+    <div class="card-desc">What the pins mean and how to navigate the map.</div>
+  </a>
+  <a class="card" href="using/browsing.html">
+    <div class="card-icon">📋</div>
+    <div class="card-title">Browsing &amp; Searching</div>
+    <div class="card-desc">Filter by series, country, or owned status. Mark cups as owned.</div>
+  </a>
+</div>
+
+<h2>Setting it up?</h2>
+<div class="cards">
+  <a class="card" href="setup/prerequisites.html">
+    <div class="card-icon">📋</div>
+    <div class="card-title">Prerequisites</div>
+    <div class="card-desc">What you need before you start.</div>
+  </a>
+  <a class="card" href="setup/pocketid.html">
+    <div class="card-icon">🔑</div>
+    <div class="card-title">PocketID Setup</div>
+    <div class="card-desc">Register the app and add users.</div>
+  </a>
+  <a class="card" href="setup/pocketbase.html">
+    <div class="card-icon">🗄️</div>
+    <div class="card-title">PocketBase Setup</div>
+    <div class="card-desc">Create collections and access rules.</div>
+  </a>
+  <a class="card" href="setup/deployment.html">
+    <div class="card-icon">🚀</div>
+    <div class="card-title">Deployment</div>
+    <div class="card-desc">Add the Nix flake, configure the module, rebuild.</div>
+  </a>
+  <a class="card" href="setup/first-run.html">
+    <div class="card-icon">✅</div>
+    <div class="card-title">First Run Checklist</div>
+    <div class="card-desc">Verify everything works after deploying.</div>
+  </a>
+</div>
+
+<h2>Managing cups?</h2>
+<div class="cards">
+  <a class="card" href="maintenance/adding-cups.html">
+    <div class="card-icon">📥</div>
+    <div class="card-title">Adding Cups</div>
+    <div class="card-desc">Curator workflow — update the spreadsheet and import.</div>
+  </a>
+  <a class="card" href="maintenance/updates.html">
+    <div class="card-icon">🔄</div>
+    <div class="card-title">Updating the App</div>
+    <div class="card-desc">Bump the flake input and rebuild.</div>
+  </a>
+  <a class="card" href="maintenance/backup.html">
+    <div class="card-icon">💾</div>
+    <div class="card-title">Backups</div>
+    <div class="card-desc">What to back up and how often.</div>
+  </a>
+</div>
+
+<h2>Technical reference</h2>
+<ul>
+  <li><a href="reference/spec.html">Project Specification</a> — authoritative design document, full data model, decision log</li>
+</ul>
+
+</body>
+</html>

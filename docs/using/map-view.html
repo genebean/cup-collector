@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Map View — Cup Collector</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
+  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
+  h2:first-of-type { border-top: none; }
+  p { color: #333; margin-bottom: 0.8rem; }
+  .pin-legend { display: flex; flex-direction: column; gap: 0.65rem; margin: 1rem 0 1.5rem; }
+  .pin-row { display: flex; align-items: center; gap: 0.85rem; font-size: 0.9rem; }
+  .pin { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(0,0,0,0.15); }
+  .pin-green { background: #00704A; }
+  .pin-orange { background: #f97316; }
+  .pin-blue { background: #3b82f6; }
+  .pin-you { background: #3b82f6; box-shadow: 0 0 0 5px rgba(59,130,246,0.25); }
+  ul { padding-left: 1.25rem; }
+  li { margin-bottom: 0.35rem; font-size: 0.92rem; }
+  .callout { border-left: 3px solid #CBA258; background: #f5edd8; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<nav><a href="../index.html">← Docs home</a></nav>
+
+<h1>🗺️ Map View</h1>
+<p>The map is the default home screen. It gives you a visual overview of the entire collection and nearby Starbucks stores.</p>
+
+<h2>Pin colors</h2>
+<div class="pin-legend">
+  <div class="pin-row"><div class="pin pin-green"></div><span><strong>Green</strong> — a cup you own</span></div>
+  <div class="pin-row"><div class="pin pin-orange"></div><span><strong>Orange</strong> — a cup you still need</span></div>
+  <div class="pin-row"><div class="pin pin-blue"></div><span><strong>Blue</strong> — a nearby Starbucks store</span></div>
+  <div class="pin-row"><div class="pin pin-you"></div><span><strong>Pulsing blue dot</strong> — your current location</span></div>
+</div>
+
+<h2>Zooming and navigating</h2>
+<ul>
+  <li>Pinch to zoom in and out, or use the + / − buttons.</li>
+  <li>Drag to pan around the map.</li>
+  <li>Tap the <strong>🌍 globe button</strong> (top-right of the header) to zoom out to a world view showing your entire collection.</li>
+  <li>When you first open the app, the map automatically zooms to your current location if you've allowed location access.</li>
+</ul>
+
+<h2>Tapping pins</h2>
+<ul>
+  <li><strong>Tap a cup pin</strong> (green or orange) — opens the Cup Detail screen for that cup, showing its image, metadata, and ownership controls.</li>
+  <li><strong>Tap a Starbucks pin</strong> (blue) — shows the store name and address, with a "Get directions" link that opens Apple Maps.</li>
+</ul>
+
+<h2>Location permission</h2>
+<p>The app asks for your location when it first opens. If you allow it:</p>
+<ul>
+  <li>The map centers on where you are.</li>
+  <li>A pulsing blue dot marks your position.</li>
+  <li>Nearby Starbucks stores appear as blue pins.</li>
+  <li>The Browse screen sorts unowned nearby cups to the top.</li>
+</ul>
+<p>If you deny location permission, the app falls back to a world map view. No broken screens or error messages — the app just works without the location features.</p>
+
+<div class="callout">
+  <strong>Changed your mind about location?</strong><br>
+  Go to iPhone Settings → Privacy &amp; Security → Location Services → Safari → set to "While Using". Then reload the app.
+</div>
+
+<h2>Nearby Starbucks</h2>
+<p>When location is active, the app automatically searches for Starbucks stores within about 2km of your position using Google's Places service (server-side — your location is never sent to Google directly). Blue store pins appear on the map. Tap any store pin to see its name, address, and a "Get directions" link that opens Apple Maps with turn-by-turn directions.</p>
+
+</body>
+</html>

@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cup Collector — Project Specification</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --ink: #0f1a14;
+  --green: #00704A;
+  --green-dark: #1E3932;
+  --green-mid: #2d5a3d;
+  --gold: #CBA258;
+  --gold-light: #f5edd8;
+  --cream: #FAF7F2;
+  --rule: #d8d0c4;
+  --muted: #6b6457;
+  --code-bg: #1a2820;
+  --code-text: #a8d8b0;
+  --warn: #E8833A;
+  --tag-bg: #e8f2ee;
+  --tag-text: #1E3932;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); line-height: 1.7; font-size: 15px; }
+
+.doc-header { background: var(--green-dark); padding: 3rem 2rem 2.5rem; position: relative; overflow: hidden; }
+.doc-header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--gold) 0%, transparent 100%); }
+.header-inner { max-width: 920px; margin: 0 auto; }
+.doc-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--gold); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.75rem; }
+.doc-title { font-family: 'Bitter', serif; font-size: clamp(2rem, 5vw, 3rem); color: white; font-weight: 700; line-height: 1.1; margin-bottom: 0.75rem; }
+.doc-title span { color: var(--gold); }
+.doc-desc { color: rgba(255,255,255,0.65); font-size: 0.95rem; margin-top: 0.5rem; max-width: 600px; }
+.doc-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
+.meta-chip { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.75); padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 0.78rem; font-family: 'IBM Plex Mono', monospace; }
+.meta-chip strong { color: white; }
+
+.doc-body { max-width: 920px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+.section { margin-bottom: 3rem; padding-bottom: 3rem; border-bottom: 1px solid var(--rule); }
+.section:last-child { border-bottom: none; }
+.section-number { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.3rem; }
+
+h2 { font-family: 'Bitter', serif; font-size: 1.5rem; font-weight: 700; color: var(--green-dark); margin-bottom: 1rem; line-height: 1.25; }
+h3 { font-family: 'Bitter', serif; font-size: 1.05rem; font-weight: 700; color: var(--green-dark); margin: 1.5rem 0 0.5rem; }
+h3:first-child { margin-top: 0; }
+
+p { margin-bottom: 0.85rem; color: #2a2a2a; }
+p:last-child { margin-bottom: 0; }
+
+.callout { border-radius: 8px; padding: 1rem 1.2rem; margin: 1.25rem 0; display: flex; gap: 0.85rem; }
+.callout-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.callout-body { flex: 1; }
+.callout-body p { margin: 0; font-size: 0.9rem; }
+.callout-body p + p { margin-top: 0.5rem; }
+.callout-body strong { display: block; margin-bottom: 0.2rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.callout.info { background: var(--tag-bg); border-left: 3px solid var(--green); }
+.callout.info .callout-body strong { color: var(--green); }
+.callout.warn { background: #fdf0e6; border-left: 3px solid var(--warn); }
+.callout.warn .callout-body strong { color: var(--warn); }
+.callout.decision { background: var(--gold-light); border-left: 3px solid var(--gold); }
+.callout.decision .callout-body strong { color: #8a6830; }
+.callout.agent { background: #f0eaf8; border-left: 3px solid #7c4dba; }
+.callout.agent .callout-body strong { color: #5a2d9a; }
+
+.stack-table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: 0.88rem; }
+.stack-table thead tr { background: var(--green-dark); color: white; }
+.stack-table thead th { padding: 0.65rem 1rem; text-align: left; font-weight: 600; font-size: 0.8rem; letter-spacing: 0.04em; }
+.stack-table tbody tr { border-bottom: 1px solid var(--rule); }
+.stack-table tbody tr:last-child { border: none; }
+.stack-table tbody tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+.stack-table td { padding: 0.7rem 1rem; vertical-align: top; }
+.stack-table td:first-child { font-weight: 600; color: var(--green-dark); white-space: nowrap; }
+.stack-table td:nth-child(2) { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: var(--green-mid); }
+.stack-table td:last-child { color: var(--muted); font-size: 0.85rem; }
+
+pre { background: var(--code-bg); border-radius: 8px; padding: 1.1rem 1.2rem; overflow-x: auto; margin: 1rem 0; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; line-height: 1.6; }
+code { color: var(--code-text); }
+.cm { color: #5a8060; }
+.ck { color: #78c4f0; }
+.cv { color: #f0c878; }
+.cs { color: #c8e6a0; }
+
+.ic { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; background: #e8ede8; color: var(--green-dark); padding: 0.1rem 0.4rem; border-radius: 3px; }
+
+.schema { background: white; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; margin: 1rem 0; }
+.schema-header { background: var(--green-dark); color: white; padding: 0.5rem 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; letter-spacing: 0.04em; }
+.schema-body { padding: 0.75rem 1rem; }
+.schema-field { display: flex; gap: 1rem; padding: 0.35rem 0; border-bottom: 1px solid #f0ece6; align-items: baseline; }
+.schema-field:last-child { border: none; }
+.field-name { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--green-mid); font-weight: 600; width: 180px; flex-shrink: 0; }
+.field-type { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--gold); width: 90px; flex-shrink: 0; }
+.field-desc { color: var(--muted); font-size: 0.82rem; }
+
+.screen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin: 1rem 0; }
+.screen-card { background: white; border: 1px solid var(--rule); border-radius: 8px; padding: 1rem; }
+.screen-name { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--green); font-weight: 600; margin-bottom: 0.35rem; }
+.screen-title { font-weight: 700; font-size: 0.92rem; color: var(--ink); margin-bottom: 0.4rem; }
+.screen-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+.screen-notes { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--rule); }
+.screen-note { font-size: 0.78rem; color: var(--green-dark); padding: 0.15rem 0; display: flex; gap: 0.4rem; }
+.screen-note::before { content: '→'; color: var(--gold); flex-shrink: 0; }
+
+.feature-list { list-style: none; margin: 0.5rem 0 1rem; }
+.feature-list li { padding: 0.4rem 0; border-bottom: 1px solid var(--rule); font-size: 0.9rem; display: flex; gap: 0.6rem; align-items: flex-start; }
+.feature-list li:last-child { border: none; }
+.feature-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+.toc { background: white; border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 2.5rem; }
+.toc-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem; }
+.toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2rem; }
+.toc-group { margin-bottom: 0.75rem; }
+.toc-group-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.3rem; }
+.toc ol { padding-left: 1.2rem; }
+.toc li { margin-bottom: 0.25rem; font-size: 0.88rem; }
+.toc a { color: var(--green); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+.decision-log { margin: 1rem 0; }
+.decision { background: white; border: 1px solid var(--rule); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin-bottom: 0.75rem; }
+.decision-q { font-weight: 700; font-size: 0.88rem; color: var(--ink); margin-bottom: 0.3rem; }
+.decision-a { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+.decision-a strong { color: var(--green-dark); display: inline; font-size: inherit; text-transform: none; letter-spacing: 0; }
+
+.doc-spec { background: white; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; margin: 0.75rem 0; }
+.doc-spec-header { display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 1rem; background: var(--green-dark); gap: 1rem; }
+.doc-spec-path { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--gold); }
+.doc-spec-audience { font-size: 0.72rem; color: rgba(255,255,255,0.55); font-style: italic; white-space: nowrap; }
+.doc-spec-body { padding: 0.85rem 1rem; }
+.doc-spec-body p { font-size: 0.88rem; margin-bottom: 0.5rem; color: #333; }
+.doc-spec-body p:last-child { margin-bottom: 0; }
+.doc-spec-body ul { padding-left: 1.2rem; font-size: 0.83rem; color: var(--muted); margin-top: 0.4rem; }
+.doc-spec-body ul li { margin-bottom: 0.2rem; }
+
+.user-role { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 3px; margin-left: 0.3rem; vertical-align: middle; font-family: 'IBM Plex Mono', monospace; }
+.role-owner { background: #d4ede5; color: var(--green-dark); }
+.role-collab { background: #fde8d5; color: #7a3a10; }
+.role-viewer { background: #e8e4f4; color: #4a2880; }
+
+@media (max-width: 640px) {
+  .toc-grid { grid-template-columns: 1fr; }
+  .screen-grid { grid-template-columns: 1fr; }
+  .doc-header { padding: 2rem 1.2rem; }
+  .doc-body { padding: 1.5rem 1rem 3rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+  <div class="header-inner">
+    <div class="doc-eyebrow">Claude Code — Project Specification (Final)</div>
+    <div class="doc-title">Cup <span>Collector</span></div>
+    <p class="doc-desc">A self-hosted Progressive Web App for tracking a shared Starbucks location cup collection. Map-first, location-aware, real-time sync between two primary users with support for view-only family members. Built for long-term self-hosted operation by a non-developer owner.</p>
+    <div class="doc-meta">
+      <div class="meta-chip"><strong>Type:</strong> PWA</div>
+      <div class="meta-chip"><strong>Frontend:</strong> Next.js + Tailwind</div>
+      <div class="meta-chip"><strong>Backend:</strong> PocketBase</div>
+      <div class="meta-chip"><strong>Auth:</strong> PocketID (OIDC)</div>
+      <div class="meta-chip"><strong>Hosting:</strong> NixOS (home server)</div>
+      <div class="meta-chip"><strong>Deployment:</strong> Nix flake + NixOS module</div>
+      <div class="meta-chip"><strong>Docs:</strong> Pure HTML → GitHub Pages</div>
+    </div>
+  </div>
+</div>
+
+<div class="doc-body">
+
+  <div class="toc">
+    <div class="toc-title">Table of Contents</div>
+    <div class="toc-grid">
+      <div>
+        <div class="toc-group">
+          <div class="toc-group-label">App Design</div>
+          <ol>
+            <li><a href="#overview">Project Overview &amp; Goals</a></li>
+            <li><a href="#users">User Roles</a></li>
+            <li><a href="#stack">Technology Stack</a></li>
+            <li><a href="#auth">Authentication &amp; User Model</a></li>
+            <li><a href="#data">Data Model</a></li>
+            <li><a href="#screens">Screens &amp; Navigation</a></li>
+            <li><a href="#features">Feature Specifications</a></li>
+            <li><a href="#apis">External APIs</a></li>
+          </ol>
+        </div>
+      </div>
+      <div>
+        <div class="toc-group">
+          <div class="toc-group-label">Infrastructure &amp; Delivery</div>
+          <ol start="9">
+            <li><a href="#hosting">Hosting &amp; Infrastructure</a></li>
+            <li><a href="#nix">Nix Flake &amp; NixOS Module</a></li>
+            <li><a href="#data-loading">Data Loading Strategy</a></li>
+            <li><a href="#pwa">PWA Configuration</a></li>
+          </ol>
+        </div>
+        <div class="toc-group">
+          <div class="toc-group-label">Documentation &amp; Maintenance</div>
+          <ol start="13">
+            <li><a href="#docs">Docs Structure &amp; Requirements</a></li>
+            <li><a href="#readme">README &amp; AGENTS.md</a></li>
+            <li><a href="#decisions">Decision Log</a></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 01 OVERVIEW ══ -->
+  <div class="section" id="overview">
+    <div class="section-number">Section 01</div>
+    <h2>Project Overview &amp; Goals</h2>
+
+    <p>Two people collect location-specific Starbucks mugs and cups from the <em>You Are Here</em>, <em>Been There</em>, and related series. After years of collecting they have so many cups they can't reliably remember what they own. This app solves that problem — at home for browsing, and on the road when a new cup is in front of them.</p>
+
+    <h3>Primary Use Cases</h3>
+    <ul class="feature-list">
+      <li>Open the app while traveling and immediately see which cups from the current area are still needed</li>
+      <li>Find nearby Starbucks stores that might carry those cups, and navigate to them via Apple Maps</li>
+      <li>Browse the full collection by series, country, or owned/needed status</li>
+      <li>Mark a cup as owned — both phones update instantly without any manual syncing</li>
+      <li>Quick-check any city: "do we already have the Tokyo cup?"</li>
+      <li>Let family members (view-only) browse the collection</li>
+    </ul>
+
+    <h3>Non-Goals</h3>
+    <ul class="feature-list">
+      <li>Public sharing or social features — private household app</li>
+      <li>E-commerce or purchase tracking</li>
+      <li>Native iOS App Store distribution</li>
+      <li>Android-specific optimization (works in any browser; not a priority)</li>
+    </ul>
+
+    <div class="callout info">
+      <div class="callout-icon">ℹ️</div>
+      <div class="callout-body">
+        <strong>Design Philosophy</strong>
+        <p>Self-sovereign by default. Every core component runs on infrastructure the owner controls. The only external dependency for core functionality is Google Places API for nearby Starbucks discovery — acceptable because it is a read-only location lookup, not a data custody concern.</p>
+      </div>
+    </div>
+
+    <div class="callout agent">
+      <div class="callout-icon">🤖</div>
+      <div class="callout-body">
+        <strong>Note for Agents &amp; Claude Code</strong>
+        <p>The owner is not an app developer. Prioritise clarity, long-term maintainability, and self-sufficiency over cleverness. When in doubt: self-hosted over cloud, open-source over proprietary, simple over clever, explicit over magic. Comment generously — future maintenance may be done by an AI agent without full context.</p>
+        <p>All tooling (node, npm, npx, ts-node, pocketbase) must come from the Nix dev shell. Never assume or suggest installing tools on the host system directly. See Section 03 and Section 10 for detail.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 02 USER ROLES ══ -->
+  <div class="section" id="users">
+    <div class="section-number">Section 02</div>
+    <h2>User Roles</h2>
+
+    <p>Three roles exist. Role is determined entirely by the user's PocketID subject claim (<span class="ic">sub</span>) and its presence in the household record — no in-app role field required.</p>
+
+    <table class="stack-table">
+      <thead><tr><th>Role</th><th>Who</th><th>Capabilities</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Owner <span class="user-role role-owner">owner</span></td>
+          <td>Primary collector (Gene)</td>
+          <td>Full access: browse, mark cups owned/unowned, upload own photos, run data imports. Sub stored in <span class="ic">member_sub_1</span> on the household record.</td>
+        </tr>
+        <tr>
+          <td>Collaborator <span class="user-role role-collab">collaborator</span></td>
+          <td>Spouse / co-collector</td>
+          <td>Same as owner — full read and write. Sub stored in <span class="ic">member_sub_2</span>. Also the person who curates the cup catalog CSV.</td>
+        </tr>
+        <tr>
+          <td>Viewer <span class="user-role role-viewer">viewer</span></td>
+          <td>Family / friends</td>
+          <td>Read-only: browse catalog, see owned/needed status, use map and nearby stores. Cannot mark cups owned or make any changes. Sub appears in the <span class="ic">viewer_subs</span> array on the household record.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-body">
+        <strong>Role Enforcement is Two-Layer — Both Are Required</strong>
+        <p>The UI hides write controls from viewers. PocketBase collection access rules enforce the same restriction at the database level. A viewer must not be able to write owned_cups records even if they bypass the UI. Implement both layers.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 03 STACK ══ -->
+  <div class="section" id="stack">
+    <div class="section-number">Section 03</div>
+    <h2>Technology Stack</h2>
+
+    <table class="stack-table">
+      <thead><tr><th>Concern</th><th>Technology</th><th>Rationale</th></tr></thead>
+      <tbody>
+        <tr><td>Frontend Framework</td><td>Next.js (App Router)</td><td>PWA support, SSR for fast first load, large ecosystem</td></tr>
+        <tr><td>Styling</td><td>Tailwind CSS</td><td>Rapid mobile-first UI, no runtime overhead</td></tr>
+        <tr><td>Authentication</td><td>PocketID via OIDC</td><td>Self-hosted identity provider already in operator's infrastructure</td></tr>
+        <tr><td>OIDC Client</td><td>next-auth v5 (Auth.js)</td><td>Native Next.js integration, standard OIDC provider support</td></tr>
+        <tr><td>Database &amp; API</td><td>PocketBase</td><td>Single binary, built-in REST + realtime API, file storage, self-hosted</td></tr>
+        <tr><td>Realtime Sync</td><td>PocketBase Realtime (SSE)</td><td>Built into PocketBase — no additional infrastructure</td></tr>
+        <tr><td>Cup Images</td><td>PocketBase file storage</td><td>Self-hosted alongside records — no third-party CDN</td></tr>
+        <tr><td>Map Rendering</td><td>Leaflet + OpenStreetMap tiles</td><td>Open source, no API key for tiles, works well as PWA</td></tr>
+        <tr><td>Nearby Stores</td><td>Google Places API (proxied)</td><td>Most reliable Starbucks data; key stays server-side only</td></tr>
+        <tr><td>Navigation</td><td>maps.apple.com URL scheme</td><td>Opens Apple Maps natively on iPhone; no key, no cost</td></tr>
+        <tr><td>PWA</td><td>next-pwa</td><td>Service worker and manifest generation for Next.js</td></tr>
+        <tr><td>App Hosting</td><td>NixOS home server</td><td>Next.js as systemd service; PocketBase as OCI container</td></tr>
+        <tr><td>Reverse Proxy</td><td>nginx (NixOS module)</td><td>Already in use on host; TLS via Let's Encrypt / ACME</td></tr>
+        <tr><td>Nix Packaging</td><td>buildNpmPackage + flake</td><td>Exports package, NixOS module, and dev shell from one repo</td></tr>
+        <tr><td>Docs</td><td>Pure HTML → GitHub Pages</td><td>No build step; agent-friendly; rich layout without generator constraints</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout agent">
+      <div class="callout-icon">🤖</div>
+      <div class="callout-body">
+        <strong>Dev Shell is the Tooling Contract — Non-Negotiable</strong>
+        <p>Every invocation of <span class="ic">node</span>, <span class="ic">npm</span>, <span class="ic">npx</span>, <span class="ic">ts-node</span>, or <span class="ic">pocketbase</span> must happen inside <span class="ic">nix develop</span>. Documentation, scripts, Makefiles, and README instructions must reflect this. Never suggest installing Node, npm, or any app-level tooling globally on the host system. The dev shell provides all of it at the correct pinned versions.</p>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-body">
+        <strong>Google Places API Key — Server-Side Only</strong>
+        <p>The key must never appear in client-side code or be exposed to the browser. All Places lookups go through a Next.js API route at <span class="ic">/api/nearby-starbucks</span> that proxies the request server-side.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 04 AUTH ══ -->
+  <div class="section" id="auth">
+    <div class="section-number">Section 04</div>
+    <h2>Authentication &amp; User Model</h2>
+
+    <p>Authentication is handled by PocketID (self-hosted OIDC provider). Auth.js (next-auth v5) acts as the OIDC client in the Next.js app. Each user has their own PocketID account. A household record in PocketBase links users to a shared collection and determines their role.</p>
+
+    <h3>PocketID App Registration</h3>
+    <p>Register the app in the PocketID admin panel before first deployment. Required values:</p>
+
+    <table class="stack-table">
+      <thead><tr><th>PocketID Field</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Application Name</td><td>Cup Collector</td></tr>
+        <tr><td>Redirect URI</td><td><span class="ic">https://cups.yourdomain.com/api/auth/callback/pocketid</span></td></tr>
+        <tr><td>Launch URL</td><td><span class="ic">https://cups.yourdomain.com</span> — enables the "My Apps" launch icon in PocketID</td></tr>
+        <tr><td>Logo / Icon</td><td>192×192 PNG — the same icon used in the PWA manifest (Section 12)</td></tr>
+        <tr><td>Post-logout redirect</td><td><span class="ic">https://cups.yourdomain.com</span></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <div class="callout-icon">ℹ️</div>
+      <div class="callout-body">
+        <strong>PocketID "My Apps" Launch Icon</strong>
+        <p>PocketID shows registered apps in each user's "My Apps" panel with a clickable launch button. For this to work the Launch URL must point to the app's root and the uploaded icon must match the PWA icon. The setup documentation must include a step-by-step walkthrough of this registration with screenshots or ASCII diagrams.</p>
+      </div>
+    </div>
+
+    <h3>Auth.js OIDC Configuration</h3>
+    <pre><code><span class="cm">// app/auth.ts</span>
+<span class="ck">import</span> NextAuth <span class="ck">from</span> <span class="cs">"next-auth"</span>
+
+<span class="ck">export const</span> { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [{
+    <span class="ck">id</span>: <span class="cs">"pocketid"</span>,
+    <span class="ck">name</span>: <span class="cs">"PocketID"</span>,
+    <span class="ck">type</span>: <span class="cs">"oidc"</span>,
+    <span class="ck">issuer</span>: process.env.POCKETID_ISSUER_URL,
+    <span class="ck">clientId</span>: process.env.POCKETID_CLIENT_ID,
+    <span class="ck">clientSecret</span>: process.env.POCKETID_CLIENT_SECRET,
+  }],
+  callbacks: {
+    async jwt({ token, profile }) {
+      <span class="ck">if</span> (profile) token.pocketIdSub = profile.sub
+      <span class="ck">return</span> token
+    },
+    async session({ session, token }) {
+      session.user.pocketIdSub = token.pocketIdSub
+      <span class="ck">return</span> session
+    }
+  }
+})
+</code></pre>
+
+    <h3>Required Environment Variables</h3>
+    <pre><code><span class="cm"># PocketID OIDC</span>
+<span class="ck">POCKETID_ISSUER_URL</span>=<span class="cs">https://id.yourdomain.com</span>
+<span class="ck">POCKETID_CLIENT_ID</span>=<span class="cs">cup-collector</span>
+<span class="ck">POCKETID_CLIENT_SECRET</span>=<span class="cs">from-pocketid-registration</span>
+
+<span class="cm"># Auth.js</span>
+<span class="ck">AUTH_SECRET</span>=<span class="cs">generate with: openssl rand -base64 32</span>
+<span class="ck">NEXTAUTH_URL</span>=<span class="cs">https://cups.yourdomain.com</span>
+
+<span class="cm"># PocketBase</span>
+<span class="ck">POCKETBASE_URL</span>=<span class="cs">https://pb.yourdomain.com</span>
+<span class="ck">POCKETBASE_ADMIN_TOKEN</span>=<span class="cs">server-side admin operations only</span>
+
+<span class="cm"># Google Places — server-side only, never exposed to browser</span>
+<span class="ck">GOOGLE_PLACES_API_KEY</span>=<span class="cs">your-key-here</span>
+</code></pre>
+
+    <h3>Role Resolution Flow</h3>
+    <p>On every authenticated request the app resolves the current user's role by looking up their <span class="ic">sub</span> in the household record:</p>
+    <ul class="feature-list">
+      <li><span class="ic">sub</span> matches <span class="ic">member_sub_1</span> or <span class="ic">member_sub_2</span> → Owner/Collaborator — full read and write</li>
+      <li><span class="ic">sub</span> appears in <span class="ic">viewer_subs</span> array → Viewer — read-only</li>
+      <li>No match in any field → access denied, redirect to an "access not granted" page</li>
+    </ul>
+  </div>
+
+  <!-- ══ 05 DATA MODEL ══ -->
+  <div class="section" id="data">
+    <div class="section-number">Section 05</div>
+    <h2>Data Model</h2>
+    <p>Three collections in PocketBase. All data is self-hosted.</p>
+
+    <div class="schema">
+      <div class="schema-header">households — links PocketID users to a shared collection and defines roles</div>
+      <div class="schema-body">
+        <div class="schema-field"><div class="field-name">id</div><div class="field-type">string</div><div class="field-desc">PocketBase auto-ID</div></div>
+        <div class="schema-field"><div class="field-name">name</div><div class="field-type">string</div><div class="field-desc">Display name, e.g. "The Smith Collection"</div></div>
+        <div class="schema-field"><div class="field-name">member_sub_1</div><div class="field-type">string</div><div class="field-desc">PocketID <span class="ic">sub</span> claim for first owner/collaborator</div></div>
+        <div class="schema-field"><div class="field-name">member_sub_2</div><div class="field-type">string</div><div class="field-desc">PocketID <span class="ic">sub</span> claim for second owner/collaborator</div></div>
+        <div class="schema-field"><div class="field-name">viewer_subs</div><div class="field-type">json</div><div class="field-desc">JSON array of PocketID <span class="ic">sub</span> strings for view-only users. Empty array by default.</div></div>
+        <div class="schema-field"><div class="field-name">created</div><div class="field-type">datetime</div><div class="field-desc">Auto-managed by PocketBase</div></div>
+      </div>
+    </div>
+
+    <div class="schema">
+      <div class="schema-header">cups — master catalog of all known location cups</div>
+      <div class="schema-body">
+        <div class="schema-field"><div class="field-name">id</div><div class="field-type">string</div><div class="field-desc">PocketBase auto-ID</div></div>
+        <div class="schema-field"><div class="field-name">city</div><div class="field-type">string</div><div class="field-desc">e.g. "San Francisco", "Tokyo"</div></div>
+        <div class="schema-field"><div class="field-name">region</div><div class="field-type">string</div><div class="field-desc">State/province where applicable, e.g. "California"</div></div>
+        <div class="schema-field"><div class="field-name">country</div><div class="field-type">string</div><div class="field-desc">Full country name, e.g. "United States"</div></div>
+        <div class="schema-field"><div class="field-name">country_code</div><div class="field-type">string</div><div class="field-desc">ISO 3166-1 alpha-2, e.g. "US" — used for flag emoji</div></div>
+        <div class="schema-field"><div class="field-name">series</div><div class="field-type">string</div><div class="field-desc">"You Are Here" | "Been There" | "Ornament" | other</div></div>
+        <div class="schema-field"><div class="field-name">year</div><div class="field-type">number</div><div class="field-desc">4-digit release year</div></div>
+        <div class="schema-field"><div class="field-name">image</div><div class="field-type">file</div><div class="field-desc">Primary cup photo stored in PocketBase file storage</div></div>
+        <div class="schema-field"><div class="field-name">image_credit</div><div class="field-type">string</div><div class="field-desc">Source URL or "own photo" — for attribution tracking</div></div>
+        <div class="schema-field"><div class="field-name">lat</div><div class="field-type">number</div><div class="field-desc">Latitude of city centroid for map pin placement</div></div>
+        <div class="schema-field"><div class="field-name">lng</div><div class="field-type">number</div><div class="field-desc">Longitude of city centroid for map pin placement</div></div>
+        <div class="schema-field"><div class="field-name">notes</div><div class="field-type">text</div><div class="field-desc">Optional freeform notes (variants, limited editions, etc.)</div></div>
+      </div>
+    </div>
+
+    <div class="schema">
+      <div class="schema-header">owned_cups — which cups the household has collected</div>
+      <div class="schema-body">
+        <div class="schema-field"><div class="field-name">id</div><div class="field-type">string</div><div class="field-desc">PocketBase auto-ID</div></div>
+        <div class="schema-field"><div class="field-name">household_id</div><div class="field-type">relation</div><div class="field-desc">→ households.id</div></div>
+        <div class="schema-field"><div class="field-name">cup_id</div><div class="field-type">relation</div><div class="field-desc">→ cups.id</div></div>
+        <div class="schema-field"><div class="field-name">marked_by_sub</div><div class="field-type">string</div><div class="field-desc">PocketID <span class="ic">sub</span> of the user who marked it owned — for attribution</div></div>
+        <div class="schema-field"><div class="field-name">acquired_date</div><div class="field-type">date</div><div class="field-desc">Optional — when the cup was acquired</div></div>
+        <div class="schema-field"><div class="field-name">own_photo</div><div class="field-type">file</div><div class="field-desc">Optional owner photo; shown instead of catalog image when present</div></div>
+        <div class="schema-field"><div class="field-name">created</div><div class="field-type">datetime</div><div class="field-desc">Auto — serves as "added to collection" timestamp</div></div>
+      </div>
+    </div>
+
+    <h3>PocketBase Access Rules</h3>
+    <table class="stack-table">
+      <thead><tr><th>Collection</th><th>List / View</th><th>Create / Update / Delete</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>cups</td>
+          <td>Any authenticated user whose <span class="ic">sub</span> appears in any household record</td>
+          <td>Admin only — catalog is curated via import script, not user-editable</td>
+        </tr>
+        <tr>
+          <td>owned_cups</td>
+          <td>Household members and viewers for that household</td>
+          <td>Members only (<span class="ic">member_sub_1</span> or <span class="ic">member_sub_2</span>) — viewers explicitly excluded</td>
+        </tr>
+        <tr>
+          <td>households</td>
+          <td>Members and viewers of that specific household</td>
+          <td>Admin only — household is created once during setup</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <div class="callout-icon">ℹ️</div>
+      <div class="callout-body">
+        <strong>Ownership as Existence</strong>
+        <p>A cup is "owned" if and only if a record exists in <span class="ic">owned_cups</span> with the matching household ID and cup ID. There is no status field. To un-own a cup, delete the record. This keeps queries simple and eliminates invalid state.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 06 SCREENS ══ -->
+  <div class="section" id="screens">
+    <div class="section-number">Section 06</div>
+    <h2>Screens &amp; Navigation</h2>
+
+    <p>Persistent bottom navigation bar with four items. All screens share a common app header showing current location context when available. Write controls (Mark as Owned, photo upload) are hidden from viewers at the UI layer in addition to being blocked at the database layer.</p>
+
+    <div class="screen-grid">
+      <div class="screen-card">
+        <div class="screen-name">/map</div>
+        <div class="screen-title">🗺️ Map</div>
+        <div class="screen-desc">Default home screen. Opens zoomed to current GPS location. Cup pins colored by status. Blue pins for nearby Starbucks.</div>
+        <div class="screen-notes">
+          <div class="screen-note">Green pin = owned, orange = needed, blue = Starbucks store</div>
+          <div class="screen-note">Globe button (🌍) zooms to world view of full collection</div>
+          <div class="screen-note">Bottom sheet shows cups relevant to current viewport</div>
+          <div class="screen-note">Tap cup pin → Cup Detail screen</div>
+          <div class="screen-note">Tap store pin → opens Apple Maps directly</div>
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-name">/browse</div>
+        <div class="screen-title">📋 Browse</div>
+        <div class="screen-desc">Filterable list of all cups. "Still Need" cups float to the top when location is active.</div>
+        <div class="screen-notes">
+          <div class="screen-note">Filter chips: All · Still Need · by Series · by Country</div>
+          <div class="screen-note">"Near Me" filter applies location-aware sort</div>
+          <div class="screen-note">Header badge: "147 cups · 89 owned"</div>
+          <div class="screen-note">Search bar — instant results by city name</div>
+          <div class="screen-note">Tap any row → Cup Detail</div>
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-name">/cup/[id]</div>
+        <div class="screen-title">☕ Cup Detail</div>
+        <div class="screen-desc">Full detail for one cup. Hero image, metadata, owned toggle (members only), nearby Starbucks list with directions.</div>
+        <div class="screen-notes">
+          <div class="screen-note">"Mark as Owned" / "Remove" toggle — members only, hidden from viewers</div>
+          <div class="screen-note">Optimistic UI — updates instantly, rolls back on error</div>
+          <div class="screen-note">Syncs to all connected devices within ~2 seconds</div>
+          <div class="screen-note">Nearby Starbucks list — distance + Maps button per store</div>
+          <div class="screen-note">Maps button opens maps.apple.com with store coordinates</div>
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-name">/search</div>
+        <div class="screen-title">🔍 Search</div>
+        <div class="screen-desc">Full-text search across city, country, and series. Instant results.</div>
+        <div class="screen-notes">
+          <div class="screen-note">Owned/needed status shown inline on each result</div>
+          <div class="screen-note">Tap result → Cup Detail</div>
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-name">/settings</div>
+        <div class="screen-title">⚙️ Settings</div>
+        <div class="screen-desc">Account info, household name, role display, sign out.</div>
+        <div class="screen-notes">
+          <div class="screen-note">Shows user's name from PocketID</div>
+          <div class="screen-note">Shows household name</div>
+          <div class="screen-note">Shows user's role: Owner / Collaborator / Viewer</div>
+          <div class="screen-note">Sign Out button</div>
+          <div class="screen-note">App version number</div>
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-name">/admin/import</div>
+        <div class="screen-title">📥 Import</div>
+        <div class="screen-desc">Admin-only screen for CSV catalog import. Not in normal navigation. Protected by admin token check.</div>
+        <div class="screen-notes">
+          <div class="screen-note">Upload CSV → preview → confirm import</div>
+          <div class="screen-note">Shows dry-run diff before writing</div>
+          <div class="screen-note">CLI script preferred — see Section 11</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 07 FEATURES ══ -->
+  <div class="section" id="features">
+    <div class="section-number">Section 07</div>
+    <h2>Feature Specifications</h2>
+
+    <h3>Location Awareness</h3>
+    <p>On first load the app requests <span class="ic">navigator.geolocation</span> permission. If granted:</p>
+    <ul class="feature-list">
+      <li>Map centers on current location with a blue pulsing "you are here" dot</li>
+      <li>Browse list sorts so cups within ~100km of current position appear first</li>
+      <li>"Near Me" filter chip auto-applied on the Browse screen</li>
+      <li>Nearby Starbucks lookup triggered automatically via the Google Places proxy route</li>
+    </ul>
+    <p>If the user declines location permission the app falls back gracefully — map shows world view, Browse shows all cups unsorted. No broken states or error messages.</p>
+
+    <h3>Realtime Sync</h3>
+    <p>PocketBase provides realtime subscriptions via Server-Sent Events. The app subscribes to <span class="ic">owned_cups</span> on mount. When either member marks a cup owned or removes it, all connected devices update within 1–2 seconds without a page refresh.</p>
+    <pre><code><span class="cm">// Subscribe to owned_cups changes for this household</span>
+pb.collection(<span class="cs">'owned_cups'</span>).subscribe(<span class="cs">'*'</span>, (e) => {
+  <span class="ck">if</span> (e.record.household_id === currentHouseholdId) {
+    <span class="cm">// Invalidate the owned cups query — React Query refetches automatically</span>
+    queryClient.invalidateQueries([<span class="cs">'owned_cups'</span>, currentHouseholdId])
+  }
+})
+</code></pre>
+
+    <h3>Owned / Needed Toggle</h3>
+    <ul class="feature-list">
+      <li>Not owned → green button "✓ Mark as Owned" → creates a record in <span class="ic">owned_cups</span></li>
+      <li>Owned → red button "Remove from Collection" → deletes the record</li>
+      <li>Optimistic UI — button reflects new state immediately, rolls back if server returns an error</li>
+      <li>Button not rendered at all for viewer-role users</li>
+    </ul>
+
+    <h3>Nearby Starbucks — Google Places Proxy</h3>
+    <pre><code><span class="cm">// app/api/nearby-starbucks/route.ts</span>
+<span class="cm">// Accepts: ?lat=37.77&lng=-122.41&radius=2000</span>
+<span class="cm">// Returns: [{ name, address, lat, lng, place_id }]</span>
+<span class="cm">// API key is NEVER sent to the client</span>
+
+<span class="ck">const</span> url = <span class="cs">`https://maps.googleapis.com/maps/api/place/nearbysearch/json`</span>
+  + <span class="cs">`?location=</span><span class="cv">${lat}</span><span class="cs">,</span><span class="cv">${lng}</span><span class="cs">&radius=</span><span class="cv">${radius}</span><span class="cs">`</span>
+  + <span class="cs">`&keyword=starbucks&type=cafe`</span>
+  + <span class="cs">`&key=</span><span class="cv">${process.env.GOOGLE_PLACES_API_KEY}</span><span class="cs">`</span>
+</code></pre>
+
+    <h3>Apple Maps Navigation</h3>
+    <pre><code><span class="ck">const</span> openInMaps = (store: Store) => {
+  <span class="cm">// dirflg=d for driving, dirflg=w for walking</span>
+  <span class="ck">const</span> url = <span class="cs">`https://maps.apple.com/?daddr=</span><span class="cv">${store.lat}</span><span class="cs">,</span><span class="cv">${store.lng}</span><span class="cs">&dirflg=d`</span>
+  window.open(url, <span class="cs">'_blank'</span>)
+}
+</code></pre>
+
+    <h3>Cup Images</h3>
+    <ul class="feature-list">
+      <li>Primary: web-sourced images downloaded and stored in PocketBase during catalog import</li>
+      <li>Override: if <span class="ic">owned_cups.own_photo</span> is set, display that instead of the catalog image</li>
+      <li>Fallback: styled placeholder with city initial and series-specific accent color</li>
+      <li>All images served from PocketBase — no third-party CDN</li>
+    </ul>
+  </div>
+
+  <!-- ══ 08 APIS ══ -->
+  <div class="section" id="apis">
+    <div class="section-number">Section 08</div>
+    <h2>External APIs</h2>
+
+    <table class="stack-table">
+      <thead><tr><th>API</th><th>Used For</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Google Places Nearby Search</td><td>Finding Starbucks stores near GPS location</td><td>Server-side proxy only. Key never in client. Free tier sufficient for personal use.</td></tr>
+        <tr><td>Browser Geolocation API</td><td>Current GPS coordinates</td><td>Built into all modern browsers. Free. Requires explicit user permission.</td></tr>
+        <tr><td>maps.apple.com URL scheme</td><td>Opening Apple Maps with directions</td><td>A URL, not an API. No key, no account. Works on all iPhones.</td></tr>
+        <tr><td>OpenStreetMap tile servers</td><td>Map background rendering via Leaflet</td><td>Free, no key. OSM attribution required per usage policy.</td></tr>
+        <tr><td>PocketID (self-hosted)</td><td>OIDC authentication</td><td>Operator-controlled. No third-party dependency.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ 09 HOSTING ══ -->
+  <div class="section" id="hosting">
+    <div class="section-number">Section 09</div>
+    <h2>Hosting &amp; Infrastructure</h2>
+
+    <p>All services run on a NixOS home server alongside other self-hosted services. nginx handles TLS and reverse proxying. PocketBase runs as an OCI container. The Next.js app runs as a native systemd service managed by the NixOS module.</p>
+
+    <table class="stack-table">
+      <thead><tr><th>Service</th><th>Port</th><th>Run As</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Next.js app</td><td>3000</td><td>systemd service</td><td>Built by Nix via buildNpmPackage, managed by module</td></tr>
+        <tr><td>PocketBase</td><td>8090</td><td>OCI container</td><td>Data volume at configurable path; admin UI at <span class="ic">/_/</span></td></tr>
+        <tr><td>nginx</td><td>80 / 443</td><td>NixOS nginx module</td><td>Reverse proxy + Let's Encrypt; proxyWebsockets = true required on both vhosts for PocketBase SSE realtime</td></tr>
+      </tbody>
+    </table>
+
+    <h3>nginx vhost declarations</h3>
+    <pre><code>services.nginx.virtualHosts = {
+  <span class="cs">"cups.yourdomain.com"</span> = {
+    enableACME = <span class="cv">true</span>; forceSSL = <span class="cv">true</span>;
+    locations.<span class="cs">"/"</span> = {
+      proxyPass = <span class="cs">"http://127.0.0.1:3000"</span>;
+      proxyWebsockets = <span class="cv">true</span>;
+    };
+  };
+  <span class="cs">"pb.yourdomain.com"</span> = {
+    enableACME = <span class="cv">true</span>; forceSSL = <span class="cv">true</span>;
+    locations.<span class="cs">"/"</span> = {
+      proxyPass = <span class="cs">"http://127.0.0.1:8090"</span>;
+      proxyWebsockets = <span class="cv">true</span>; <span class="cm"># required for PocketBase SSE realtime</span>
+    };
+  };
+};
+</code></pre>
+  </div>
+
+  <!-- ══ 10 NIX ══ -->
+  <div class="section" id="nix">
+    <div class="section-number">Section 10</div>
+    <h2>Nix Flake &amp; NixOS Module</h2>
+
+    <p>The app repo is a Nix flake that exports three things: a package (the built Next.js app), a NixOS module, and a dev shell. The <span class="ic">genebean/dots</span> repo adds it as a flake input and imports the module for the relevant host.</p>
+
+    <h3>Repository Layout</h3>
+    <pre><code>cup-collector/
+├── flake.nix              <span class="cm"># outputs: packages, nixosModules, devShells</span>
+├── flake.lock
+├── app/                   <span class="cm"># Next.js source</span>
+│   ├── package.json
+│   ├── package-lock.json  <span class="cm"># required for buildNpmPackage hash</span>
+│   └── ...
+├── pocketbase/
+│   └── migrations/        <span class="cm"># PocketBase schema migrations (version controlled)</span>
+├── scripts/
+│   └── import-cups.ts     <span class="cm"># CSV import — must run inside nix develop</span>
+├── docs/                  <span class="cm"># GitHub Pages site (pure HTML — see Section 13)</span>
+│   └── ...
+├── nixos/
+│   └── module.nix         <span class="cm"># NixOS module</span>
+├── README.md
+└── AGENTS.md
+</code></pre>
+
+    <h3>flake.nix</h3>
+    <pre><code>{
+  description = <span class="cs">"Cup Collector — Starbucks cup collection tracker"</span>;
+  inputs = {
+    nixpkgs.url = <span class="cs">"github:NixOS/nixpkgs/nixos-unstable"</span>;
+    flake-utils.url = <span class="cs">"github:numtide/flake-utils"</span>;
+  };
+
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system:
+      <span class="ck">let</span> pkgs = nixpkgs.legacyPackages.${system}; <span class="ck">in</span> {
+
+        <span class="cm"># `nix build` — produces the Next.js app as a Nix package</span>
+        packages.default = pkgs.buildNpmPackage {
+          pname = <span class="cs">"cup-collector"</span>;
+          version = <span class="cs">"0.1.0"</span>;
+          src = ./app;
+          npmDepsHash = <span class="cs">"sha256-..."</span>; <span class="cm"># compute after first npm install; see note below</span>
+          buildPhase = <span class="cs">"npm run build"</span>;
+          installPhase = <span class="cs">''
+            mkdir -p $out
+            cp -r .next/standalone $out/
+            cp -r public $out/standalone/public
+            cp -r .next/static $out/standalone/.next/static
+          ''</span>;
+        };
+
+        <span class="cm"># `nix develop` — dev shell with all required tooling</span>
+        <span class="cm"># All node/npm/pocketbase commands MUST be run inside this shell</span>
+        devShells.default = pkgs.mkShell {
+          buildInputs = <span class="ck">with</span> pkgs; [
+            nodejs_20
+            pocketbase          <span class="cm"># available in nixpkgs</span>
+            nodePackages.typescript
+            nodePackages.ts-node
+          ];
+          shellHook = <span class="cs">''
+            echo "Cup Collector dev shell"
+            echo "  All app tooling is provided here — do not install node/npm on the host"
+            echo ""
+            echo "  Start PocketBase:  pocketbase serve --dir ./pocketbase/pb_data"
+            echo "  Start Next.js:     cd app && npm run dev"
+            echo "  Import cups:       npx ts-node scripts/import-cups.ts --file cups.csv"
+          ''</span>;
+        };
+
+      }) // {
+        <span class="cm"># NixOS module — exported at top level, system-independent</span>
+        nixosModules.default = import ./nixos/module.nix;
+      };
+}
+</code></pre>
+
+    <div class="callout info">
+      <div class="callout-icon">ℹ️</div>
+      <div class="callout-body">
+        <strong>Getting the npmDepsHash</strong>
+        <p>After scaffolding the app and running <span class="ic">npm install</span> inside <span class="ic">nix develop</span>, run <span class="ic">nix build</span> once from the repo root. It will fail and print the correct hash in the error output. Copy that value into <span class="ic">flake.nix</span>. Repeat whenever <span class="ic">package-lock.json</span> changes.</p>
+      </div>
+    </div>
+
+    <h3>nixos/module.nix</h3>
+    <pre><code>{ config, lib, pkgs, ... }:
+<span class="ck">let</span>
+  cfg = config.services.cupCollector;
+  app = pkgs.callPackage ../. {};  <span class="cm"># builds the Next.js package from this flake</span>
+<span class="ck">in</span> {
+  options.services.cupCollector = {
+    enable   = lib.mkEnableOption <span class="cs">"Cup Collector PWA"</span>;
+    domain   = lib.mkOption { type = lib.types.str; example = <span class="cs">"cups.example.com"</span>; };
+    pbDomain = lib.mkOption { type = lib.types.str; example = <span class="cs">"pb.example.com"</span>; };
+    port     = lib.mkOption { type = lib.types.port; default = <span class="cv">3000</span>; };
+    pbPort   = lib.mkOption { type = lib.types.port; default = <span class="cv">8090</span>; };
+    dataDir  = lib.mkOption { type = lib.types.path; default = <span class="cs">"/var/lib/cup-collector"</span>; };
+    envFile  = lib.mkOption {
+      type = lib.types.path;
+      description = <span class="cs">"Path to env file with secrets (see Section 04 for required variables)"</span>;
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+
+    <span class="cm"># PocketBase — runs as OCI container</span>
+    virtualisation.oci-containers.containers.cup-collector-pb = {
+      image = <span class="cs">"ghcr.io/muchobien/pocketbase:latest"</span>;
+      ports = [ <span class="cs">"127.0.0.1:</span><span class="cv">${toString cfg.pbPort}</span><span class="cs">:8090"</span> ];
+      volumes = [ <span class="cs">"</span><span class="cv">${cfg.dataDir}</span><span class="cs">/pb_data:/pb/pb_data"</span> ];
+      autoStart = <span class="cv">true</span>;
+    };
+
+    <span class="cm"># Next.js app — runs as native systemd service</span>
+    systemd.services.cup-collector = {
+      description = <span class="cs">"Cup Collector Next.js app"</span>;
+      wantedBy = [ <span class="cs">"multi-user.target"</span> ];
+      after = [ <span class="cs">"network.target"</span> ];
+      serviceConfig = {
+        ExecStart = <span class="cs">"</span><span class="cv">${pkgs.nodejs_20}</span><span class="cs">/bin/node </span><span class="cv">${app}</span><span class="cs">/standalone/server.js"</span>;
+        EnvironmentFile = cfg.envFile;
+        Environment = [
+          <span class="cs">"PORT=</span><span class="cv">${toString cfg.port}</span><span class="cs">"</span>
+          <span class="cs">"HOSTNAME=127.0.0.1"</span>
+          <span class="cs">"NODE_ENV=production"</span>
+        ];
+        DynamicUser = <span class="cv">true</span>;
+        StateDirectory = <span class="cs">"cup-collector"</span>;
+        Restart = <span class="cs">"on-failure"</span>;
+      };
+    };
+
+    <span class="cm"># nginx vhosts — added to whatever else is already on this host</span>
+    services.nginx.virtualHosts = {
+      <span class="cv">${cfg.domain}</span> = {
+        enableACME = <span class="cv">true</span>; forceSSL = <span class="cv">true</span>;
+        locations.<span class="cs">"/"</span> = {
+          proxyPass = <span class="cs">"http://127.0.0.1:</span><span class="cv">${toString cfg.port}</span><span class="cs">"</span>;
+          proxyWebsockets = <span class="cv">true</span>;
+        };
+      };
+      <span class="cv">${cfg.pbDomain}</span> = {
+        enableACME = <span class="cv">true</span>; forceSSL = <span class="cv">true</span>;
+        locations.<span class="cs">"/"</span> = {
+          proxyPass = <span class="cs">"http://127.0.0.1:</span><span class="cv">${toString cfg.pbPort}</span><span class="cs">"</span>;
+          proxyWebsockets = <span class="cv">true</span>;
+        };
+      };
+    };
+
+    <span class="cm"># Ensure data directory exists before container starts</span>
+    systemd.tmpfiles.rules = [
+      <span class="cs">"d </span><span class="cv">${cfg.dataDir}</span><span class="cs">/pb_data 0750 root root -"</span>
+    ];
+  };
+}
+</code></pre>
+
+    <h3>Consuming the module from genebean/dots</h3>
+    <pre><code><span class="cm"># In dots flake.nix inputs block:</span>
+cup-collector.url = <span class="cs">"github:genebean/cup-collector"</span>;
+
+<span class="cm"># In the relevant host's NixOS config:</span>
+{ inputs, config, ... }: {
+  imports = [ inputs.cup-collector.nixosModules.default ];
+
+  services.cupCollector = {
+    enable   = <span class="cv">true</span>;
+    domain   = <span class="cs">"cups.yourdomain.com"</span>;
+    pbDomain = <span class="cs">"pb.yourdomain.com"</span>;
+    envFile  = config.sops.secrets.<span class="cs">"cup-collector-env"</span>.path;
+    <span class="cm"># or: envFile = "/run/secrets/cup-collector-env";</span>
+  };
+}
+</code></pre>
+  </div>
+
+  <!-- ══ 11 DATA LOADING ══ -->
+  <div class="section" id="data-loading">
+    <div class="section-number">Section 11</div>
+    <h2>Data Loading Strategy</h2>
+
+    <p>The cup catalog is maintained by the collaborator in a spreadsheet (Google Sheets or Excel) and imported via CSV. This is a manual process: she updates the sheet, exports as CSV, and hands it to the owner who runs the import script from inside the dev shell.</p>
+
+    <h3>CSV Column Format</h3>
+    <pre><code>city,region,country,country_code,series,year,lat,lng,image_url,notes
+San Francisco,California,United States,US,You Are Here,2021,37.7749,-122.4194,https://...,
+Tokyo,,Japan,JP,You Are Here,2019,35.6762,139.6503,https://...,
+London,England,United Kingdom,GB,Been There,2020,51.5074,-0.1278,https://...,
+</code></pre>
+
+    <p>The <span class="ic">image_url</span> column accepts a public URL. The import script downloads the image and stores it in PocketBase file storage. Images are not linked externally after import — the URL is stored only in <span class="ic">image_credit</span> for attribution.</p>
+
+    <h3>Import Script — scripts/import-cups.ts</h3>
+    <ul class="feature-list">
+      <li>Must be run inside the Nix dev shell: enter with <span class="ic">nix develop</span> first</li>
+      <li>Run: <span class="ic">npx ts-node scripts/import-cups.ts --file cups.csv</span></li>
+      <li>Dry-run preview: <span class="ic">npx ts-node scripts/import-cups.ts --file cups.csv --dry-run</span></li>
+      <li>Upsert logic: match on <span class="ic">city + series + year</span> — update if exists, create if not</li>
+      <li>Safe to re-run at any time — will not duplicate records</li>
+      <li>Images downloaded and saved to PocketBase; source URL stored in <span class="ic">image_credit</span></li>
+    </ul>
+  </div>
+
+  <!-- ══ 12 PWA ══ -->
+  <div class="section" id="pwa">
+    <div class="section-number">Section 12</div>
+    <h2>PWA Configuration</h2>
+
+    <p>The app must be installable on iPhone via Safari's "Add to Home Screen." This requires a valid Web App Manifest and Service Worker. The 192×192 icon produced here is also the icon uploaded to PocketID during app registration (Section 04).</p>
+
+    <h3>manifest.json</h3>
+    <pre><code>{
+  <span class="ck">"name"</span>: <span class="cs">"Cup Collector"</span>,
+  <span class="ck">"short_name"</span>: <span class="cs">"Cups"</span>,
+  <span class="ck">"start_url"</span>: <span class="cs">"/"</span>,
+  <span class="ck">"display"</span>: <span class="cs">"standalone"</span>,
+  <span class="ck">"background_color"</span>: <span class="cs">"#1E3932"</span>,
+  <span class="ck">"theme_color"</span>: <span class="cs">"#1E3932"</span>,
+  <span class="ck">"orientation"</span>: <span class="cs">"portrait"</span>,
+  <span class="ck">"icons"</span>: [
+    { <span class="ck">"src"</span>: <span class="cs">"/icons/icon-192.png"</span>,         <span class="ck">"sizes"</span>: <span class="cs">"192x192"</span>, <span class="ck">"type"</span>: <span class="cs">"image/png"</span> },
+    { <span class="ck">"src"</span>: <span class="cs">"/icons/icon-512.png"</span>,         <span class="ck">"sizes"</span>: <span class="cs">"512x512"</span>, <span class="ck">"type"</span>: <span class="cs">"image/png"</span> },
+    { <span class="ck">"src"</span>: <span class="cs">"/icons/icon-512-maskable.png"</span>, <span class="ck">"sizes"</span>: <span class="cs">"512x512"</span>, <span class="ck">"type"</span>: <span class="cs">"image/png"</span>,
+      <span class="ck">"purpose"</span>: <span class="cs">"maskable"</span> }
+  ]
+}
+</code></pre>
+
+    <h3>Service Worker Strategy</h3>
+    <ul class="feature-list">
+      <li>Use <span class="ic">next-pwa</span> to generate the service worker automatically</li>
+      <li>Cache strategy: Network First for API routes and PocketBase calls; Cache First for static assets and cup images</li>
+      <li>Offline: show cached data with a subtle "you're offline" banner — never block the UI entirely</li>
+    </ul>
+
+    <div class="callout warn">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-body">
+        <strong>HTTPS Required</strong>
+        <p>PWA install and geolocation both require HTTPS. The NixOS module sets <span class="ic">enableACME = true</span> which handles Let's Encrypt certificates automatically. Do not test PWA install or geolocation features over plain HTTP.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 13 DOCS ══ -->
+  <div class="section" id="docs">
+    <div class="section-number">Section 13</div>
+    <h2>Documentation Structure &amp; Requirements</h2>
+
+    <p>All documentation lives in <span class="ic">docs/</span> as pure HTML files served via GitHub Pages. No static site generator. A GitHub Actions workflow deploys automatically on every push to <span class="ic">main</span> that touches <span class="ic">docs/</span>.</p>
+
+    <div class="callout agent">
+      <div class="callout-icon">🤖</div>
+      <div class="callout-body">
+        <strong>HTML-Only — No Generator, No Markdown</strong>
+        <p>All files in <span class="ic">docs/</span> are plain HTML. No Jekyll, Hugo, MkDocs, or any other tool. GitHub Pages serves them as static files with zero build step. Agents edit HTML directly. Markdown is not used for documentation. Navigation between pages uses standard <span class="ic">&lt;a href&gt;</span> links.</p>
+        <p>Docs are tailored for this specific owner but must be complete enough for a different person to run their own self-hosted copy. End-user docs come first in the navigation so the owner can link family members to them directly.</p>
+      </div>
+    </div>
+
+    <h3>GitHub Actions Deployment Workflow</h3>
+    <pre><code><span class="cm"># .github/workflows/docs.yml</span>
+on:
+  push:
+    branches: [main]
+    paths: [<span class="cs">'docs/**'</span>]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4
+</code></pre>
+
+    <h3>Complete Docs File Inventory</h3>
+    <p>Files are listed in navigation order — user-facing docs first.</p>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/index.html</div><div class="doc-spec-audience">All users — landing page</div></div>
+      <div class="doc-spec-body">
+        <p>Welcome page. Brief, friendly description of the app. Clear navigation to the three audiences: "New to the app?" → getting-started, "Setting it up?" → prerequisites, "Managing cups?" → adding-cups. Visual and welcoming, no technical language.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/using/getting-started.html</div><div class="doc-spec-audience">All users — read this first</div></div>
+      <div class="doc-spec-body">
+        <p>How to install the PWA on your iPhone (Add to Home Screen walkthrough with screenshots or step illustrations). How to log in with PocketID. What the app looks like on first open. What the green/orange/blue pins mean. Your role (owner, collaborator, or viewer) and what you can and can't do. Written for a non-technical reader — no jargon. This is the page the owner links new users to.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/using/map-view.html</div><div class="doc-spec-audience">All users</div></div>
+      <div class="doc-spec-body">
+        <p>Plain-language explanation of the map screen. What each pin color means. How to zoom to your location vs the world view. How to tap a pin to see cup detail. How to use the bottom sheet. How to tap a Starbucks pin to get directions in Apple Maps.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/using/browsing.html</div><div class="doc-spec-audience">All users</div></div>
+      <div class="doc-spec-body">
+        <p>How to use Browse and Search screens. What the filter chips do. How to read a cup detail page. How to mark a cup as owned (members only — note that viewers will not see this button). How to upload your own photo of a cup you own.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/using/traveling.html</div><div class="doc-spec-audience">All users</div></div>
+      <div class="doc-spec-body">
+        <p>The core travel scenario as a narrative walkthrough: arriving somewhere new, seeing what you need, finding a nearby Starbucks, getting directions, buying the cup, marking it owned, and watching the other person's phone update. Written as a story, not a feature list.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/setup/prerequisites.html</div><div class="doc-spec-audience">Owner / self-hosters</div></div>
+      <div class="doc-spec-body">
+        <p>What you need before starting: a NixOS server with nginx, PocketID already running, a domain with DNS configured, a Google Places API key, a GitHub/Forgejo account for the repo. Links to where to get each. Honest about which steps require technical comfort. Written to be usable by a different person self-hosting their own copy.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/setup/pocketid.html</div><div class="doc-spec-audience">Owner / self-hosters</div></div>
+      <div class="doc-spec-body">
+        <p>Step-by-step guide to registering the app in PocketID admin panel: all field values to enter (redirect URI, launch URL, icon), how to retrieve the Client ID and Client Secret, how to add each user to PocketID, how the "My Apps" launch icon works and how to verify it is working correctly. Include screenshots or ASCII art diagrams for each major step.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/setup/pocketbase.html</div><div class="doc-spec-audience">Owner / self-hosters</div></div>
+      <div class="doc-spec-body">
+        <p>How to access the PocketBase admin UI. How to create the three collections with the correct fields and types (reference Section 05 of this spec exactly). How to configure access rules per collection. How to create the household record manually on first run. How to find and add a user's PocketID <span class="ic">sub</span> value when adding a viewer.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/setup/deployment.html</div><div class="doc-spec-audience">Owner / self-hosters</div></div>
+      <div class="doc-spec-body">
+        <p>How to add the flake input to the NixOS config repo. All module options explained. How to create and populate the secrets env file. How to run <span class="ic">nixos-rebuild switch</span>. How to verify both services are running. Common first-deployment issues and how to resolve them. Must emphasize clearly: all app commands must run inside <span class="ic">nix develop</span> — never on the bare host.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/setup/first-run.html</div><div class="doc-spec-audience">Owner / self-hosters</div></div>
+      <div class="doc-spec-body">
+        <p>Post-deployment checklist: run first cup import, verify data in PocketBase admin UI, first login on each phone, test realtime sync between two devices, install the PWA on each phone. Checklist format with verification steps after each item.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/maintenance/adding-cups.html</div><div class="doc-spec-audience">Owner (curator workflow)</div></div>
+      <div class="doc-spec-body">
+        <p>The full curator workflow: how the collaborator maintains the spreadsheet, the CSV column format explained in plain terms, how to export CSV, how to run the import script inside the dev shell (<span class="ic">nix develop</span> first), what the dry-run flag does, how to verify the import succeeded. Written assuming the curator is non-technical and the importer has basic terminal comfort.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/maintenance/updates.html</div><div class="doc-spec-audience">Owner</div></div>
+      <div class="doc-spec-body">
+        <p>How to update the app: bump the flake input (<span class="ic">nix flake update cup-collector</span> in the dots repo), run <span class="ic">nixos-rebuild switch</span>. How to check what changed. How to roll back if something breaks (<span class="ic">nixos-rebuild --rollback</span>). When to update promptly vs when it is safe to wait.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/maintenance/backup.html</div><div class="doc-spec-audience">Owner</div></div>
+      <div class="doc-spec-body">
+        <p>What data needs backing up: the PocketBase <span class="ic">pb_data</span> directory (contains the SQLite database and all uploaded images). How to back it up. Suggested frequency. How to restore. Note that the curator's spreadsheet CSV is the source of truth for the catalog and must be kept separately.</p>
+      </div>
+    </div>
+
+    <div class="doc-spec">
+      <div class="doc-spec-header"><div class="doc-spec-path">docs/reference/spec.html</div><div class="doc-spec-audience">Owner / agents / future maintainers</div></div>
+      <div class="doc-spec-body">
+        <p>This document, verbatim. The authoritative record of all design decisions, the complete data model, the stack choices and rationale, and the decision log. Kept in docs so it is versioned with the code and accessible to any agent working on the repo. Do not summarise — include full content. Update this document whenever structural decisions change.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 14 README & AGENTS ══ -->
+  <div class="section" id="readme">
+    <div class="section-number">Section 14</div>
+    <h2>README.md &amp; AGENTS.md</h2>
+
+    <h3>README.md — Required Content</h3>
+    <ul class="feature-list">
+      <li>One-paragraph description of what the app is and does</li>
+      <li>Quick links: live docs site, user guide (getting-started), setup guide</li>
+      <li>Prerequisites summary — brief, with link to <span class="ic">docs/setup/prerequisites.html</span> for detail</li>
+      <li>Dev shell: <span class="ic">nix develop</span> — what it provides, how to start services locally. Must state explicitly that all tooling comes from the shell and nothing should be installed on the host.</li>
+      <li>Building: <span class="ic">nix build</span> and what it produces</li>
+      <li>Deploying: add flake input, configure module options, <span class="ic">nixos-rebuild switch</span> — brief, link to docs for detail</li>
+      <li>Repo structure: one-line description of each top-level directory and key file</li>
+      <li>License</li>
+    </ul>
+
+    <h3>AGENTS.md — Required Content</h3>
+    <p>Placed at the repo root. Written specifically for AI agents (Claude Code and others) that may modify this codebase. Must cover all of the following:</p>
+    <ul class="feature-list">
+      <li><strong>Tooling contract (first section):</strong> All <span class="ic">node</span>, <span class="ic">npm</span>, <span class="ic">npx</span>, <span class="ic">ts-node</span>, and <span class="ic">pocketbase</span> commands must run inside <span class="ic">nix develop</span>. Never install tools on the host. Never suggest or use global installs. This is non-negotiable.</li>
+      <li><strong>Repo structure:</strong> Purpose of every directory and key file</li>
+      <li><strong>Nix outputs:</strong> What <span class="ic">nix build</span>, <span class="ic">nix develop</span>, and the NixOS module each produce and do</li>
+      <li><strong>How to run locally:</strong> Exact commands in order, inside the dev shell</li>
+      <li><strong>Data model summary:</strong> The three PocketBase collections and their relationships and access rules</li>
+      <li><strong>Auth flow:</strong> PocketID OIDC → Auth.js → session with <span class="ic">pocketIdSub</span> → household lookup → role resolution</li>
+      <li><strong>Role enforcement:</strong> Happens at both the UI layer and PocketBase rules layer — both must be maintained</li>
+      <li><strong>Do not change without reading the spec:</strong> PocketBase collection structure, access rules, household schema, OIDC callback path, PWA manifest <span class="ic">start_url</span> and <span class="ic">display</span> fields, viewer_subs logic</li>
+      <li><strong>Docs rule:</strong> All docs are plain HTML in <span class="ic">docs/</span>. No generator. Edit HTML directly. Do not convert to Markdown or introduce a build step.</li>
+      <li><strong>Owner context:</strong> Owner is not an app developer. Comment generously. Avoid patterns that require deep framework knowledge to maintain. Prefer explicit over implicit.</li>
+      <li><strong>Reference:</strong> <span class="ic">docs/reference/spec.html</span> is the authoritative design document — read it before making any structural changes.</li>
+    </ul>
+  </div>
+
+  <!-- ══ 15 DECISIONS ══ -->
+  <div class="section" id="decisions">
+    <div class="section-number">Section 15</div>
+    <h2>Decision Log</h2>
+    <p>All key decisions made during planning. Preserved for context. Do not override without updating this document.</p>
+
+    <div class="decision-log">
+
+      <div class="decision">
+        <div class="decision-q">Why a PWA instead of a native iOS app?</div>
+        <div class="decision-a">For a private two-person app the PWA hits every requirement at a fraction of the build effort. No App Store account, no review process, instant updates. If native feel ever becomes a priority, migrating to React Native is a natural next step — the PocketBase backend carries over entirely.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why PocketBase instead of Firebase or Supabase?</div>
+        <div class="decision-a"><strong>Self-sovereignty.</strong> PocketBase is a single Go binary with no external dependencies. Data stays on hardware the operator controls. Firebase and Supabase are both third-party data custodians.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why Auth.js instead of PocketBase's built-in auth?</div>
+        <div class="decision-a">PocketBase's built-in auth cannot act as an OIDC relying party — it cannot consume an external OIDC provider. Auth.js handles the OIDC client flow against PocketID. PocketBase is used for data only.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why Google Places instead of OpenStreetMap/Overpass?</div>
+        <div class="decision-a">Overpass was the first preference (open, no key). Accepted trade: Google Places provides more reliable and complete Starbucks data, especially outside major cities. Key stays server-side only. Personal use will almost certainly remain in the free tier. Not a data custody concern — read-only location lookup.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why separate accounts with a household record instead of one shared account?</div>
+        <div class="decision-a">Each person logs in with their own PocketID identity. This enables correct attribution, supports viewer accounts without sharing credentials, and allows each person to have their own session and sign-in experience.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why Leaflet + OpenStreetMap for the map?</div>
+        <div class="decision-a">Fully open source, no API key for tile rendering, works well as a PWA. Google Maps JavaScript API and Mapbox both require keys and have usage costs. The Google Places API key is used only for the Nearby Search server-side call — not for rendering the map.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why a NixOS module in the app repo rather than inline host config?</div>
+        <div class="decision-a">Keeps deployment config co-located with the code it deploys. The dots repo adds the app repo as a flake input and imports the module. Updating the app and its deployment config is a single commit in one repo; the dots repo bumps the flake input to pick up changes.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why is PocketBase containerised but Next.js is not?</div>
+        <div class="decision-a">PocketBase is not straightforward to build from source in nixpkgs, so a pinned OCI image is the most reliable declarative approach. Next.js builds cleanly with <span class="ic">buildNpmPackage</span> and runs as a plain Node process — no container overhead, integrates more naturally with NixOS systemd service management.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why pure HTML docs with no static site generator?</div>
+        <div class="decision-a">Markdown is too limiting for rich documentation layout. Agents can create and edit HTML directly without learning a generator's conventions or build pipeline. GitHub Pages serves static files natively with no build step. Maximally portable and maintainable by both humans and agents.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why is the Nix dev shell the tooling contract?</div>
+        <div class="decision-a">The owner runs NixOS and manages infrastructure declaratively. Installing Node globally would be inconsistent with that philosophy and could cause version conflicts with other hosted services. The dev shell provides a reproducible, version-pinned environment for all app development and maintenance tasks without polluting the host.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why CSV import instead of live Google Sheets sync?</div>
+        <div class="decision-a">For this round, simplicity wins. The collaborator maintains the sheet, exports CSV, the owner runs the import script. No Google Sheets OAuth, no scheduled jobs, no network-dependent failure modes. Can be upgraded to automated sync later — the import script is already idempotent.</div>
+      </div>
+
+    </div>
+
+    <div class="callout agent">
+      <div class="callout-icon">🤖</div>
+      <div class="callout-body">
+        <strong>Final Note for Claude Code &amp; Future Agents</strong>
+        <p>This spec was developed through a thorough planning conversation and represents settled decisions. Implement as described. The owner is not an app developer — write code with generous inline comments, prefer explicit over implicit, and make maintenance tasks as approachable as possible.</p>
+        <p>All tooling comes from <span class="ic">nix develop</span>. Never assume host-level tool installation. The full spec lives at <span class="ic">docs/reference/spec.html</span> — keep it current when making structural decisions. When in doubt: self-hosted over cloud, open-source over proprietary, simple over clever.</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>

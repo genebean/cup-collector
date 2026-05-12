@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet requires its own CSS — imported here so it's always available
+   when MapView renders. next-pwa will cache this as a static asset. */
+@import "leaflet/dist/leaflet.css";
+
+/* Safe area insets for iPhone notch/home indicator.
+   The bottom nav must clear the home indicator. */
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  /* Prevent iOS Safari rubber-band scroll on the root */
+  overscroll-behavior: none;
+  /* Cream background from spec palette */
+  background-color: #FAF7F2;
+}
+
+/* Bottom nav clears the iPhone home indicator */
+.bottom-nav {
+  padding-bottom: calc(0.5rem + var(--safe-bottom));
+}
+
+/* Pulsing "you are here" dot on the map */
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.you-are-here-pulse {
+  animation: pulse-ring 1.5s ease-out infinite;
+}

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PocketBase Setup — Cup Collector</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
+  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
+  h2:first-of-type { border-top: none; }
+  p { color: #333; margin-bottom: 0.8rem; }
+  ol, ul { padding-left: 1.25rem; } li { margin-bottom: 0.4rem; font-size: 0.92rem; }
+  code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
+  .callout { border-left: 3px solid #CBA258; background: #f5edd8; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
+  .warn { border-left-color: #E8833A; background: #fdf0e6; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.75rem 0; }
+  thead tr { background: #1E3932; color: white; }
+  th { text-align: left; padding: 0.55rem 0.85rem; font-size: 0.8rem; }
+  td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #ece8e1; vertical-align: top; font-family: monospace; font-size: 0.8rem; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { color: #2d5a3d; font-weight: 600; }
+  td:nth-child(2) { color: #CBA258; }
+  td:last-child { font-family: system-ui, sans-serif; color: #555; }
+</style>
+</head>
+<body>
+
+<nav><a href="../index.html">← Docs home</a></nav>
+
+<h1>PocketBase Setup</h1>
+<p>After deploying, PocketBase runs at <code>https://pb.yourdomain.com</code>. Access the admin UI at <code>https://pb.yourdomain.com/_/</code> to set up collections and create the household record.</p>
+
+<div class="callout">
+  <strong>Migrations run automatically</strong><br>
+  The PocketBase migration in <code>pocketbase/migrations/001_initial_schema.js</code> creates the three collections on first start. If migrations applied cleanly, you can skip to Step 3. Check the PocketBase logs to confirm.
+</div>
+
+<h2>Step 1 — Access the admin UI</h2>
+<ol>
+  <li>Open <code>https://pb.yourdomain.com/_/</code> in your browser.</li>
+  <li>On first run, PocketBase prompts you to create an admin account. Use a strong password and store it in your password manager.</li>
+  <li>You're now in the PocketBase admin panel.</li>
+</ol>
+
+<h2>Step 2 — Verify collections</h2>
+<p>Go to <strong>Collections</strong> in the left sidebar. You should see three collections: <code>households</code>, <code>cups</code>, and <code>owned_cups</code>. If they're missing (migration didn't run), create them manually with these fields:</p>
+
+<p><strong>households</strong></p>
+<table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+  <tr><td>name</td><td>text</td><td>Required. Display name, e.g. "The Smith Collection"</td></tr>
+  <tr><td>member_sub_1</td><td>text</td><td>Required. PocketID sub for first owner</td></tr>
+  <tr><td>member_sub_2</td><td>text</td><td>Optional. PocketID sub for second owner</td></tr>
+  <tr><td>viewer_subs</td><td>json</td><td>Array of sub strings for view-only users</td></tr>
+</tbody></table>
+
+<p><strong>cups</strong></p>
+<table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+  <tr><td>city</td><td>text</td><td>Required</td></tr>
+  <tr><td>region</td><td>text</td><td>State/province</td></tr>
+  <tr><td>country</td><td>text</td><td>Required</td></tr>
+  <tr><td>country_code</td><td>text</td><td>ISO 3166-1 alpha-2, e.g. "US"</td></tr>
+  <tr><td>series</td><td>text</td><td>Required. "You Are Here", "Been There", etc.</td></tr>
+  <tr><td>year</td><td>number</td><td>Required. 4-digit year</td></tr>
+  <tr><td>image</td><td>file</td><td>Primary cup photo</td></tr>
+  <tr><td>image_credit</td><td>text</td><td>Source URL or "own photo"</td></tr>
+  <tr><td>lat</td><td>number</td><td>City centroid latitude</td></tr>
+  <tr><td>lng</td><td>number</td><td>City centroid longitude</td></tr>
+  <tr><td>notes</td><td>text</td><td>Optional freeform notes</td></tr>
+</tbody></table>
+
+<p><strong>owned_cups</strong></p>
+<table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+  <tr><td>household_id</td><td>relation → households</td><td>Required</td></tr>
+  <tr><td>cup_id</td><td>relation → cups</td><td>Required</td></tr>
+  <tr><td>marked_by_sub</td><td>text</td><td>PocketID sub of who marked it owned</td></tr>
+  <tr><td>acquired_date</td><td>date</td><td>Optional</td></tr>
+  <tr><td>own_photo</td><td>file</td><td>Optional owner photo</td></tr>
+</tbody></table>
+
+<h2>Step 3 — Set access rules</h2>
+<div class="warn callout">
+  <strong>Both UI and database rules are required.</strong> The app hides write controls from viewers, but PocketBase rules are the security backstop. Don't skip this step.
+</div>
+
+<p>For each collection, go to the collection settings → <strong>API Rules</strong> tab and set:</p>
+
+<p><strong>cups</strong> — catalog is read-only for all authenticated users; admin-only write:</p>
+<ul>
+  <li>List/View rule: <code>@request.auth.id != ""</code> (any authenticated user)</li>
+  <li>Create/Update/Delete rule: leave empty (admin only)</li>
+</ul>
+
+<p><strong>owned_cups</strong> — members can write; viewers cannot:</p>
+<ul>
+  <li>List/View rule: The app queries with a household filter — leave open for authenticated users or craft a rule matching household membership</li>
+  <li>Create rule: Only members — requires custom rule comparing <code>@request.auth.id</code> against household <code>member_sub_1</code>/<code>member_sub_2</code></li>
+  <li>Delete rule: same as create</li>
+</ul>
+
+<p><strong>households</strong> — read for members and viewers; admin-only write:</p>
+<ul>
+  <li>List/View rule: authenticated users who appear in the record</li>
+  <li>Create/Update/Delete: leave empty (admin only)</li>
+</ul>
+
+<h2>Step 4 — Create the household record</h2>
+<ol>
+  <li>In the admin panel, go to <strong>Collections</strong> → <strong>households</strong> → <strong>New record</strong>.</li>
+  <li>Set <code>name</code> to something friendly, e.g. "Our Collection".</li>
+  <li>Set <code>member_sub_1</code> to the PocketID <code>sub</code> of the first owner (found in <a href="pocketid.html">Step 3 of the PocketID setup</a>).</li>
+  <li>Set <code>member_sub_2</code> to the second owner's <code>sub</code>, if applicable.</li>
+  <li>Leave <code>viewer_subs</code> as <code>[]</code> for now. Add viewer subs later when needed.</li>
+  <li>Save.</li>
+</ol>
+
+<p>To add a viewer later: edit the household record and add their <code>sub</code> to the <code>viewer_subs</code> JSON array, e.g. <code>["sub-value-here"]</code>.</p>
+
+</body>
+</html>

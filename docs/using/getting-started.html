@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Getting Started — Cup Collector</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
+  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
+  h2:first-of-type { border-top: none; padding-top: 0; }
+  p { color: #333; margin-bottom: 0.8rem; }
+  .steps { list-style: none; padding: 0; counter-reset: steps; }
+  .steps li { counter-increment: steps; padding: 0.75rem 0 0.75rem 3rem; border-bottom: 1px solid #ece8e1; position: relative; font-size: 0.92rem; }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before { content: counter(steps); position: absolute; left: 0; top: 0.75rem; width: 2rem; height: 2rem; background: #1E3932; color: #CBA258; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+  .callout { border-left: 3px solid #00704A; background: #e8f2ee; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
+  .role-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+  .role-table th { background: #1E3932; color: white; text-align: left; padding: 0.6rem 0.85rem; }
+  .role-table td { padding: 0.6rem 0.85rem; border-bottom: 1px solid #ece8e1; vertical-align: top; }
+  .role-table tr:last-child td { border-bottom: none; }
+  code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
+  a { color: #00704A; }
+</style>
+</head>
+<body>
+
+<nav><a href="../index.html">← Docs home</a></nav>
+
+<h1>Getting Started</h1>
+<p>Welcome to Cup Collector. This guide walks you through installing the app on your iPhone and logging in for the first time.</p>
+
+<h2>Step 1 — Install on your iPhone</h2>
+<p>Cup Collector is a Progressive Web App (PWA). You don't download it from the App Store — you install it directly from Safari.</p>
+<ol class="steps">
+  <li>Open <strong>Safari</strong> on your iPhone and go to the app's address (e.g. <code>https://cups.yourdomain.com</code>).</li>
+  <li>Tap the <strong>Share</strong> button at the bottom of the screen (the box with an arrow pointing up).</li>
+  <li>Scroll down in the share sheet and tap <strong>"Add to Home Screen"</strong>.</li>
+  <li>Tap <strong>Add</strong> in the top-right corner.</li>
+  <li>The Cup Collector icon now appears on your home screen. Tap it to open — it will open full-screen, just like a native app.</li>
+</ol>
+
+<div class="callout">
+  <strong>Use Safari, not Chrome</strong><br>
+  The "Add to Home Screen" option only works properly in Safari on iPhone. Chrome and other browsers on iOS don't support PWA installation.
+</div>
+
+<h2>Step 2 — Log in with PocketID</h2>
+<ol class="steps">
+  <li>Open the app from your home screen.</li>
+  <li>Tap <strong>"Sign in with PocketID"</strong>.</li>
+  <li>You'll be taken to the PocketID login page. Enter your username and password.</li>
+  <li>After logging in, you'll be returned to Cup Collector automatically.</li>
+</ol>
+
+<div class="callout">
+  <strong>Don't have a PocketID account?</strong><br>
+  The household owner needs to create an account for you in PocketID and then add your account to the household. Ask them to follow the <a href="../setup/pocketid.html">PocketID Setup guide</a>.
+</div>
+
+<h2>What you'll see</h2>
+<p>After logging in, the app opens on the <strong>Map screen</strong>. If you allow location access, the map will zoom to your current location and show:</p>
+<ul>
+  <li><strong>Green pins</strong> — cups you already own, placed at the city they represent</li>
+  <li><strong>Orange pins</strong> — cups you still need</li>
+  <li><strong>Blue pins</strong> — nearby Starbucks stores</li>
+</ul>
+<p>The bottom of the screen has four navigation tabs: Map, Browse, Search, and Settings.</p>
+
+<h2>Your role</h2>
+<p>Every person in the household has one of three roles:</p>
+<table class="role-table">
+  <thead><tr><th>Role</th><th>What you can do</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Owner</strong></td><td>Browse, mark cups owned, upload photos, import catalog</td></tr>
+    <tr><td><strong>Collaborator</strong></td><td>Same as owner — full access</td></tr>
+    <tr><td><strong>Viewer</strong></td><td>Browse and view the collection — cannot mark cups as owned</td></tr>
+  </tbody>
+</table>
+<p>You can see your role in the <strong>Settings</strong> tab.</p>
+
+</body>
+</html>
