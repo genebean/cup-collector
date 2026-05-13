@@ -35,13 +35,13 @@ if (!fs.existsSync(csvPath)) {
 }
 
 const POCKETBASE_URL = process.env.POCKETBASE_URL || "http://localhost:8090";
-const ADMIN_TOKEN = process.env.POCKETBASE_ADMIN_TOKEN;
+const ADMIN_EMAIL = process.env.POCKETBASE_ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.POCKETBASE_ADMIN_PASSWORD;
 
-if (!ADMIN_TOKEN) {
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
   console.error(
-    "POCKETBASE_ADMIN_TOKEN is not set.\n" +
-    "Set it in your environment or in a .env file.\n" +
-    "See .env.example for all required variables."
+    "POCKETBASE_ADMIN_EMAIL and POCKETBASE_ADMIN_PASSWORD are not set.\n" +
+    "Set them in your environment or in app/.env.local."
   );
   process.exit(1);
 }
@@ -96,7 +96,7 @@ function parseCSV(filePath: string): CsvRow[] {
 
 // ── Image download ────────────────────────────────────────────────────────────
 
-async function downloadImage(url: string): Promise<Buffer | null> {
+async function downloadImage(url: string): Promise<ArrayBuffer | null> {
   if (!url || !url.startsWith("http")) return null;
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
@@ -104,7 +104,7 @@ async function downloadImage(url: string): Promise<Buffer | null> {
       console.warn(`    Could not download image (${response.status}): ${url}`);
       return null;
     }
-    return Buffer.from(await response.arrayBuffer());
+    return response.arrayBuffer();
   } catch (err) {
     console.warn(`    Image download failed: ${url}`, err);
     return null;
@@ -119,8 +119,7 @@ async function main() {
   console.log(`PocketBase: ${POCKETBASE_URL}\n`);
 
   const pb = new PocketBase(POCKETBASE_URL);
-  // Authenticate as admin for catalog write access
-  pb.authStore.save(ADMIN_TOKEN!, null);
+  await pb.collection("_superusers").authWithPassword(ADMIN_EMAIL!, ADMIN_PASSWORD!);
 
   const rows = parseCSV(csvPath);
   console.log(`Parsed ${rows.length} rows from CSV.\n`);
