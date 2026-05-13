@@ -28,7 +28,7 @@ export default function SearchPage() {
     queryKey: ["cups"],
     queryFn: () =>
       getPocketBase().collection("cups").getFullList({ sort: "city" })
-        .then((r) => r as Cup[]),
+        .then((r) => r as unknown as Cup[]),
   });
 
   const { data: ownedCups = [] } = useQuery<OwnedCup[]>({
@@ -36,11 +36,11 @@ export default function SearchPage() {
     queryFn: () =>
       getPocketBase().collection("owned_cups")
         .getFullList({ filter: `household_id="${householdId}"` })
-        .then((r) => r as OwnedCup[]),
+        .then((r) => r as unknown as OwnedCup[]),
     enabled: !!householdId,
   });
 
-  const ownedCupIds = new Set(ownedCups.map((o) => o.cup_id));
+  const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
 
   const results: CupWithOwnership[] = useMemo(() => {
     const q = search.toLowerCase().trim();

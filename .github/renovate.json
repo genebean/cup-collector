@@ -1,0 +1,63 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "America/New_York",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Group Next.js core and its companion packages to avoid version skew",
+      "groupName": "Next.js ecosystem",
+      "matchPackageNames": [
+        "next",
+        "next-auth",
+        "eslint-config-next",
+        "@ducanh2912/next-pwa"
+      ]
+    },
+    {
+      "description": "Group React packages — they release together",
+      "groupName": "React ecosystem",
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "react-leaflet",
+        "@types/react",
+        "@types/react-dom"
+      ]
+    },
+    {
+      "description": "Group Tailwind and its PostCSS companion",
+      "groupName": "Tailwind ecosystem",
+      "matchPackageNames": [
+        "tailwindcss",
+        "@tailwindcss/postcss",
+        "autoprefixer",
+        "postcss"
+      ]
+    },
+    {
+      "description": "Group GitHub Actions updates into a single PR",
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"]
+    },
+    {
+      "description": "Group the PocketBase container image across both files it appears in",
+      "groupName": "PocketBase container",
+      "matchManagers": ["regex"],
+      "matchPackageNames": ["ghcr.io/muchobien/pocketbase"]
+    }
+  ],
+  "regexManagers": [
+    {
+      "description": "Track PocketBase container tag in flake.nix and nixos/module.nix",
+      "fileMatch": ["^flake\\.nix$", "^nixos/module\\.nix$"],
+      "matchStrings": [
+        "ghcr\\.io/muchobien/pocketbase:(?<currentValue>[^\\s\"\\\\]+)"
+      ],
+      "depNameTemplate": "ghcr.io/muchobien/pocketbase",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ]
+}

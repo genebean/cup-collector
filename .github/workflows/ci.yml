@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  pre-commit:
+    name: pre-commit hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - uses: pre-commit/action@v3.0.1
+
+  dependency-review:
+    name: dependency review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        # Requires "Dependency graph" enabled in repo Settings → Security & Analysis.
+        # Non-blocking until that is enabled.
+        continue-on-error: true
+
+  npm-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Audit for critical vulnerabilities
+        # high-severity findings in next's bundled postcss and @ducanh2912/next-pwa's
+        # workbox deps have no available fix without breaking changes upstream.
+        # Blocking on critical only; Renovate will surface fixes when they land.
+        run: npm audit --audit-level=critical
+        working-directory: app
+
+  nix-build:
+    name: nix build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v14
+      - uses: DeterminateSystems/magic-nix-cache-action@v8
+      - uses: DeterminateSystems/flake-checker-action@v9
+        with:
+          # Fail the PR if nixpkgs is more than 30 days stale.
+          # The update-flake-lock workflow keeps it fresh on a weekly cadence.
+          fail-mode: true
+      - name: Ensure npmDepsHash is not the placeholder value
+        run: |
+          if grep -qF 'sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' flake.nix; then
+            echo "::error file=flake.nix::npmDepsHash is still the placeholder. Run 'nix build', copy the 'got:' hash into flake.nix, and commit."
+            exit 1
+          fi
+      - name: nix build
+        run: nix build
+      - name: NixOS module evaluation (nix build nixosConfigurations.test)
+        # Builds the full NixOS system closure using the module to catch evaluation
+        # errors (missing options, type mismatches, callPackage failures) without
+        # deploying to production.
+        run: nix build .#nixosConfigurations.test.config.system.build.toplevel
+
+  lint:
+    name: next lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        working-directory: app
+      - name: Run ESLint
+        run: npm run lint
+        working-directory: app
+
+  container-scan:
+    name: container image scan (PocketBase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract PocketBase image reference
+        id: image
+        run: |
+          # Pull the image tag from the module default — single source of truth after
+          # the flake.nix dev shell was aligned to the same version.
+          TAG=$(grep -oP 'ghcr\.io/muchobien/pocketbase:\K[^\s"\\]+' nixos/module.nix | head -1)
+          echo "ref=ghcr.io/muchobien/pocketbase:${TAG}" >> "$GITHUB_OUTPUT"
+      - uses: anchore/scan-action@v5
+        with:
+          image: ${{ steps.image.outputs.ref }}
+          fail-build: false
+          severity-cutoff: critical
+
+  pb-migrations:
+    name: PocketBase migrations (fresh instance)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract PocketBase image reference
+        id: image
+        run: |
+          TAG=$(grep -oP 'ghcr\.io/muchobien/pocketbase:\K[^\s"\\]+' nixos/module.nix | head -1)
+          echo "ref=ghcr.io/muchobien/pocketbase:${TAG}" >> "$GITHUB_OUTPUT"
+      - name: Start PocketBase on a fresh instance with migrations
+        run: |
+          mkdir -p /tmp/pb_data
+          docker run -d --name pb-test \
+            -v "${{ github.workspace }}/pocketbase/migrations:/pb/pb_migrations:ro" \
+            -v "/tmp/pb_data:/pb/pb_data" \
+            -p 127.0.0.1:8090:8090 \
+            ${{ steps.image.outputs.ref }} \
+            serve \
+            --dir=/pb/pb_data \
+            --migrationsDir=/pb/pb_migrations \
+            --http=0.0.0.0:8090
+      - name: Wait for healthy API
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8090/api/health > /dev/null; then
+              echo "PocketBase is healthy"
+              exit 0
+            fi
+            echo "Waiting... attempt $i/30"
+            sleep 2
+          done
+          echo "PocketBase failed to start in 60s"
+          docker logs pb-test
+          exit 1
+      - name: Verify no migration errors
+        run: |
+          docker logs pb-test 2>&1 | tee /tmp/pb-logs.txt
+          if grep -iE 'migration.*error|failed.*migrat|error.*migrat' /tmp/pb-logs.txt; then
+            echo "::error::Migration errors detected"
+            exit 1
+          fi
+          echo "Migrations applied cleanly"
+      - name: Stop container
+        if: always()
+        run: docker rm -f pb-test 2>/dev/null || true

@@ -4,7 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { getPocketBase } from "@/lib/pocketbase";
+import Image from "next/image";
+import { getPocketBase, getFileUrl } from "@/lib/pocketbase";
 import { BottomNav } from "@/components/BottomNav";
 import type { Cup, OwnedCup, NearbyStore, Household } from "@/types";
 
@@ -120,9 +121,8 @@ export default function CupDetailPage() {
     );
   }
 
-  const pb = getPocketBase();
   const imageUrl = cup.image
-    ? pb.files.getUrl({ collectionId: cup.collectionId, id: cup.id } as any, cup.image)
+    ? getFileUrl(cup.collectionId, cup.id, cup.image)
     : null;
 
   return (
@@ -139,7 +139,7 @@ export default function CupDetailPage() {
         {/* Hero image */}
         <div className="w-full h-56 bg-green-starbucks flex items-center justify-center">
           {imageUrl ? (
-            <img src={imageUrl} alt={`${cup.city} cup`} className="h-full w-full object-contain" />
+            <Image src={imageUrl} alt={`${cup.city} cup`} fill className="object-contain" unoptimized />
           ) : (
             <span className="text-white text-6xl font-bold opacity-30">
               {cup.city.charAt(0)}

@@ -1,10 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Leaflet requires its own CSS — imported here so it's always available
-   when MapView renders. next-pwa will cache this as a static asset. */
+@import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
+
+/* Starbucks-inspired palette matching the spec and PWA manifest */
+@theme {
+  --color-green-starbucks: #00704A;
+  --color-green-dark: #1E3932;
+  --color-green-mid: #2d5a3d;
+  --color-gold: #CBA258;
+  --color-gold-light: #f5edd8;
+  --color-cream: #FAF7F2;
+}
 
 /* Safe area insets for iPhone notch/home indicator.
    The bottom nav must clear the home indicator. */
@@ -17,6 +22,9 @@ body {
   overscroll-behavior: none;
   /* Cream background from spec palette */
   background-color: #FAF7F2;
+  /* System font stack — avoids a Google Fonts network fetch at build time,
+     and SF Pro / Segoe UI are visually equivalent to Inter on target platforms */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
 
 /* Bottom nav clears the iPhone home indicator */
