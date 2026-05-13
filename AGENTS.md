@@ -49,37 +49,47 @@ The shell prints a reminder of available commands on entry.
 cup-collector/
 ├── flake.nix              # Nix outputs: package, devShell, nixosModules
 ├── flake.lock             # Pinned Nix inputs — commit changes
+├── .env.example           # Template for required environment variables
 ├── app/                   # Next.js project root (App Router, src/ layout)
 │   ├── package.json
 │   ├── package-lock.json  # Required for buildNpmPackage hash — always commit
 │   ├── next.config.js
-│   ├── tailwind.config.ts
 │   ├── tsconfig.json
 │   ├── public/
 │   │   ├── manifest.json  # PWA manifest
 │   │   └── icons/         # PWA icons (192, 512, 512-maskable)
 │   └── src/
+│       ├── middleware.ts  # Auth.js route protection (must be named middleware.ts)
+│       ├── types/         # Shared TypeScript types
+│       ├── lib/
+│       │   ├── pocketbase.ts  # PocketBase client (browser → proxy, server → direct)
+│       │   └── roles.ts       # Role resolution from PocketID groups
+│       ├── hooks/
+│       │   ├── useMapTheme.ts     # Map tile theme preference (system/light/dark)
+│       │   └── useNearbyRadius.ts # Nearby search radius preference
+│       ├── components/    # Shared UI components
 │       └── app/           # Next.js App Router pages and API routes
-│           ├── auth.ts    # Auth.js / next-auth v5 config
-│           ├── layout.tsx # Root layout
-│           ├── page.tsx   # Redirects to /map
+│           ├── auth.ts    # Auth.js / next-auth v5 config (PocketID OIDC)
+│           ├── layout.tsx
 │           ├── map/       # Map screen (default home)
 │           ├── browse/    # Browse + filter screen
 │           ├── cup/[id]/  # Cup detail screen
 │           ├── search/    # Full-text search screen
-│           ├── settings/  # Account info and sign out
+│           ├── settings/  # Account info, map theme, sign out
 │           ├── admin/
-│           │   └── import/# CSV import screen (admin only)
+│           │   └── import/    # CSV import screen (owner/collaborator only)
 │           └── api/
-│               ├── auth/[...nextauth]/  # Auth.js route handler
-│               └── nearby-starbucks/   # Google Places proxy (key never exposed)
+│               ├── auth/[...nextauth]/     # Auth.js route handler
+│               ├── pb/[...path]/           # Authenticated PocketBase proxy
+│               ├── owned-cups/             # Mark/unmark cup ownership
+│               └── nearby-starbucks/       # Google Places proxy (key never exposed)
 ├── pocketbase/
 │   └── migrations/        # PocketBase JS migrations — version controlled
 ├── scripts/
-│   └── import-cups.ts     # CSV catalog import — run inside nix develop only
+│   └── import-cups.ts     # CSV catalog import — run via `import-cups` in dev shell
 ├── docs/                  # GitHub Pages site (pure HTML — no generator)
 │   ├── index.html
-│   ├── using/             # End-user guides (linked to by owner for family)
+│   ├── using/             # End-user guides
 │   ├── setup/             # Self-hosting setup guides
 │   ├── maintenance/       # Ongoing maintenance guides
 │   └── reference/
@@ -89,7 +99,6 @@ cup-collector/
 ├── .github/
 │   └── workflows/
 │       └── docs.yml       # Auto-deploys docs/ to GitHub Pages on push
-├── .env.example           # Template for required environment variables
 ├── README.md
 └── AGENTS.md              # This file
 ```
@@ -100,7 +109,7 @@ cup-collector/
 
 | Command | What it does |
 |---|---|
-| `nix develop` | Enters dev shell with node 20, pocketbase, typescript, ts-node |
+| `nix develop` | Enters dev shell with node, pocketbase, typescript, ts-node, and helper scripts |
 | `nix build` | Builds the Next.js app as a Nix package (standalone output) |
 | `nixosModules.default` | NixOS module consumed by the `genebean/dots` repo |
 
@@ -111,26 +120,19 @@ will fail and print the correct hash in the error output. Copy that value into
 
 ---
 
-## How to Run Locally
+## Dev Shell Helper Commands
 
-All commands must be run inside the dev shell:
+These are defined in `flake.nix` and available inside `nix develop`:
 
-```bash
-# Enter the dev shell (do this first, always)
-nix develop
-
-# Terminal 1 — start PocketBase
-pocketbase serve --dir ./pocketbase/pb_data
-
-# Terminal 2 — start Next.js dev server
-cd app && npm run dev
-
-# Import cups from CSV
-npx ts-node scripts/import-cups.ts --file cups.csv
-npx ts-node scripts/import-cups.ts --file cups.csv --dry-run
-```
-
-The app runs at http://localhost:3000. PocketBase admin UI at http://localhost:8090/_/.
+| Command | What it does |
+|---|---|
+| `pb-serve` | Start PocketBase on localhost:8090 |
+| `pocketid-serve` | Start PocketID container on localhost:1411 |
+| `dev-next` | Start Next.js dev server on localhost:3000 |
+| `import-cups --file cups.csv` | Import cup catalog from CSV |
+| `import-cups --file cups.csv --dry-run` | Preview import without writing |
+| `gen-auth-secret` | Generate a new AUTH_SECRET value |
+| `docs-serve` | Serve the docs site at localhost:4000 |
 
 ---
 
@@ -139,15 +141,13 @@ The app runs at http://localhost:3000. PocketBase admin UI at http://localhost:8
 Three PocketBase collections. All data is self-hosted.
 
 ### `households`
-Links PocketID users to a shared collection and defines roles.
+One record per family/group. Roles are determined by PocketID group membership,
+not by fields in this table.
 
 | Field | Type | Purpose |
 |---|---|---|
 | `id` | string | PocketBase auto-ID |
 | `name` | string | Display name, e.g. "The Smith Collection" |
-| `member_sub_1` | string | PocketID `sub` for first owner/collaborator |
-| `member_sub_2` | string | PocketID `sub` for second owner/collaborator |
-| `viewer_subs` | json | JSON array of PocketID `sub` strings for view-only users |
 | `created` | datetime | Auto-managed |
 
 ### `cups`
@@ -169,7 +169,7 @@ Master catalog of all known location cups.
 | `notes` | text | Optional freeform notes |
 
 ### `owned_cups`
-Which cups the household has collected. Ownership = record existence (no status field).
+Which cups the household has collected. Ownership = record existence.
 
 | Field | Type | Purpose |
 |---|---|---|
@@ -178,19 +178,18 @@ Which cups the household has collected. Ownership = record existence (no status 
 | `cup_id` | relation | → cups.id |
 | `marked_by_sub` | string | PocketID `sub` of who marked it owned |
 | `acquired_date` | date | Optional acquisition date |
-| `own_photo` | file | Optional owner photo; shown instead of catalog image |
+| `own_photo` | file | Optional owner photo |
 | `created` | datetime | Auto — serves as "added to collection" timestamp |
 
 A cup is owned if and only if a record exists in `owned_cups` with the matching
-household ID and cup ID. To un-own a cup, delete the record.
+household ID and cup ID. To un-own, delete the record.
 
 ### PocketBase Access Rules
 
-| Collection | List/View | Create/Update/Delete |
-|---|---|---|
-| `cups` | Any authenticated user in any household | Admin only |
-| `owned_cups` | Household members and viewers | Members only (`member_sub_1` or `member_sub_2`) — viewers explicitly blocked |
-| `households` | Members and viewers of that household | Admin only |
+PocketBase access rules are intentionally permissive (`""`), because all browser
+traffic is gated through the authenticated Next.js proxy (`/api/pb/[...path]`).
+PocketBase is not exposed publicly — only the Next.js app is. Server-side
+operations use a dedicated admin client (`getAdminPocketBase()`).
 
 ---
 
@@ -198,48 +197,55 @@ household ID and cup ID. To un-own a cup, delete the record.
 
 ```
 User visits app
-  → Auth.js middleware checks session
-  → If no session → redirect to PocketID OIDC login
-  → PocketID returns OIDC token with sub claim
-  → Auth.js JWT callback stores sub as token.pocketIdSub
-  → Auth.js session callback exposes it as session.user.pocketIdSub
-  → App fetches household record where member_sub_1, member_sub_2, or viewer_subs contains the sub
-  → Role resolved: owner/collaborator (full write) | viewer (read-only) | none (redirect to access-denied)
+  → Auth.js middleware (src/middleware.ts) checks session
+  → If no session → redirect to /sign-in → PocketID OIDC login
+  → PocketID returns OIDC token with groups[] claim
+  → Auth.js JWT callback stores groups as token.groups
+  → Auth.js session callback exposes as session.user.groups
+  → roleFromGroups(session.user.groups) resolves: owner | collaborator | viewer | none
+  → canWrite(role) determines UI controls and API route access
 ```
 
-The `pocketIdSub` value is the stable identifier used for all role checks.
-See `src/app/auth.ts` and `src/lib/roles.ts`.
+Roles map from PocketID group names — see `src/lib/roles.ts` for the exact mapping.
 
 ---
 
-## Role Enforcement — TWO LAYERS, BOTH REQUIRED
+## Role Enforcement
 
-**This is a security requirement, not just a UX choice.**
+Write access (mark/remove owned cups, import) requires `owner` or `collaborator` role.
+Viewers can browse and search but cannot write. Role is checked:
 
-1. **UI layer:** Write controls (Mark as Owned button, photo upload, Remove from
-   Collection) are not rendered at all for viewer-role users.
+1. **API layer** — every mutating API route calls `requireWriter()` / `resolveRole()`
+   and returns 403 if the role is insufficient
+2. **UI layer** — write controls are not rendered for viewer-role users
 
-2. **PocketBase rules layer:** The `owned_cups` collection access rules
-   explicitly block create/update/delete for anyone whose sub is only in
-   `viewer_subs`. A viewer bypassing the UI still cannot write.
+Both layers must stay in sync whenever role logic changes.
 
-Both layers must be maintained whenever role logic is changed.
+---
+
+## Security Architecture
+
+- **PocketBase is not publicly exposed.** All browser→PocketBase traffic goes
+  through `app/src/app/api/pb/[...path]/route.ts`, which requires a valid
+  Auth.js session before forwarding.
+- **`POCKETBASE_URL` is internal-only** (typically `http://localhost:8090`).
+  The browser client points to `/api/pb`, never directly to PocketBase.
+- **File URLs** use `getFileUrl()` from `lib/pocketbase.ts`, which returns
+  `/api/pb/api/files/...` paths routed through the same auth-gated proxy.
+- **`GOOGLE_PLACES_API_KEY` is server-side only** — used exclusively in
+  `api/nearby-starbucks/route.ts`, never sent to the browser.
 
 ---
 
 ## Do Not Change Without Reading the Spec
 
-These things have settled design decisions in `docs/reference/spec.html`.
-Read the spec before touching them:
+These things have settled design decisions in `docs/reference/spec.html`:
 
 - PocketBase collection structure and field names
-- PocketBase access rules (especially owned_cups write restriction)
-- Household schema (`member_sub_1`, `member_sub_2`, `viewer_subs`)
 - OIDC callback path (`/api/auth/callback/pocketid`)
 - PWA manifest `start_url` and `display` fields
-- `viewer_subs` role logic
 - Google Places API proxy — key must NEVER appear in client code
-- PocketBase URL in environment — accessed server-side and client-side separately
+- PocketBase URL — internal only, never exposed to browser
 
 ---
 
@@ -251,8 +257,7 @@ All docs are plain HTML in `docs/`. No exceptions.
 - Do not introduce Jekyll, Hugo, MkDocs, Docusaurus, or any other generator
 - Do not add a build step for docs
 - Edit `.html` files directly
-- Navigate between pages with standard `<a href>` links
-- `docs/reference/spec.html` is the verbatim project spec — keep it current
+- `docs/reference/spec.html` is the authoritative project spec — keep it current
 
 ---
 
@@ -264,7 +269,7 @@ All docs are plain HTML in `docs/`. No exceptions.
 - **Simple over clever** — least complex solution that meets requirements
 
 Google Places API is an accepted exception: read-only location lookup, key
-server-side only, personal use stays in free tier. See Decision Log in spec.
+server-side only, personal use stays in free tier.
 
 ---
 
@@ -282,4 +287,6 @@ server-side only, personal use stays in free tier. See Decision Log in spec.
 - Module lives in `nixos/module.nix`, exported as `nixosModules.default` from `flake.nix`
 - The `genebean/dots` repo adds this repo as a flake input and imports the module
 - Secrets are passed via `envFile` option pointing to a sops-nix managed path
+- `pbDomain` is optional — omit it to keep PocketBase off the public internet
+  (access admin UI via `ssh -L 8090:localhost:8090 yourserver`)
 - Never hardcode secrets anywhere in the repo

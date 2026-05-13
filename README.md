@@ -1,14 +1,18 @@
 # Cup Collector
 
+> **Work in progress.** Core functionality is under active development.
+> See [`docs/reference/spec.html`](docs/reference/spec.html) for the full
+> design spec and what remains to be built.
+
 A self-hosted Progressive Web App for tracking a shared Starbucks location cup
 collection. Two people collect location-specific mugs from the *You Are Here*,
 *Been There*, and related series. This app answers the question "do we already
 have this one?" — whether you're at home browsing the collection or standing in
 a store abroad.
 
-**[User Guide](https://genebean.github.io/cup-collector/using/getting-started.html)** ·
+**[Docs Site](https://genebean.github.io/cup-collector/)** ·
 **[Setup Guide](https://genebean.github.io/cup-collector/setup/prerequisites.html)** ·
-**[Full Docs](https://genebean.github.io/cup-collector/)**
+**[Spec](docs/reference/spec.html)**
 
 ---
 
@@ -16,7 +20,7 @@ a store abroad.
 
 - NixOS server with nginx already configured
 - PocketID running and accessible (self-hosted OIDC provider)
-- Domain names with DNS pointing to your server
+- Domain name with DNS pointing to your server
 - Google Places API key (for nearby Starbucks discovery)
 
 See [docs/setup/prerequisites.html](docs/setup/prerequisites.html) for the full
@@ -34,10 +38,13 @@ PocketBase on the host system directly.**
 nix develop
 
 # Terminal 1: start PocketBase
-pocketbase serve --dir ./pocketbase/pb_data
+pb-serve
 
-# Terminal 2: start Next.js
-cd app && npm run dev
+# Terminal 2: start PocketID
+pocketid-serve
+
+# Terminal 3: start Next.js
+dev-next
 ```
 
 App runs at http://localhost:3000. PocketBase admin UI at http://localhost:8090/_/.
@@ -60,39 +67,39 @@ in the error output — copy that value into `flake.nix` and rebuild.
 
 ## Deploying
 
-1. Add this repo as a flake input in your NixOS config repo (`genebean/dots`):
+1. Add this repo as a flake input in your NixOS config repo:
    ```nix
    cup-collector.url = "github:genebean/cup-collector";
    ```
-2. Import the module and configure it for the relevant host:
+2. Import the module and configure it:
    ```nix
    imports = [ inputs.cup-collector.nixosModules.default ];
 
    services.cupCollector = {
-     enable   = true;
-     domain   = "cups.yourdomain.com";
-     pbDomain = "pb.yourdomain.com";
-     envFile  = config.sops.secrets."cup-collector-env".path;
+     enable  = true;
+     domain  = "cups.yourdomain.com";
+     envFile = config.sops.secrets."cup-collector-env".path;
    };
    ```
 3. Run `sudo nixos-rebuild switch`.
 
-See [docs/setup/deployment.html](docs/setup/deployment.html) for the complete
-walkthrough including secrets setup and first-run verification.
+`pbDomain` is optional — omit it to keep PocketBase off the public internet
+and access the admin UI via SSH tunnel (`ssh -L 8090:localhost:8090 yourserver`).
+
+See [docs/setup/deployment.html](docs/setup/deployment.html) for the full walkthrough.
 
 ---
 
 ## Importing Cups
 
-The cup catalog is maintained as a CSV spreadsheet and imported via script.
 Run inside the dev shell:
 
 ```bash
 # Preview changes without writing
-npx ts-node scripts/import-cups.ts --file cups.csv --dry-run
+import-cups --file cups.csv --dry-run
 
 # Import for real
-npx ts-node scripts/import-cups.ts --file cups.csv
+import-cups --file cups.csv
 ```
 
 See [docs/maintenance/adding-cups.html](docs/maintenance/adding-cups.html) for
@@ -105,10 +112,9 @@ the full curator workflow.
 ```
 app/              Next.js project (App Router) — the PWA frontend
 pocketbase/       PocketBase migrations (schema, version controlled)
-scripts/          Maintenance scripts (CSV import) — run inside nix develop
+scripts/          Maintenance scripts — run inside nix develop
 docs/             GitHub Pages documentation site (pure HTML, no generator)
 nixos/            NixOS module exported by flake.nix
-.github/          GitHub Actions workflow for docs deployment
 flake.nix         Nix outputs: package, devShell, nixosModule
 .env.example      Template for required environment variables
 AGENTS.md         Instructions for AI agents working on this repo

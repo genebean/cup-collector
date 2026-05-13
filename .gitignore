@@ -1,0 +1,25 @@
+# Dev service data (local containers)
+pocketbase/pb_data/
+pocketid/
+
+# Claude Code personal settings (permissions, MCP config) — not for public repos
+.claude/
+.mcp.json
+
+# Next.js
+app/.next/
+app/node_modules/
+app/.env.local
+app/next-env.d.ts
+app/tsconfig.tsbuildinfo
+app/package-lock.json
+
+# Playwright artifacts
+.playwright-mcp/
+screenshot-*.png
+
+# Test data
+test-cups.csv
+
+# Nix
+result
