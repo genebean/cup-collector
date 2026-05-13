@@ -7,9 +7,9 @@ import { BottomNav } from "@/components/BottomNav";
 // no client-side JS needed for this static page.
 export default async function SettingsPage() {
   const session = await auth();
-  if (!session?.user?.pocketIdSub) redirect("/sign-in");
+  if (!session?.user?.groups) redirect("/sign-in");
 
-  const { role, household } = await resolveRole(session.user.pocketIdSub);
+  const { role, household } = await resolveRole(session.user.groups);
   if (role === "none") redirect("/access-denied");
 
   const roleLabels = {

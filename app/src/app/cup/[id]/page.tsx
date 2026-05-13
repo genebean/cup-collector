@@ -66,13 +66,11 @@ export default function CupDetailPage() {
   // Mark as owned — optimistic UI: button reflects new state immediately
   const markOwned = useMutation({
     mutationFn: () =>
-      getPocketBase()
-        .collection("owned_cups")
-        .create({
-          household_id: household!.id,
-          cup_id: id,
-          marked_by_sub: session!.user.pocketIdSub,
-        }),
+      fetch("/api/owned-cups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cup_id: id }),
+      }).then((r) => { if (!r.ok) throw new Error("Failed to mark owned"); return r.json(); }),
     onMutate: async () => {
       // Optimistically set as owned before server confirms
       await queryClient.cancelQueries({ queryKey: ["owned_cup", id, household?.id] });
@@ -91,7 +89,8 @@ export default function CupDetailPage() {
   // Remove from collection — optimistic UI
   const removeOwned = useMutation({
     mutationFn: () =>
-      getPocketBase().collection("owned_cups").delete(ownedRecord!.id),
+      fetch(`/api/owned-cups?id=${ownedRecord!.id}`, { method: "DELETE" })
+        .then((r) => { if (!r.ok) throw new Error("Failed to remove"); }),
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["owned_cup", id, household?.id] });
       queryClient.setQueryData(["owned_cup", id, household?.id], null);

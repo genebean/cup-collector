@@ -8,7 +8,6 @@ export interface Household {
   name: string;
   member_sub_1: string;
   member_sub_2: string;
-  // JSON array of PocketID sub strings for view-only users
   viewer_subs: string[];
   created: string;
 }
@@ -22,7 +21,7 @@ export interface Cup {
   country_code: string; // ISO 3166-1 alpha-2, e.g. "US"
   series: string; // "You Are Here" | "Been There" | "Ornament" | other
   year: number;
-  image: string; // PocketBase file token — use pb.files.getUrl() to resolve
+  image: string; // PocketBase filename — pass to getFileUrl() to get a usable URL
   image_credit: string; // Source URL or "own photo"
   lat: number; // City centroid latitude
   lng: number; // City centroid longitude
