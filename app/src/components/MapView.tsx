@@ -13,6 +13,7 @@ interface MapViewProps {
   cups: CupWithOwnership[];
   stores: NearbyStore[];
   userLocation: { lat: number; lng: number } | null;
+  isDark: boolean;
 }
 
 // Re-centers the map when the user's location changes
@@ -30,7 +31,7 @@ function LocationUpdater({ location }: { location: { lat: number; lng: number } 
   return null;
 }
 
-export default function MapView({ cups, stores, userLocation }: MapViewProps) {
+export default function MapView({ cups, stores, userLocation, isDark }: MapViewProps) {
   const router = useRouter();
 
   // Default world view when no location is available
@@ -45,11 +46,17 @@ export default function MapView({ cups, stores, userLocation }: MapViewProps) {
       // Disable attribution UI (we add it manually per OSM policy)
       attributionControl={true}
     >
-      {/* OpenStreetMap tiles — free, no API key, attribution required */}
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      {isDark ? (
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        />
+      ) : (
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+      )}
 
       <LocationUpdater location={userLocation} />
 
@@ -81,17 +88,20 @@ export default function MapView({ cups, stores, userLocation }: MapViewProps) {
             fillOpacity: 0.85,
             weight: 2,
           }}
-          eventHandlers={{
-            click: () => router.push(`/cup/${cup.id}`),
-          }}
         >
           <Popup>
             <div className="text-sm">
               <div className="font-semibold">{cup.city}</div>
               <div className="text-gray-500">{cup.series} · {cup.year}</div>
-              <div className={cup.isOwned ? "text-green-700" : "text-orange-600"}>
+              <div className={cup.isOwned ? "text-green-700 mb-1" : "text-orange-600 mb-1"}>
                 {cup.isOwned ? "✓ Owned" : "Needed"}
               </div>
+              <button
+                onClick={() => router.push(`/cup/${cup.id}`)}
+                className="text-green-700 underline text-xs"
+              >
+                View details →
+              </button>
             </div>
           </Popup>
         </CircleMarker>
@@ -108,13 +118,6 @@ export default function MapView({ cups, stores, userLocation }: MapViewProps) {
             fillColor: "#3b82f6",
             fillOpacity: 0.9,
             weight: 2,
-          }}
-          eventHandlers={{
-            click: () => {
-              // Open Apple Maps with driving directions to this store
-              const url = `https://maps.apple.com/?daddr=${store.lat},${store.lng}&dirflg=d`;
-              window.open(url, "_blank");
-            },
           }}
         >
           <Popup>

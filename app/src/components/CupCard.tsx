@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CupWithOwnership } from "@/types";
+import { getFileUrl } from "@/lib/pocketbase";
 
 interface CupCardProps {
   cup: CupWithOwnership;
@@ -30,7 +31,7 @@ export function CupCard({ cup }: CupCardProps) {
         style={
           cup.image
             ? {
-                backgroundImage: `url(${cup.image})`,
+                backgroundImage: `url(${getFileUrl(cup.collectionId, cup.id, cup.image)})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }

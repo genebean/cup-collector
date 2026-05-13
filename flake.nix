@@ -25,9 +25,10 @@
           nodejs = pkgs.nodejs_24;
 
           # Recompute this hash after any package-lock.json change:
-          #   Run `nix build` — it fails and prints the correct hash.
-          #   Copy that hash here and run `nix build` again.
-          npmDepsHash = "sha256-Wc01oTojdmAQlPLe8zMsZHar6aPyJHLvzHNdDfx27dY=";
+          #   1. Set npmDepsHash = pkgs.lib.fakeHash;
+          #   2. Run `nix build` — it fails with "got: sha256-..."
+          #   3. Copy that hash here and run `nix build` again.
+          npmDepsHash = "sha256-KXWAy3FISWEERe0Alv3PQ7s0h+GBfCcBtgSw2wtPRtM=";
 
           # --legacy-peer-deps matches how the lock file was generated;
           # without it the offline install phase fails on unresolved peer deps.

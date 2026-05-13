@@ -17,10 +17,7 @@ export default function SignInPage() {
           await signIn("pocketid", { redirectTo: "/map" });
         }}
       >
-        <button
-          type="submit"
-          className="px-8 py-3 bg-gold text-green-dark font-bold rounded-xl text-base shadow-lg"
-        >
+        <button type="submit" className="px-8 py-3 bg-gold text-green-dark font-bold rounded-xl cursor-pointer hover:brightness-110 active:scale-[0.98] transition-all shadow-lg text-base">
           Sign in with PocketID
         </button>
       </form>

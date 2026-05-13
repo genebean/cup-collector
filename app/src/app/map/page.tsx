@@ -9,6 +9,8 @@ import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { useNearbyRadius } from "@/hooks/useNearbyRadius";
+import { useMapTheme } from "@/hooks/useMapTheme";
 import type { Cup, OwnedCup, CupWithOwnership, NearbyStore } from "@/types";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
@@ -18,13 +20,18 @@ export default function MapPage() {
   const queryClient = useQueryClient();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
+  const { radiusMeters } = useNearbyRadius();
+  const { isDark } = useMapTheme();
 
   // Request geolocation on mount — falls back gracefully if denied
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {/* Permission denied — map stays at world view, no error shown */}
+      (err) => {
+        // err.code: 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT
+        console.warn("[map] geolocation error:", err.code, err.message);
+      }
     );
   }, []);
 
@@ -60,12 +67,12 @@ export default function MapPage() {
     enabled: !!householdId,
   });
 
-  // Fetch nearby Starbucks when location is known
+  // Fetch nearby Starbucks when location is known; re-fetches when radius changes
   const { data: storesData } = useQuery<{ stores: NearbyStore[] }>({
-    queryKey: ["nearby-stores", userLocation?.lat, userLocation?.lng],
+    queryKey: ["nearby-stores", userLocation?.lat, userLocation?.lng, radiusMeters],
     queryFn: () =>
       fetch(
-        `/api/nearby-starbucks?lat=${userLocation!.lat}&lng=${userLocation!.lng}&radius=3000`
+        `/api/nearby-starbucks?lat=${userLocation!.lat}&lng=${userLocation!.lng}&radius=${radiusMeters}`
       ).then((r) => r.json()),
     enabled: !!userLocation,
   });
@@ -119,6 +126,7 @@ export default function MapPage() {
           cups={cupsWithOwnership}
           stores={stores}
           userLocation={userLocation}
+          isDark={isDark}
         />
       </div>
 

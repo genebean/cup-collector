@@ -6,6 +6,8 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getPocketBase, getFileUrl } from "@/lib/pocketbase";
+import { roleFromGroups, canWrite as canWriteRole } from "@/lib/roles";
+import { useNearbyRadius } from "@/hooks/useNearbyRadius";
 import { BottomNav } from "@/components/BottomNav";
 import type { Cup, OwnedCup, NearbyStore, Household } from "@/types";
 
@@ -15,21 +17,18 @@ export default function CupDetailPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [household, setHousehold] = useState<Household | null>(null);
-  const [canWrite, setCanWrite] = useState(false);
 
-  // Resolve household and write permission for this user
+  const canWrite = canWriteRole(roleFromGroups(session?.user?.groups ?? []));
+  const { radiusMeters } = useNearbyRadius();
+
+  // Fetch the single household — needed to scope the owned_cups query
   useEffect(() => {
-    if (!session?.user?.pocketIdSub) return;
     const pb = getPocketBase();
-    const sub = session.user.pocketIdSub;
     pb.collection("households")
-      .getFirstListItem<Household>(`member_sub_1="${sub}" || member_sub_2="${sub}" || viewer_subs~"${sub}"`)
-      .then((h) => {
-        setHousehold(h);
-        setCanWrite(h.member_sub_1 === sub || h.member_sub_2 === sub);
-      })
+      .getList<Household>(1, 1)
+      .then((r) => setHousehold(r.items[0] ?? null))
       .catch(() => {});
-  }, [session]);
+  }, []);
 
   const { data: cup, isLoading } = useQuery<Cup>({
     queryKey: ["cup", id],
@@ -55,9 +54,9 @@ export default function CupDetailPage() {
 
   // Fetch nearby Starbucks using the cup's city coordinates
   const { data: storesData } = useQuery<{ stores: NearbyStore[] }>({
-    queryKey: ["nearby-stores-cup", cup?.lat, cup?.lng],
+    queryKey: ["nearby-stores-cup", cup?.lat, cup?.lng, radiusMeters],
     queryFn: () =>
-      fetch(`/api/nearby-starbucks?lat=${cup!.lat}&lng=${cup!.lng}&radius=3000`).then((r) =>
+      fetch(`/api/nearby-starbucks?lat=${cup!.lat}&lng=${cup!.lng}&radius=${radiusMeters}`).then((r) =>
         r.json()
       ),
     enabled: !!cup?.lat && !!cup?.lng,
@@ -72,12 +71,10 @@ export default function CupDetailPage() {
         body: JSON.stringify({ cup_id: id }),
       }).then((r) => { if (!r.ok) throw new Error("Failed to mark owned"); return r.json(); }),
     onMutate: async () => {
-      // Optimistically set as owned before server confirms
       await queryClient.cancelQueries({ queryKey: ["owned_cup", id, household?.id] });
       queryClient.setQueryData(["owned_cup", id, household?.id], { id: "optimistic" });
     },
     onError: () => {
-      // Roll back on error
       queryClient.setQueryData(["owned_cup", id, household?.id], null);
     },
     onSettled: () => {
@@ -146,7 +143,7 @@ export default function CupDetailPage() {
           )}
         </div>
 
-        <div className="px-4 py-4 space-y-4">
+        <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
           {/* Metadata */}
           <div className="bg-white rounded-xl p-4 space-y-2 text-sm">
             <Row label="City" value={cup.city} />
@@ -164,7 +161,7 @@ export default function CupDetailPage() {
                 <button
                   onClick={() => removeOwned.mutate()}
                   disabled={removeOwned.isPending}
-                  className="w-full py-3 rounded-xl bg-red-50 text-red-600 border border-red-200 font-semibold"
+                  className="w-full py-3 bg-red-50 text-red-600 border border-red-200 font-semibold rounded-xl cursor-pointer hover:bg-red-100 active:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {removeOwned.isPending ? "Removing…" : "Remove from Collection"}
                 </button>
@@ -172,7 +169,7 @@ export default function CupDetailPage() {
                 <button
                   onClick={() => markOwned.mutate()}
                   disabled={markOwned.isPending}
-                  className="w-full py-3 rounded-xl bg-green-starbucks text-white font-semibold"
+                  className="w-full py-3 bg-gold text-green-dark font-bold rounded-xl cursor-pointer hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {markOwned.isPending ? "Saving…" : "✓ Mark as Owned"}
                 </button>

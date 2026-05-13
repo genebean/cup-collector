@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -12,7 +11,6 @@ import type { Cup, OwnedCup, CupWithOwnership } from "@/types";
 type Filter = "all" | "needed" | string; // string covers series/country filter values
 
 export default function BrowsePage() {
-  const { data: session } = useSession();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
@@ -27,14 +25,10 @@ export default function BrowsePage() {
   }, []);
 
   useEffect(() => {
-    if (!session?.user?.pocketIdSub) return;
-    const pb = getPocketBase();
-    const sub = session.user.pocketIdSub;
-    pb.collection("households")
-      .getFirstListItem(`member_sub_1="${sub}" || member_sub_2="${sub}" || viewer_subs~"${sub}"`)
-      .then((h) => setHouseholdId(h.id))
+    getPocketBase().collection("households").getList(1, 1)
+      .then((r) => setHouseholdId(r.items[0]?.id ?? null))
       .catch(() => {});
-  }, [session]);
+  }, []);
 
   const { data: cups = [] } = useQuery<Cup[]>({
     queryKey: ["cups"],
@@ -97,8 +91,8 @@ export default function BrowsePage() {
     if (userLocation) {
       result.sort((a, b) => {
         if (a.isOwned !== b.isOwned) return a.isOwned ? 1 : -1;
-        const distA = haversineKm(userLocation, a);
-        const distB = haversineKm(userLocation, b);
+        const distA = haversineMi(userLocation, a);
+        const distB = haversineMi(userLocation, b);
         return distA - distB;
       });
     }
@@ -163,12 +157,12 @@ export default function BrowsePage() {
   );
 }
 
-// Approximate distance between two lat/lng points in kilometres (Haversine formula)
-function haversineKm(
+// Approximate distance between two lat/lng points in miles (Haversine formula)
+function haversineMi(
   a: { lat: number; lng: number },
   b: { lat: number; lng: number }
 ): number {
-  const R = 6371;
+  const R = 3958.8; // Earth radius in miles
   const dLat = ((b.lat - a.lat) * Math.PI) / 180;
   const dLng = ((b.lng - a.lng) * Math.PI) / 180;
   const x =
