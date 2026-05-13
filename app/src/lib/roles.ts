@@ -1,64 +1,38 @@
 import { getPocketBase } from "@/lib/pocketbase";
 import type { Household, UserRole } from "@/types";
 
-// Resolve the current user's role by looking up their PocketID sub in the
-// household record. Called server-side on authenticated requests.
-//
-// Role resolution rules (from spec §02):
-//   sub == member_sub_1 or member_sub_2  →  "owner" or "collaborator" (full write)
-//   sub in viewer_subs                   →  "viewer" (read-only)
-//   no match                             →  "none" (redirect to access-denied)
-export async function resolveRole(pocketIdSub: string): Promise<{
+// Group names must match the PocketID groups assigned to users.
+// Defaults work out of the box; override via env vars if needed.
+const OWNER_GROUP = process.env.ROLE_GROUP_OWNER ?? "cup-owner";
+const COLLABORATOR_GROUP = process.env.ROLE_GROUP_COLLABORATOR ?? "cup-collaborator";
+const VIEWER_GROUP = process.env.ROLE_GROUP_VIEWER ?? "cup-viewer";
+
+// Derive a role from the PocketID groups claim (included when "groups" scope is requested).
+export function roleFromGroups(groups: string[]): UserRole {
+  if (groups.includes(OWNER_GROUP)) return "owner";
+  if (groups.includes(COLLABORATOR_GROUP)) return "collaborator";
+  if (groups.includes(VIEWER_GROUP)) return "viewer";
+  return "none";
+}
+
+// Resolve role and fetch the single household record (needed for owned_cups queries).
+export async function resolveRole(groups: string[]): Promise<{
   role: UserRole;
   household: Household | null;
 }> {
-  const pb = getPocketBase();
+  const role = roleFromGroups(groups);
+  if (role === "none") return { role: "none", household: null };
 
   try {
-    // Fetch the household where this user appears in any role field.
-    // PocketBase filter syntax: || is OR, ~ is "contains" for JSON arrays.
-    const records = await pb.collection("households").getList<Household>(1, 1, {
-      filter: `member_sub_1="${pocketIdSub}" || member_sub_2="${pocketIdSub}" || viewer_subs~"${pocketIdSub}"`,
-    });
-
-    if (records.totalItems === 0) {
-      return { role: "none", household: null };
-    }
-
-    const household = records.items[0];
-
-    if (
-      household.member_sub_1 === pocketIdSub ||
-      household.member_sub_2 === pocketIdSub
-    ) {
-      // Both primary members have full read+write access.
-      // We label member_sub_1 "owner" and member_sub_2 "collaborator" for display,
-      // but the actual permissions are identical.
-      const role: UserRole =
-        household.member_sub_1 === pocketIdSub ? "owner" : "collaborator";
-      return { role, household };
-    }
-
-    // viewer_subs is stored as a JSON array in PocketBase
-    const viewerSubs: string[] =
-      typeof household.viewer_subs === "string"
-        ? JSON.parse(household.viewer_subs)
-        : (household.viewer_subs ?? []);
-
-    if (viewerSubs.includes(pocketIdSub)) {
-      return { role: "viewer", household };
-    }
-
-    return { role: "none", household: null };
-  } catch (err) {
-    console.error("Role resolution failed:", err);
-    return { role: "none", household: null };
+    const pb = getPocketBase();
+    const records = await pb.collection("households").getList<Household>(1, 1);
+    return { role, household: records.items[0] ?? null };
+  } catch {
+    return { role, household: null };
   }
 }
 
 // Check whether a role has write access.
-// Used to guard "Mark as Owned" and photo upload controls.
-// Viewers must not see write controls — enforced here AND in PocketBase rules.
 export function canWrite(role: UserRole): boolean {
   return role === "owner" || role === "collaborator";
 }

@@ -1,26 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 // Shows a subtle banner when the device has no network connection.
 // Never blocks the UI — the app keeps showing cached data while offline.
+function subscribe(cb: () => void) {
+  window.addEventListener("online", cb);
+  window.addEventListener("offline", cb);
+  return () => {
+    window.removeEventListener("online", cb);
+    window.removeEventListener("offline", cb);
+  };
+}
+
 export function OfflineBanner() {
-  // Initialize from the DOM directly to avoid a synchronous setState in an effect
-  const [isOffline, setIsOffline] = useState(() =>
-    typeof navigator !== "undefined" ? !navigator.onLine : false
+  // useSyncExternalStore handles SSR (server snapshot = false) and subscribes to
+  // online/offline events without useState or effects.
+  const isOffline = useSyncExternalStore(
+    subscribe,
+    () => !navigator.onLine,
+    () => false,
   );
-
-  useEffect(() => {
-    const handleOffline = () => setIsOffline(true);
-    const handleOnline = () => setIsOffline(false);
-
-    window.addEventListener("offline", handleOffline);
-    window.addEventListener("online", handleOnline);
-    return () => {
-      window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("online", handleOnline);
-    };
-  }, []);
 
   if (!isOffline) return null;
 

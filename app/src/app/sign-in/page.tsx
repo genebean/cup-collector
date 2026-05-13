@@ -19,7 +19,7 @@ export default function SignInPage() {
       >
         <button
           type="submit"
-          className="px-8 py-3 bg-gold-DEFAULT text-green-dark font-bold rounded-xl text-base shadow-lg"
+          className="px-8 py-3 bg-gold text-green-dark font-bold rounded-xl text-base shadow-lg"
         >
           Sign in with PocketID
         </button>

@@ -1,47 +1,47 @@
 import PocketBase from "pocketbase";
 
-// POCKETBASE_URL must be set in .env.local (dev) or the NixOS envFile (prod).
-// See .env.example for the full list of required variables.
+// Internal PocketBase URL — used server-side only (API routes, import script).
+// The browser never connects here directly; it goes through the /api/pb proxy.
 const POCKETBASE_URL = process.env.POCKETBASE_URL || "http://localhost:8090";
 
-// Browser-side PocketBase client — used in client components for realtime
-// subscriptions and user-initiated reads/writes.
-// Exported as a singleton to avoid creating multiple connections.
+// Browser-side PocketBase client.
+// Points at /api/pb (the Next.js proxy) so all requests are auth-gated before
+// reaching PocketBase. PocketBase is not publicly exposed.
 let browserClient: PocketBase | null = null;
 
 export function getPocketBase(): PocketBase {
   if (typeof window === "undefined") {
-    // Server-side: create a fresh instance per request (no singleton, no state leak)
+    // Server-side: connect directly to PocketBase via internal URL
     return new PocketBase(POCKETBASE_URL);
   }
-  // Browser-side: reuse a single instance so realtime subscriptions persist
+  // Browser-side: route through the authenticated proxy
   if (!browserClient) {
-    browserClient = new PocketBase(POCKETBASE_URL);
+    browserClient = new PocketBase(`${window.location.origin}/api/pb`);
   }
   return browserClient;
 }
 
-// Server-side client authenticated as admin — for the import script and admin
-// API routes only. Never send this token to the browser.
-export function getAdminPocketBase(): PocketBase {
+// Server-side admin client — for API routes and the import script only.
+// Never expose this client or its credentials to the browser.
+export async function getAdminPocketBase(): Promise<PocketBase> {
   const pb = new PocketBase(POCKETBASE_URL);
-  const adminToken = process.env.POCKETBASE_ADMIN_TOKEN;
-  if (!adminToken) {
-    throw new Error("POCKETBASE_ADMIN_TOKEN is not set — required for admin operations");
+  const email = process.env.POCKETBASE_ADMIN_EMAIL;
+  const password = process.env.POCKETBASE_ADMIN_PASSWORD;
+  if (!email || !password) {
+    throw new Error("POCKETBASE_ADMIN_EMAIL and POCKETBASE_ADMIN_PASSWORD are required for admin operations");
   }
-  // Directly set the admin auth token without going through the login flow
-  pb.authStore.save(adminToken, null);
+  await pb.collection("_superusers").authWithPassword(email, password);
   return pb;
 }
 
-// Resolves a PocketBase file token to a full URL.
-// Use this anywhere you need to display a cup image.
+// Returns the URL for a PocketBase-stored file.
+// Always uses the /api/pb proxy path so the URL is accessible from the browser
+// and the file request is auth-gated along with all other PocketBase traffic.
 export function getFileUrl(
   collectionId: string,
   recordId: string,
   filename: string
 ): string {
   if (!filename) return "";
-  const pb = getPocketBase();
-  return pb.files.getUrl({ collectionId, id: recordId }, filename);
+  return `/api/pb/api/files/${collectionId}/${recordId}/${encodeURIComponent(filename)}`;
 }

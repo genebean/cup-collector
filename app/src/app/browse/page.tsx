@@ -140,7 +140,7 @@ export default function BrowsePage() {
               onClick={() => setFilter(value)}
               className={`flex-shrink-0 text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
                 filter === value
-                  ? "bg-gold-DEFAULT text-green-dark border-gold-DEFAULT"
+                  ? "bg-gold text-green-dark border-gold"
                   : "border-white/30 text-white/80 hover:border-white/60"
               }`}
             >

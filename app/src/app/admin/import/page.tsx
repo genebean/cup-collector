@@ -8,9 +8,9 @@ import { resolveRole } from "@/lib/roles";
 // page provides a browser-based fallback with dry-run preview.
 export default async function AdminImportPage() {
   const session = await auth();
-  if (!session?.user?.pocketIdSub) redirect("/sign-in");
+  if (!session?.user?.groups) redirect("/sign-in");
 
-  const { role } = await resolveRole(session.user.pocketIdSub);
+  const { role } = await resolveRole(session.user.groups);
   if (role === "viewer" || role === "none") redirect("/access-denied");
 
   return (

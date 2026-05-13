@@ -114,7 +114,7 @@ export default function MapPage() {
       </header>
 
       {/* Map fills remaining space above bottom nav */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative isolate">
         <MapView
           cups={cupsWithOwnership}
           stores={stores}
