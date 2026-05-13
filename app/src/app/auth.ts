@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import type { JWT as _JWT } from "next-auth/jwt"; // import required for module augmentation below
 
 // Extend the built-in session/token types to include our PocketID subject claim.
 // The `sub` from PocketID is the stable user identifier used for role resolution.

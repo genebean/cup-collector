@@ -15,6 +15,7 @@ export interface Household {
 
 export interface Cup {
   id: string;
+  collectionId: string; // PocketBase collection identifier — needed for file URL construction
   city: string;
   region: string;
   country: string;

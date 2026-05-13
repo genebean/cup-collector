@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Cup Collector",
@@ -40,7 +37,7 @@ export default function RootLayout({
         {/* Apple touch icon — same 192px icon as PWA manifest and PocketID registration */}
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className={inter.className}>
+      <body>
         {/* Providers wraps everything in SessionProvider and QueryClientProvider */}
         <Providers>{children}</Providers>
       </body>

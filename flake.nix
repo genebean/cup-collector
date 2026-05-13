@@ -10,17 +10,28 @@
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system}; in {
 
+        # `nix build .#migrations` — produces the PocketBase migrations as a store path
+        # Reference in the NixOS module: migrationsDir = inputs.cup-collector.packages.${system}.migrations;
+        packages.migrations = pkgs.runCommand "cup-collector-migrations" {} ''
+          cp -r ${./pocketbase/migrations} $out
+        '';
+
         # `nix build` — produces the Next.js app as a Nix package
         # Uses standalone output mode so it can run as a plain Node process.
         packages.default = pkgs.buildNpmPackage {
           pname = "cup-collector";
           version = "0.1.0";
           src = ./app;
+          nodejs = pkgs.nodejs_24;
 
           # Recompute this hash after any package-lock.json change:
           #   Run `nix build` — it fails and prints the correct hash.
           #   Copy that hash here and run `nix build` again.
-          npmDepsHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+          npmDepsHash = "sha256-Wc01oTojdmAQlPLe8zMsZHar6aPyJHLvzHNdDfx27dY=";
+
+          # --legacy-peer-deps matches how the lock file was generated;
+          # without it the offline install phase fails on unresolved peer deps.
+          npmFlags = [ "--legacy-peer-deps" ];
 
           buildPhase = "npm run build";
 
@@ -39,26 +50,131 @@
         # Never install these tools on the host system directly.
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            nodejs_20
-            pocketbase
-            nodePackages.typescript
-            nodePackages.ts-node
+            nodejs_24
+            python3   # used by docs-serve (stdlib http.server, no extra deps)
+            # PocketBase runs via podman (matches production; stays current automatically).
+            # typescript and ts-node are installed as npm devDependencies in app/
+            # and invoked via `npx` — this avoids node-version mismatches in nixpkgs.
           ];
 
           shellHook = ''
-            echo "Cup Collector dev shell — all tooling is provided here"
-            echo "Do NOT install node/npm/pocketbase on the host system."
+            PROJ_ROOT="$(pwd)"
+
+            # Start PocketBase on localhost:8090 with migrations applied automatically.
+            # Uses the same OCI image version as nixos/module.nix (kept in sync by Renovate).
+            pb-serve() {
+              mkdir -p "$PROJ_ROOT/pocketbase/pb_data"
+              podman run --rm \
+                --name cup-collector-pb \
+                -p 127.0.0.1:8090:8090 \
+                -v "$PROJ_ROOT/pocketbase/pb_data:/pb/pb_data:Z" \
+                -v "$PROJ_ROOT/pocketbase/migrations:/pb/pb_migrations:ro,Z" \
+                ghcr.io/muchobien/pocketbase:0.38.0 \
+                serve \
+                --dir=/pb/pb_data \
+                --migrationsDir=/pb/pb_migrations \
+                --http=0.0.0.0:8090
+            }
+
+            # Start a self-contained PocketID v2 OIDC provider for local dev on :1411.
+            # localhost is a WebAuthn secure context, so plain HTTP works here.
+            # No TRUST_PROXY — we hit the container directly (unlike prod which uses nginx).
+            # First run: visit http://localhost:1411/setup to create the admin account,
+            # then create an OIDC application and copy the client ID/secret into
+            # app/.env.local (POCKETID_CLIENT_ID / POCKETID_CLIENT_SECRET).
+            pocketid-serve() {
+              mkdir -p "$PROJ_ROOT/pocketid/data"
+              local key_file="$PROJ_ROOT/pocketid/encryption_key"
+              if [ ! -f "$key_file" ]; then
+                openssl rand -base64 32 > "$key_file"
+                chmod 600 "$key_file"
+                echo "Generated PocketID encryption key: $key_file"
+              fi
+              podman run --rm \
+                --name cup-collector-pocketid \
+                -p 127.0.0.1:1411:1411 \
+                -e APP_URL=http://localhost:1411 \
+                -e ENCRYPTION_KEY="$(cat "$key_file")" \
+                -v "$PROJ_ROOT/pocketid/data:/app/data:Z" \
+                ghcr.io/pocket-id/pocket-id:v2
+            }
+
+            # Start the Next.js dev server (from any directory).
+            dev-next() {
+              cd "$PROJ_ROOT/app" && npm run dev
+            }
+
+            # Print a fresh AUTH_SECRET — paste into app/.env.local.
+            gen-auth-secret() {
+              openssl rand -base64 32
+            }
+
+            # Serve the docs/ directory on localhost so you can preview the HTML locally.
+            docs-serve() {
+              echo "Docs available at http://localhost:4000"
+              python3 -m http.server 4000 --directory "$PROJ_ROOT/docs"
+            }
+
+            # Import cups from a CSV file into PocketBase.
+            # Usage: import-cups --file cups.csv [--dry-run]
+            # Requires POCKETBASE_ADMIN_EMAIL and POCKETBASE_ADMIN_PASSWORD in app/.env.local.
+            import-cups() {
+              set -a && source "$PROJ_ROOT/app/.env.local" && set +a
+              NODE_PATH="$PROJ_ROOT/app/node_modules" \
+                "$PROJ_ROOT/app/node_modules/.bin/ts-node" \
+                --transpile-only \
+                --project "$PROJ_ROOT/scripts/tsconfig.json" \
+                "$PROJ_ROOT/scripts/import-cups.ts" \
+                "$@"
+            }
+
+            echo "Cup Collector dev shell"
             echo ""
-            echo "  Start PocketBase:  pocketbase serve --dir ./pocketbase/pb_data"
-            echo "  Start Next.js:     cd app && npm run dev"
-            echo "  Import cups:       npx ts-node scripts/import-cups.ts --file cups.csv"
-            echo "  Dry-run import:    npx ts-node scripts/import-cups.ts --file cups.csv --dry-run"
+            echo "  pb-serve          start PocketBase on :8090 via podman (applies migrations)"
+            echo "  pocketid-serve    start PocketID OIDC provider on :1411 via podman"
+            echo "  dev-next          start Next.js dev server on :3000"
+            echo "  gen-auth-secret   generate a new AUTH_SECRET value"
+            echo "  import-cups       import cup catalog from CSV (--file cups.csv [--dry-run])"
+            echo "  docs-serve        serve the HTML docs on http://localhost:4000"
+            echo ""
+            echo "  First-time PocketID setup:"
+            echo "    1. Run pocketid-serve, then open http://localhost:1411"
+            echo "    2. Create admin account, add an OIDC application"
+            echo "    3. Copy client ID/secret into app/.env.local"
           '';
         };
 
       }) // {
         # NixOS module — exported at top level (system-independent)
         # Consumed by genebean/dots: imports = [ inputs.cup-collector.nixosModules.default ];
-        nixosModules.default = import ./nixos/module.nix;
+        # The wrapper sets appPackage from this flake's own packages output so consumers
+        # don't have to set it manually. Override to use a different build:
+        #   services.cupCollector.appPackage = inputs.cup-collector.packages.${pkgs.system}.default;
+        nixosModules.default = { lib, pkgs, ... }: {
+          imports = [ ./nixos/module.nix ];
+          services.cupCollector.appPackage = lib.mkDefault self.packages.${pkgs.system}.default;
+        };
+
+        # Minimal NixOS configuration used by CI to verify the module evaluates and
+        # builds cleanly without deploying to production.
+        # Verified by: nix build .#nixosConfigurations.test.config.system.build.toplevel
+        nixosConfigurations.test = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            self.nixosModules.default
+            {
+              services.cupCollector = {
+                enable = true;
+                domain = "cups.example.com";
+                migrationsDir = self.packages.x86_64-linux.migrations;
+                # envFile is a runtime secret path — not evaluated at build time.
+                envFile = "/run/secrets/cup-collector";
+              };
+              # Disable boot loader — this config only exists to test module evaluation.
+              boot.isContainer = true;
+              system.stateVersion = "24.11";
+            }
+          ];
+        };
       };
 }

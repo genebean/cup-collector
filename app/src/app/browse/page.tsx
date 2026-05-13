@@ -40,7 +40,7 @@ export default function BrowsePage() {
     queryKey: ["cups"],
     queryFn: () =>
       getPocketBase().collection("cups").getFullList({ sort: "country,city" })
-        .then((r) => r as Cup[]),
+        .then((r) => r as unknown as Cup[]),
   });
 
   const { data: ownedCups = [] } = useQuery<OwnedCup[]>({
@@ -48,7 +48,7 @@ export default function BrowsePage() {
     queryFn: () =>
       getPocketBase().collection("owned_cups")
         .getFullList({ filter: `household_id="${householdId}"` })
-        .then((r) => r as OwnedCup[]),
+        .then((r) => r as unknown as OwnedCup[]),
     enabled: !!householdId,
   });
 
@@ -64,7 +64,7 @@ export default function BrowsePage() {
     return () => { pb.collection("owned_cups").unsubscribe("*"); };
   }, [householdId, queryClient]);
 
-  const ownedCupIds = new Set(ownedCups.map((o) => o.cup_id));
+  const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
   const seriesList = [...new Set(cups.map((c) => c.series))].sort();
 
   // Merge ownership, apply search and filter, sort "needed near me" first

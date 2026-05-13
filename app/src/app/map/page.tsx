@@ -3,7 +3,7 @@
 // Leaflet cannot run server-side — dynamic import with ssr: false is required.
 // See src/components/MapView.tsx for the actual map implementation.
 import dynamic from "next/dynamic";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
@@ -46,7 +46,7 @@ export default function MapPage() {
       getPocketBase()
         .collection("cups")
         .getFullList({ sort: "city" })
-        .then((records) => records as Cup[]),
+        .then((records) => records as unknown as Cup[]),
   });
 
   // Fetch which cups this household owns
@@ -56,7 +56,7 @@ export default function MapPage() {
       getPocketBase()
         .collection("owned_cups")
         .getFullList({ filter: `household_id="${householdId}"` })
-        .then((records) => records as OwnedCup[]),
+        .then((records) => records as unknown as OwnedCup[]),
     enabled: !!householdId,
   });
 

@@ -1,4 +1,6 @@
-const withPWA = require("@ducanh2912/next-pwa").default({
+import nextPWA from "@ducanh2912/next-pwa";
+
+const withPWA = nextPWA({
   dest: "public",
   // Network First for API/data routes — always try live data, fall back to cache
   // Cache First for static assets — icons, fonts, cup images load fast offline
@@ -27,6 +29,10 @@ const nextConfig = {
   // Node server that doesn't need node_modules at runtime.
   output: "standalone",
 
+  // Empty turbopack config tells Next.js 16 we're intentionally using Turbopack
+  // even though @ducanh2912/next-pwa injects a webpack config internally.
+  turbopack: {},
+
   images: {
     // Allow Next.js Image component to load cup photos from PocketBase.
     // POCKETBASE_URL is set at build time in the Nix build, or via .env.local locally.
@@ -45,4 +51,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withPWA(nextConfig);
+export default withPWA(nextConfig);
