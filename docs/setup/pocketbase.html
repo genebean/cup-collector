@@ -30,18 +30,18 @@
 <nav><a href="../index.html">← Docs home</a></nav>
 
 <h1>PocketBase Setup</h1>
-<p>After deploying, PocketBase runs at <code>https://pb.yourdomain.com</code>. Access the admin UI at <code>https://pb.yourdomain.com/_/</code> to set up collections and create the household record.</p>
+<p>After deploying, PocketBase runs at <code>https://pb.yourdomain.com</code>. Access the admin UI at <code>https://pb.yourdomain.com/_/</code> to verify the schema and create the household record.</p>
 
 <div class="callout">
   <strong>Migrations run automatically</strong><br>
-  The PocketBase migration in <code>pocketbase/migrations/001_initial_schema.js</code> creates the three collections on first start. If migrations applied cleanly, you can skip to Step 3. Check the PocketBase logs to confirm.
+  The migrations in <code>pocketbase/migrations/</code> create all collections and set access rules on first start. If they applied cleanly, you only need Step 3 (create the household record). Check the PocketBase logs to confirm.
 </div>
 
 <h2>Step 1 — Access the admin UI</h2>
 <ol>
   <li>Open <code>https://pb.yourdomain.com/_/</code> in your browser.</li>
   <li>On first run, PocketBase prompts you to create an admin account. Use a strong password and store it in your password manager.</li>
-  <li>You're now in the PocketBase admin panel.</li>
+  <li>Copy your email and password — you'll also need them in the <code>.env</code> file as <code>POCKETBASE_ADMIN_EMAIL</code> and <code>POCKETBASE_ADMIN_PASSWORD</code> so the app can write records server-side.</li>
 </ol>
 
 <h2>Step 2 — Verify collections</h2>
@@ -49,21 +49,18 @@
 
 <p><strong>households</strong></p>
 <table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody>
-  <tr><td>name</td><td>text</td><td>Required. Display name, e.g. "The Smith Collection"</td></tr>
-  <tr><td>member_sub_1</td><td>text</td><td>Required. PocketID sub for first owner</td></tr>
-  <tr><td>member_sub_2</td><td>text</td><td>Optional. PocketID sub for second owner</td></tr>
-  <tr><td>viewer_subs</td><td>json</td><td>Array of sub strings for view-only users</td></tr>
+  <tr><td>name</td><td>text</td><td>Required. Display name, e.g. "Our Collection"</td></tr>
 </tbody></table>
 
 <p><strong>cups</strong></p>
 <table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody>
   <tr><td>city</td><td>text</td><td>Required</td></tr>
-  <tr><td>region</td><td>text</td><td>State/province</td></tr>
+  <tr><td>region</td><td>text</td><td>State/province — blank if not applicable</td></tr>
   <tr><td>country</td><td>text</td><td>Required</td></tr>
   <tr><td>country_code</td><td>text</td><td>ISO 3166-1 alpha-2, e.g. "US"</td></tr>
   <tr><td>series</td><td>text</td><td>Required. "You Are Here", "Been There", etc.</td></tr>
   <tr><td>year</td><td>number</td><td>Required. 4-digit year</td></tr>
-  <tr><td>image</td><td>file</td><td>Primary cup photo</td></tr>
+  <tr><td>image</td><td>file</td><td>Primary cup photo (downloaded during import)</td></tr>
   <tr><td>image_credit</td><td>text</td><td>Source URL or "own photo"</td></tr>
   <tr><td>lat</td><td>number</td><td>City centroid latitude</td></tr>
   <tr><td>lng</td><td>number</td><td>City centroid longitude</td></tr>
@@ -74,48 +71,35 @@
 <table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody>
   <tr><td>household_id</td><td>relation → households</td><td>Required</td></tr>
   <tr><td>cup_id</td><td>relation → cups</td><td>Required</td></tr>
-  <tr><td>marked_by_sub</td><td>text</td><td>PocketID sub of who marked it owned</td></tr>
   <tr><td>acquired_date</td><td>date</td><td>Optional</td></tr>
   <tr><td>own_photo</td><td>file</td><td>Optional owner photo</td></tr>
 </tbody></table>
 
-<h2>Step 3 — Set access rules</h2>
-<div class="warn callout">
-  <strong>Both UI and database rules are required.</strong> The app hides write controls from viewers, but PocketBase rules are the security backstop. Don't skip this step.
+<h2>Step 2b — Verify access rules</h2>
+<p>The migration sets all three collections to allow unrestricted reads at the PocketBase level (empty rule string). This is intentional but does not mean the data is publicly accessible.</p>
+
+<p>Security is enforced at the network layer: PocketBase is not exposed publicly — there is no nginx vhost for it by default in the NixOS module. All browser traffic reaches PocketBase through the Next.js <code>/api/pb</code> proxy, which requires a valid signed-in session before forwarding any request. The "unrestricted read" rule in PocketBase itself is only reachable by traffic that has already passed the session check in the proxy.</p>
+
+<p>Browser clients do not hold PocketBase auth tokens (PocketBase's <code>@request.auth</code> rules can't be used because Auth.js handles identity, not PocketBase's own auth system). Enforcing access at the proxy layer achieves the same result cleanly.</p>
+
+<p>Writes are admin-only in PocketBase. All mutations (marking cups owned, running imports) go through Next.js server-side API routes that authenticate with the admin email/password — the browser never gets write access to PocketBase directly.</p>
+
+<div class="callout">
+  <strong>Accessing the PocketBase admin UI</strong><br>
+  Without a public nginx vhost for PocketBase, use an SSH tunnel to reach the admin UI:
+  <br><br>
+  <code>ssh -L 8090:localhost:8090 yourserver</code><br>
+  then open <code>http://localhost:8090/_/</code> in your browser.
 </div>
 
-<p>For each collection, go to the collection settings → <strong>API Rules</strong> tab and set:</p>
-
-<p><strong>cups</strong> — catalog is read-only for all authenticated users; admin-only write:</p>
-<ul>
-  <li>List/View rule: <code>@request.auth.id != ""</code> (any authenticated user)</li>
-  <li>Create/Update/Delete rule: leave empty (admin only)</li>
-</ul>
-
-<p><strong>owned_cups</strong> — members can write; viewers cannot:</p>
-<ul>
-  <li>List/View rule: The app queries with a household filter — leave open for authenticated users or craft a rule matching household membership</li>
-  <li>Create rule: Only members — requires custom rule comparing <code>@request.auth.id</code> against household <code>member_sub_1</code>/<code>member_sub_2</code></li>
-  <li>Delete rule: same as create</li>
-</ul>
-
-<p><strong>households</strong> — read for members and viewers; admin-only write:</p>
-<ul>
-  <li>List/View rule: authenticated users who appear in the record</li>
-  <li>Create/Update/Delete: leave empty (admin only)</li>
-</ul>
-
-<h2>Step 4 — Create the household record</h2>
+<h2>Step 3 — Create the household record</h2>
 <ol>
   <li>In the admin panel, go to <strong>Collections</strong> → <strong>households</strong> → <strong>New record</strong>.</li>
   <li>Set <code>name</code> to something friendly, e.g. "Our Collection".</li>
-  <li>Set <code>member_sub_1</code> to the PocketID <code>sub</code> of the first owner (found in <a href="pocketid.html">Step 3 of the PocketID setup</a>).</li>
-  <li>Set <code>member_sub_2</code> to the second owner's <code>sub</code>, if applicable.</li>
-  <li>Leave <code>viewer_subs</code> as <code>[]</code> for now. Add viewer subs later when needed.</li>
   <li>Save.</li>
 </ol>
 
-<p>To add a viewer later: edit the household record and add their <code>sub</code> to the <code>viewer_subs</code> JSON array, e.g. <code>["sub-value-here"]</code>.</p>
+<p>That's all — user roles come from PocketID groups, not from fields on the household record. There's no need to enter user IDs here.</p>
 
 </body>
 </html>

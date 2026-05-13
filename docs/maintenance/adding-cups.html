@@ -74,12 +74,12 @@
 nix develop
 
 # 2. Preview what will change (no data is written)
-npx ts-node scripts/import-cups.ts --file /path/to/cups.csv --dry-run
+import-cups --file /path/to/cups.csv --dry-run
 
 # 3. Review the output — check for unexpected creates or updates
 
 # 4. Apply the import
-npx ts-node scripts/import-cups.ts --file /path/to/cups.csv</pre>
+import-cups --file /path/to/cups.csv</pre>
 
 <p>The script is <strong>safe to re-run at any time</strong>. It uses upsert logic (match on city + series + year) — existing records are updated, new ones are created, nothing is duplicated.</p>
 
