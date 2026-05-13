@@ -8,31 +8,67 @@ import { useEffect, useRef } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import type { CupWithOwnership, NearbyStore } from "@/types";
 import { useRouter } from "next/navigation";
+import { useMapTheme } from "@/hooks/useMapTheme";
+
+const TILES = {
+  light: {
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  },
+  dark: {
+    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
+};
 
 interface MapViewProps {
   cups: CupWithOwnership[];
   stores: NearbyStore[];
   userLocation: { lat: number; lng: number } | null;
-  isDark: boolean;
+  targetZoom: number;
 }
 
-// Re-centers the map when the user's location changes
-function LocationUpdater({ location }: { location: { lat: number; lng: number } | null }) {
+// Flies to user location on first acquisition
+function LocationUpdater({ location, zoom }: { location: { lat: number; lng: number } | null; zoom: number }) {
   const map = useMap();
   const hasFlownTo = useRef(false);
 
   useEffect(() => {
     if (location && !hasFlownTo.current) {
-      map.flyTo([location.lat, location.lng], 10, { duration: 1.5 });
+      map.flyTo([location.lat, location.lng], zoom, { duration: 1.5 });
       hasFlownTo.current = true;
     }
-  }, [location, map]);
+  }, [location, zoom, map]);
 
   return null;
 }
 
-export default function MapView({ cups, stores, userLocation, isDark }: MapViewProps) {
+// Adjusts zoom when the radius chip changes (only when a location is active)
+function ZoomUpdater({ location, zoom }: { location: { lat: number; lng: number } | null; zoom: number }) {
+  const map = useMap();
+  const prevZoom = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!location) return;
+    if (prevZoom.current === null) {
+      prevZoom.current = zoom;
+      return;
+    }
+    if (zoom !== prevZoom.current) {
+      prevZoom.current = zoom;
+      map.flyTo([location.lat, location.lng], zoom, { duration: 1 });
+    }
+  }, [zoom, location, map]);
+
+  return null;
+}
+
+export default function MapView({ cups, stores, userLocation, targetZoom }: MapViewProps) {
   const router = useRouter();
+  const { isDark } = useMapTheme();
+  const tiles = isDark ? TILES.dark : TILES.light;
 
   // Default world view when no location is available
   const defaultCenter: [number, number] = [20, 0];
@@ -43,33 +79,24 @@ export default function MapView({ cups, stores, userLocation, isDark }: MapViewP
       center={defaultCenter}
       zoom={defaultZoom}
       className="w-full h-full"
-      // Disable attribution UI (we add it manually per OSM policy)
       attributionControl={true}
     >
-      {isDark ? (
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
-      ) : (
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-      )}
+      {/* key forces a remount when switching so stale tiles don't linger */}
+      <TileLayer key={isDark ? "dark" : "light"} attribution={tiles.attribution} url={tiles.url} />
 
-      <LocationUpdater location={userLocation} />
+      <LocationUpdater location={userLocation} zoom={targetZoom} />
+      <ZoomUpdater location={userLocation} zoom={targetZoom} />
 
-      {/* "You are here" — pulsing blue dot */}
+      {/* "You are here" — white dot with blue ring */}
       {userLocation && (
         <CircleMarker
           center={[userLocation.lat, userLocation.lng]}
-          radius={8}
+          radius={9}
           pathOptions={{
-            color: "#2563eb",
-            fillColor: "#3b82f6",
-            fillOpacity: 0.9,
-            weight: 2,
+            color: "#1d4ed8",
+            fillColor: "white",
+            fillOpacity: 1,
+            weight: 3,
           }}
         >
           <Popup>You are here</Popup>
@@ -107,7 +134,7 @@ export default function MapView({ cups, stores, userLocation, isDark }: MapViewP
         </CircleMarker>
       ))}
 
-      {/* Nearby Starbucks pins — blue — tap opens Apple Maps */}
+      {/* Nearby Starbucks pins — blue — tap shows popup with directions link */}
       {stores.map((store) => (
         <CircleMarker
           key={store.place_id}
