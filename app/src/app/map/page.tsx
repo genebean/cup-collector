@@ -9,8 +9,7 @@ import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
-import { useNearbyRadius } from "@/hooks/useNearbyRadius";
-import { useMapTheme } from "@/hooks/useMapTheme";
+import { useNearbyRadius, RADIUS_OPTIONS } from "@/hooks/useNearbyRadius";
 import type { Cup, OwnedCup, CupWithOwnership, NearbyStore } from "@/types";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
@@ -20,8 +19,7 @@ export default function MapPage() {
   const queryClient = useQueryClient();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
-  const { radiusMeters } = useNearbyRadius();
-  const { isDark } = useMapTheme();
+  const { radiusMeters, setRadius } = useNearbyRadius();
 
   // Request geolocation on mount — falls back gracefully if denied
   useEffect(() => {
@@ -100,33 +98,57 @@ export default function MapPage() {
     }));
 
   const stores = storesData?.stores ?? [];
+  const targetZoom = RADIUS_OPTIONS.find((o) => o.meters === radiusMeters)?.zoom ?? 11;
 
   return (
     <div className="flex flex-col h-screen">
       <OfflineBanner />
 
       {/* App header */}
-      <header className="bg-green-dark text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
-        <h1 className="font-bold text-lg">Cup Collector</h1>
-        {/* Globe button — zooms to world view of full collection */}
-        <button
-          className="text-xl"
-          title="World view"
-          onClick={() => {
-            // Handled inside MapView via a ref — placeholder for now
-          }}
-        >
-          🌍
-        </button>
+      <header className="bg-green-dark text-white px-4 py-3 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <h1 className="font-bold text-lg">Cup Collector</h1>
+          {/* Globe button — zooms to world view of full collection */}
+          <button
+            className="text-xl"
+            title="World view"
+            onClick={() => {
+              // Handled inside MapView via a ref — placeholder for now
+            }}
+          >
+            🌍
+          </button>
+        </div>
+        {/* Radius selector — only shown when location is active */}
+        {userLocation && (
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs text-white/50">Nearby:</span>
+            <div className="flex gap-1">
+              {RADIUS_OPTIONS.map((opt) => (
+                <button
+                  key={opt.meters}
+                  onClick={() => setRadius(opt.meters)}
+                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                    radiusMeters === opt.meters
+                      ? "bg-gold text-green-dark border-gold font-semibold"
+                      : "border-white/30 text-white/70 hover:border-white/60"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* Map fills remaining space above bottom nav */}
-      <div className="flex-1 relative isolate">
+      {/* z-0 creates a stacking context that isolates Leaflet's internal z-indices */}
+      <div className="flex-1 relative z-0">
         <MapView
           cups={cupsWithOwnership}
           stores={stores}
           userLocation={userLocation}
-          isDark={isDark}
+          targetZoom={targetZoom}
         />
       </div>
 

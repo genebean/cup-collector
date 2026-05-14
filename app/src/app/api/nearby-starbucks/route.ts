@@ -5,7 +5,7 @@ import { auth } from "@/app/auth";
 // The API key NEVER leaves the server — it is read from the environment here
 // and is not included in any response sent to the browser.
 //
-// Usage: GET /api/nearby-starbucks?lat=37.77&lng=-122.41&radius=8047
+// Usage: GET /api/nearby-starbucks?lat=37.77&lng=-122.41&radius=16093
 // Returns: { stores: Array of { name, address, lat, lng, place_id } }
 // radius is in meters (16093 ≈ 10 miles)
 
@@ -97,7 +97,6 @@ export async function GET(request: NextRequest) {
         haversineMeters(centerLat, centerLng, s.lat, s.lng) <= radius
       );
 
-    console.log("[nearby-starbucks] stores after haversine filter:", stores.length);
     return NextResponse.json({ stores });
   } catch (err) {
     console.error("Failed to fetch from Google Places:", err);
