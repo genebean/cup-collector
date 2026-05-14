@@ -1,14 +1,38 @@
-// Shown when a user is authenticated with PocketID but their sub does not
-// appear in any household record — they have not been granted access.
+import { signOut } from "@/app/auth";
+
 export default function AccessDeniedPage() {
   return (
-    <div className="min-h-screen bg-green-dark flex flex-col items-center justify-center text-center px-6">
-      <div className="text-5xl mb-4">☕</div>
-      <h1 className="text-2xl font-bold text-white mb-2">Access Not Granted</h1>
-      <p className="text-white/60 text-sm max-w-xs">
-        Your account hasn&apos;t been added to a household yet. Ask the household
-        owner to add your PocketID account.
-      </p>
+    <div className="flex flex-col min-h-screen bg-cream">
+      <header className="bg-green-dark text-white px-4 py-3">
+        <h1 className="font-bold text-lg">Cup Collector</h1>
+      </header>
+
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
+        <div className="text-5xl mb-4">☕</div>
+        <h2 className="text-xl font-bold text-green-dark mb-2">Access Not Granted</h2>
+        <p className="text-gray-600 text-sm max-w-xs mb-2">
+          Your account is authenticated but hasn&apos;t been added to an access group yet.
+        </p>
+        <p className="text-gray-500 text-sm max-w-xs mb-8">
+          Ask the app owner to add you to the <strong>cup-owner</strong>,{" "}
+          <strong>cup-collaborator</strong>, or <strong>cup-viewer</strong> group
+          in PocketID.
+        </p>
+
+        <form
+          action={async () => {
+            "use server";
+            await signOut({ redirectTo: "/" });
+          }}
+        >
+          <button
+            type="submit"
+            className="px-6 py-2.5 bg-red-50 text-red-600 border border-red-200 font-semibold rounded-xl cursor-pointer hover:bg-red-100 active:bg-red-200 transition-colors text-sm"
+          >
+            Sign Out
+          </button>
+        </form>
+      </main>
     </div>
   );
 }

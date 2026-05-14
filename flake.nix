@@ -28,7 +28,7 @@
           #   1. Set npmDepsHash = pkgs.lib.fakeHash;
           #   2. Run `nix build` — it fails with "got: sha256-..."
           #   3. Copy that hash here and run `nix build` again.
-          npmDepsHash = "sha256-zdDuyAbg/VF9LipilItQvDqS7nOoottQymGZNSKu9R4=";
+          npmDepsHash = "sha256-ty/k8Cx+981EmRbSzDi4sr/afZkZJ009a17zsFwLPKI=";
 
           buildPhase = "npm run build";
 
@@ -113,11 +113,14 @@
             }
 
             # Run the fast CI checks locally — useful before pushing.
-            # Covers: pre-commit hooks and next lint.
+            # Covers: pre-commit hooks, unit tests, and next lint.
             # (nix build, npm audit, and container checks are skipped — run those separately if needed.)
             check() {
               echo "==> pre-commit hooks"
               pre-commit run --all-files || return 1
+              echo ""
+              echo "==> unit tests"
+              (cd "$PROJ_ROOT/app" && npm test) || return 1
               echo ""
               echo "==> next lint"
               (cd "$PROJ_ROOT/app" && npx next lint) || return 1

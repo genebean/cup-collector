@@ -30,8 +30,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   ],
   callbacks: {
-    authorized({ auth }) {
-      return !!auth?.user;
+    authorized({ auth: session, request }) {
+      if (!session?.user) return false;
+      const groups = (session.user as { groups?: string[] }).groups ?? [];
+      const knownGroups = [
+        process.env.ROLE_GROUP_OWNER ?? "cup-owner",
+        process.env.ROLE_GROUP_COLLABORATOR ?? "cup-collaborator",
+        process.env.ROLE_GROUP_VIEWER ?? "cup-viewer",
+      ];
+      if (!groups.some((g) => knownGroups.includes(g))) {
+        return Response.redirect(new URL("/access-denied", request.url));
+      }
+      return true;
     },
     async jwt({ token, profile }) {
       if (profile) {
