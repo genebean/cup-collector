@@ -16,6 +16,11 @@
   code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
   .callout { border-left: 3px solid #E8833A; background: #fdf0e6; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
   .info { border-left-color: #00704A; background: #e8f2ee; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '← '; }
+  .page-nav .next::after { content: ' →'; }
 </style>
 </head>
 <body>
@@ -73,6 +78,11 @@ restic backup /var/lib/cup-collector/pb_data/</pre>
 </ol>
 
 <p>The Next.js app itself does not need to be backed up — it's rebuilt from source by Nix at any time. Only the PocketBase data directory is stateful.</p>
+
+<nav class="page-nav">
+  <a class="prev" href="updates.html">Updating the App</a>
+  <a class="next" href="../index.html">Docs Home</a>
+</nav>
 
 </body>
 </html>

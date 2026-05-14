@@ -15,6 +15,11 @@
   pre { background: #1a2820; color: #a8d8b0; padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; }
   code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
   .callout { border-left: 3px solid #CBA258; background: #f5edd8; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '← '; }
+  .page-nav .next::after { content: ' →'; }
 </style>
 </head>
 <body>
@@ -58,6 +63,11 @@ sudo nixos-rebuild switch --flake .#your-hostname</pre>
   <strong>No PocketBase data is affected by app updates.</strong><br>
   The PocketBase data lives at <code>/var/lib/cup-collector/pb_data/</code>. An app update only changes the Next.js server binary and static assets. Your collection, photos, and household record are untouched.
 </div>
+
+<nav class="page-nav">
+  <a class="prev" href="adding-cups.html">Adding Cups</a>
+  <a class="next" href="backup.html">Backups</a>
+</nav>
 
 </body>
 </html>

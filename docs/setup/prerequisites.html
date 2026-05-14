@@ -20,6 +20,12 @@
   .optional { background: #e8e4f4; color: #4a2880; }
   code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
   a { color: #00704A; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '←'; }
+  .page-nav .next::after { content: '→'; }
+  .page-nav span { color: #6b6457; }
 </style>
 </head>
 <body>
@@ -68,7 +74,7 @@
 
 <div class="req">
   <div class="req-title">Google Places API key <span class="req-level required">Required</span></div>
-  <div class="req-desc">Used server-side to find nearby Starbucks stores. Create a key at <a href="https://console.cloud.google.com/">Google Cloud Console</a> → APIs &amp; Services → Credentials. Enable the <strong>Places API (New)</strong>. Personal use will almost certainly stay in the free tier. The key is kept server-side only — never exposed to the browser.</div>
+  <div class="req-desc">Used server-side to find nearby Starbucks stores. Enable the <a href="https://console.cloud.google.com/apis/library/places.googleapis.com">Places API (New)</a> in Google Cloud Console, then create a key under APIs &amp; Services → Credentials. Personal use will almost certainly stay in the free tier. The key is kept server-side only — never exposed to the browser.</div>
 </div>
 
 <div class="req">
@@ -80,9 +86,15 @@
 <p>To run the app locally for development or testing, you only need:</p>
 <ul>
   <li>Nix installed on your machine (<code>nix develop</code> provides everything else)</li>
-  <li>A <code>.env.local</code> file copied from <code>.env.example</code> with real values</li>
+  <li>Podman available on your host (<code>virtualisation.podman.enable = true</code> on NixOS) — used by <code>pocketid-serve</code> to run the dev PocketID container</li>
+  <li>A <code>app/.env.local</code> file with real values (PocketID client credentials, PocketBase admin email/password)</li>
 </ul>
-<p>See the README for local development commands. You do not need to install Node, npm, or PocketBase separately — the Nix dev shell provides them.</p>
+<p>The dev shell provides <code>pb-serve</code>, <code>pocketid-serve</code>, and <code>dev-next</code> commands to run the full stack locally without touching any production services. You do not need to install Node, npm, or PocketBase separately.</p>
+
+<nav class="page-nav">
+  <a class="prev" href="../index.html">Docs Home</a>
+  <a class="next" href="pocketid.html">PocketID Setup</a>
+</nav>
 
 </body>
 </html>

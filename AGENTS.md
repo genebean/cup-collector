@@ -133,6 +133,7 @@ These are defined in `flake.nix` and available inside `nix develop`:
 | `import-cups --file cups.csv --dry-run` | Preview import without writing |
 | `gen-auth-secret` | Generate a new AUTH_SECRET value |
 | `docs-serve` | Serve the docs site at localhost:4000 |
+| `check` | Run pre-commit hooks and `next lint` locally (fast CI check) |
 
 ---
 
