@@ -15,6 +15,11 @@
   code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
   .callout { border-left: 3px solid #CBA258; background: #f5edd8; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
   .warn { border-left-color: #E8833A; background: #fdf0e6; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '← '; }
+  .page-nav .next::after { content: ' →'; }
   table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.75rem 0; }
   thead tr { background: #1E3932; color: white; }
   th { text-align: left; padding: 0.55rem 0.85rem; font-size: 0.8rem; }
@@ -96,10 +101,17 @@
 <ol>
   <li>In the admin panel, go to <strong>Collections</strong> → <strong>households</strong> → <strong>New record</strong>.</li>
   <li>Set <code>name</code> to something friendly, e.g. "Our Collection".</li>
+  <li>Set <code>member_sub_1</code> to the PocketID <code>sub</code> value for the first household member. Find this in the PocketID admin panel under <strong>Users</strong> — it is the "ID" shown on each user's profile.</li>
+  <li>Optionally set <code>member_sub_2</code> for the second household member, and <code>viewer_subs</code> (as a JSON array, e.g. <code>["sub-value-here"]</code>) for any view-only members.</li>
   <li>Save.</li>
 </ol>
 
-<p>That's all — user roles come from PocketID groups, not from fields on the household record. There's no need to enter user IDs here.</p>
+<p>User <strong>roles</strong> come from PocketID groups, not from these fields — a user in the <code>cup-owner</code> group is an owner regardless of whether their sub appears here. The <code>member_sub_*</code> and <code>viewer_subs</code> fields are used by the app to find which household a user belongs to, so that owned-cups data is scoped correctly.</p>
+
+<nav class="page-nav">
+  <a class="prev" href="pocketid.html">PocketID Setup</a>
+  <a class="next" href="deployment.html">Deployment</a>
+</nav>
 
 </body>
 </html>

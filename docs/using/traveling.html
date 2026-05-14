@@ -13,6 +13,11 @@
   .story p { margin-bottom: 1rem; }
   .story p:last-child { margin-bottom: 0; }
   .highlight { background: #e8f2ee; border-radius: 4px; padding: 0.1rem 0.35rem; color: #1E3932; font-weight: 600; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '← '; }
+  .page-nav .next::after { content: ' →'; }
 </style>
 </head>
 <body>
@@ -35,6 +40,11 @@
 
   <p>The whole workflow takes about ten seconds per cup. No spreadsheet, no syncing, no "wait, do we already have this one?" The app just knows.</p>
 </div>
+
+<nav class="page-nav">
+  <a class="prev" href="getting-started.html">Getting Started</a>
+  <a class="next" href="map-view.html">Map View</a>
+</nav>
 
 </body>
 </html>

@@ -22,6 +22,11 @@
   .warn { border-left-color: #CBA258; background: #f5edd8; }
   .ascii { font-family: monospace; background: #1a2820; color: #a8d8b0; padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; white-space: pre; }
   pre { background: #1a2820; color: #a8d8b0; padding: 0.85rem 1rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '← '; }
+  .page-nav .next::after { content: ' →'; }
 </style>
 </head>
 <body>
@@ -133,6 +138,11 @@ pocketid-serve   # starts PocketID at http://localhost:1411</pre>
 <pre>POCKETID_ISSUER_URL=http://localhost:1411
 POCKETID_CLIENT_ID=&lt;client id from dev PocketID&gt;
 POCKETID_CLIENT_SECRET=&lt;client secret from dev PocketID&gt;</pre>
+
+<nav class="page-nav">
+  <a class="prev" href="prerequisites.html">Prerequisites</a>
+  <a class="next" href="pocketbase.html">PocketBase Setup</a>
+</nav>
 
 </body>
 </html>

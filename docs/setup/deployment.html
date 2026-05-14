@@ -16,6 +16,11 @@
   code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
   .callout { border-left: 3px solid #00704A; background: #e8f2ee; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
   .warn { border-left-color: #E8833A; background: #fdf0e6; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '← '; }
+  .page-nav .next::after { content: ' →'; }
 </style>
 </head>
 <body>
@@ -41,13 +46,13 @@ cup-collector.url = "github:genebean/cup-collector";</pre>
   imports = [ inputs.cup-collector.nixosModules.default ];
 
   services.cupCollector = {
-    enable   = true;
-    domain   = "cups.yourdomain.com";
-    pbDomain = "pb.yourdomain.com";
+    enable        = true;
+    domain        = "cups.yourdomain.com";
+    migrationsDir = inputs.cup-collector.packages.${pkgs.system}.migrations;
     # envFile points to your secrets file — managed by sops-nix or similar
-    envFile  = config.sops.secrets."cup-collector-env".path;
-    # Optional — these are the defaults:
-    # port    = 3000;
+    envFile       = config.sops.secrets."cup-collector-env".path;
+    # pbDomain = "pb.yourdomain.com";  # optional — omit to keep PocketBase internal-only
+    # port    = 3000;                  # these are all defaults
     # pbPort  = 8090;
     # dataDir = "/var/lib/cup-collector";
   };
@@ -58,14 +63,16 @@ cup-collector.url = "github:genebean/cup-collector";</pre>
 <pre>POCKETID_ISSUER_URL=https://id.yourdomain.com
 POCKETID_CLIENT_ID=cup-collector-abc123
 POCKETID_CLIENT_SECRET=your-client-secret
-AUTH_SECRET=generate-with-openssl-rand-base64-32
+AUTH_SECRET=generate-with-gen-auth-secret-in-nix-develop
 NEXTAUTH_URL=https://cups.yourdomain.com
-POCKETBASE_URL=https://pb.yourdomain.com
-POCKETBASE_ADMIN_TOKEN=your-admin-token
+POCKETBASE_URL=http://localhost:8090
+POCKETBASE_ADMIN_EMAIL=admin@example.com
+POCKETBASE_ADMIN_PASSWORD=your-pocketbase-admin-password
 GOOGLE_PLACES_API_KEY=your-google-places-key</pre>
 
-<p>Generate <code>AUTH_SECRET</code> with:</p>
-<pre>openssl rand -base64 32</pre>
+<p>Generate <code>AUTH_SECRET</code> with the <code>gen-auth-secret</code> command inside <code>nix develop</code>:</p>
+<pre>nix develop
+gen-auth-secret</pre>
 
 <h2>Step 4 — Rebuild</h2>
 <pre>sudo nixos-rebuild switch --flake .#your-hostname</pre>
@@ -99,6 +106,11 @@ journalctl -u podman-cup-collector-pb -f</pre>
   <li><strong>Auth redirect error</strong> — double-check the <code>NEXTAUTH_URL</code> matches exactly what's in the PocketID redirect URI setting, including the protocol.</li>
   <li><strong>npmDepsHash mismatch</strong> — run <code>nix build</code>, copy the hash from the error, update <code>flake.nix</code>, rebuild.</li>
 </ul>
+
+<nav class="page-nav">
+  <a class="prev" href="pocketbase.html">PocketBase Setup</a>
+  <a class="next" href="first-run.html">First Run Checklist</a>
+</nav>
 
 </body>
 </html>

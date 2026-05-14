@@ -20,6 +20,11 @@
   code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
   .callout { border-left: 3px solid #00704A; background: #e8f2ee; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
   a { color: #00704A; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '← '; }
+  .page-nav .next::after { content: ' →'; }
 </style>
 </head>
 <body>
@@ -78,7 +83,7 @@ import-cups --file your-cups.csv</pre>
   </li>
   <li>
     <strong>Test location and nearby stores</strong>
-    <div class="verify">Open the app on your phone with a real GPS signal. Allow location access. The map should zoom to your position and show blue Starbucks pins nearby (if any are within 2km). Tap a blue pin to verify the "Get directions" link opens Apple Maps.</div>
+    <div class="verify">Open the app on your phone with a real GPS signal. Allow location access. The map should zoom to your position and show blue Starbucks pins nearby (default search radius is 10 miles). Tap a blue pin to verify the "Get directions" link opens Apple Maps.</div>
   </li>
 </ul>
 
@@ -97,6 +102,11 @@ dev-next          # Next.js dev server on http://localhost:3000</pre>
   <strong>Dev data is separate from production</strong><br>
   PocketBase stores data in <code>pocketbase/pb_data/</code> and PocketID stores data in <code>pocketid/data/</code>. Both directories are gitignored. The dev PocketID generates its own encryption key in <code>pocketid/encryption_key</code> (also gitignored, mode 600).
 </div>
+
+<nav class="page-nav">
+  <a class="prev" href="deployment.html">Deployment</a>
+  <a class="next" href="../index.html">Docs Home</a>
+</nav>
 
 </body>
 </html>

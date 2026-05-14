@@ -21,6 +21,11 @@
   td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #ece8e1; vertical-align: top; }
   tr:last-child td { border-bottom: none; }
   td:first-child { font-family: monospace; font-weight: 600; color: #2d5a3d; font-size: 0.82rem; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '← '; }
+  .page-nav .next::after { content: ' →'; }
 </style>
 </head>
 <body>
@@ -63,7 +68,11 @@
   <li>Send or share the file with the importer.</li>
 </ol>
 
-<h2>Step 3 (Importer) — Run the import script</h2>
+<h2>Step 3 (Importer) — Run the import</h2>
+
+<p>There are two ways to run an import: the CLI script (preferred for large imports) or the web UI.</p>
+
+<h3 style="border-top: none; margin-top: 1rem; font-size: 1rem;">Option A — CLI (recommended)</h3>
 
 <div class="callout">
   <strong>Enter the dev shell first.</strong><br>
@@ -81,13 +90,21 @@ import-cups --file /path/to/cups.csv --dry-run
 # 4. Apply the import
 import-cups --file /path/to/cups.csv</pre>
 
-<p>The script is <strong>safe to re-run at any time</strong>. It uses upsert logic (match on city + series + year) — existing records are updated, new ones are created, nothing is duplicated.</p>
+<h3 style="border-top: none; margin-top: 1rem; font-size: 1rem;">Option B — Web UI</h3>
+<p>Open the app, go to <strong>Settings</strong> → <strong>Import Cups</strong>. Upload the CSV file, review the dry-run preview, then submit. The web UI uses the same upsert logic as the CLI script. Suitable for small updates; the CLI is faster and more informative for large imports.</p>
+
+<p>Both options are <strong>safe to re-run at any time</strong>. They use upsert logic (match on city + series + year) — existing records are updated, new ones are created, nothing is duplicated.</p>
 
 <h2>Step 4 — Verify</h2>
 <ol>
   <li>Open the PocketBase admin UI → Collections → cups — new entries should appear.</li>
   <li>Open the app — new cups should appear in Browse and on the map (if they have lat/lng).</li>
 </ol>
+
+<nav class="page-nav">
+  <a class="prev" href="../index.html">Docs Home</a>
+  <a class="next" href="updates.html">Updating the App</a>
+</nav>
 
 </body>
 </html>

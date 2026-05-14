@@ -20,6 +20,12 @@
   .optional { background: #e8e4f4; color: #4a2880; }
   code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
   a { color: #00704A; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '←'; }
+  .page-nav .next::after { content: '→'; }
+  .page-nav span { color: #6b6457; }
 </style>
 </head>
 <body>
@@ -84,6 +90,11 @@
   <li>A <code>app/.env.local</code> file with real values (PocketID client credentials, PocketBase admin email/password)</li>
 </ul>
 <p>The dev shell provides <code>pb-serve</code>, <code>pocketid-serve</code>, and <code>dev-next</code> commands to run the full stack locally without touching any production services. You do not need to install Node, npm, or PocketBase separately.</p>
+
+<nav class="page-nav">
+  <a class="prev" href="../index.html">Docs Home</a>
+  <a class="next" href="pocketid.html">PocketID Setup</a>
+</nav>
 
 </body>
 </html>

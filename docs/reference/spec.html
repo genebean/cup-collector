@@ -145,6 +145,10 @@ code { color: var(--code-text); }
   .doc-header { padding: 2rem 1.2rem; }
   .doc-body { padding: 1.5rem 1rem 3rem; }
 }
+.page-nav { display: flex; justify-content: flex-start; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.88rem; }
+.page-nav a { color: var(--green); text-decoration: none; }
+.page-nav a:hover { text-decoration: underline; }
+.page-nav .prev::before { content: '← '; }
 </style>
 </head>
 <body>
@@ -256,7 +260,7 @@ code { color: var(--code-text); }
     <div class="section-number">Section 02</div>
     <h2>User Roles</h2>
 
-    <p>Three roles exist. Role is determined entirely by the user's PocketID subject claim (<span class="ic">sub</span>) and its presence in the household record — no in-app role field required.</p>
+    <p>Three roles exist. Role is determined entirely by the user's PocketID group membership — no in-app role field is required. The <span class="ic">groups</span> claim is included in the OIDC token (via the <span class="ic">groups</span> scope) and resolved server-side by <span class="ic">roleFromGroups()</span> in <span class="ic">src/lib/roles.ts</span>.</p>
 
     <table class="stack-table">
       <thead><tr><th>Role</th><th>Who</th><th>Capabilities</th></tr></thead>
@@ -264,17 +268,17 @@ code { color: var(--code-text); }
         <tr>
           <td>Owner <span class="user-role role-owner">owner</span></td>
           <td>Primary collector (Gene)</td>
-          <td>Full access: browse, mark cups owned/unowned, upload own photos, run data imports. Sub stored in <span class="ic">member_sub_1</span> on the household record.</td>
+          <td>Full access: browse, mark cups owned/unowned, upload own photos, run data imports. Must be a member of the <span class="ic">cup-owner</span> PocketID group.</td>
         </tr>
         <tr>
           <td>Collaborator <span class="user-role role-collab">collaborator</span></td>
           <td>Spouse / co-collector</td>
-          <td>Same as owner — full read and write. Sub stored in <span class="ic">member_sub_2</span>. Also the person who curates the cup catalog CSV.</td>
+          <td>Same as owner — full read and write. Must be a member of the <span class="ic">cup-collaborator</span> PocketID group. Also the person who curates the cup catalog CSV.</td>
         </tr>
         <tr>
           <td>Viewer <span class="user-role role-viewer">viewer</span></td>
           <td>Family / friends</td>
-          <td>Read-only: browse catalog, see owned/needed status, use map and nearby stores. Cannot mark cups owned or make any changes. Sub appears in the <span class="ic">viewer_subs</span> array on the household record.</td>
+          <td>Read-only: browse catalog, see owned/needed status, use map and nearby stores. Cannot mark cups owned or make any changes. Must be a member of the <span class="ic">cup-viewer</span> PocketID group.</td>
         </tr>
       </tbody>
     </table>
@@ -283,7 +287,7 @@ code { color: var(--code-text); }
       <div class="callout-icon">⚠️</div>
       <div class="callout-body">
         <strong>Role Enforcement is Two-Layer — Both Are Required</strong>
-        <p>The UI hides write controls from viewers. PocketBase collection access rules enforce the same restriction at the database level. A viewer must not be able to write owned_cups records even if they bypass the UI. Implement both layers.</p>
+        <p>The UI hides write controls from viewers. Every mutating API route also enforces the same restriction by calling <span class="ic">resolveRole(session.user.groups)</span> and returning 403 for viewer-role users. PocketBase write rules are admin-only — all mutations go through Next.js server-side routes that authenticate with the admin email/password. Browser clients never get direct write access to PocketBase.</p>
       </div>
     </div>
   </div>
@@ -308,7 +312,7 @@ code { color: var(--code-text); }
         <tr><td>Navigation</td><td>maps.apple.com URL scheme</td><td>Opens Apple Maps natively on iPhone; no key, no cost</td></tr>
         <tr><td>PWA</td><td>next-pwa</td><td>Service worker and manifest generation for Next.js</td></tr>
         <tr><td>App Hosting</td><td>NixOS home server</td><td>Next.js as systemd service; PocketBase as OCI container</td></tr>
-        <tr><td>Reverse Proxy</td><td>nginx (NixOS module)</td><td>Already in use on host; TLS via Let's Encrypt / ACME</td></tr>
+        <tr><td>Reverse Proxy</td><td>Nginx (NixOS module)</td><td>Already in use on host; TLS via Let's Encrypt / ACME</td></tr>
         <tr><td>Nix Packaging</td><td>buildNpmPackage + flake</td><td>Exports package, NixOS module, and dev shell from one repo</td></tr>
         <tr><td>Docs</td><td>Pure HTML → GitHub Pages</td><td>No build step; agent-friendly; rich layout without generator constraints</td></tr>
       </tbody>
@@ -372,14 +376,20 @@ code { color: var(--code-text); }
     <span class="ck">issuer</span>: process.env.POCKETID_ISSUER_URL,
     <span class="ck">clientId</span>: process.env.POCKETID_CLIENT_ID,
     <span class="ck">clientSecret</span>: process.env.POCKETID_CLIENT_SECRET,
+    <span class="cm">// "groups" scope required — PocketID includes group membership in the OIDC token</span>
+    <span class="ck">authorization</span>: { params: { scope: <span class="cs">"openid profile email groups"</span> } },
   }],
   callbacks: {
     async jwt({ token, profile }) {
-      <span class="ck">if</span> (profile) token.pocketIdSub = profile.sub
+      <span class="ck">if</span> (profile) {
+        token.pocketIdSub = profile.sub           <span class="cm">// stored for household lookup</span>
+        token.groups = profile.groups ?? []       <span class="cm">// stored for role resolution</span>
+      }
       <span class="ck">return</span> token
     },
     async session({ session, token }) {
       session.user.pocketIdSub = token.pocketIdSub
+      session.user.groups = token.groups          <span class="cm">// exposed for roleFromGroups()</span>
       <span class="ck">return</span> session
     }
   }
@@ -393,24 +403,32 @@ code { color: var(--code-text); }
 <span class="ck">POCKETID_CLIENT_SECRET</span>=<span class="cs">from-pocketid-registration</span>
 
 <span class="cm"># Auth.js</span>
-<span class="ck">AUTH_SECRET</span>=<span class="cs">generate with: openssl rand -base64 32</span>
+<span class="ck">AUTH_SECRET</span>=<span class="cs">generate with: gen-auth-secret in the dev shell</span>
 <span class="ck">NEXTAUTH_URL</span>=<span class="cs">https://cups.yourdomain.com</span>
 
-<span class="cm"># PocketBase</span>
-<span class="ck">POCKETBASE_URL</span>=<span class="cs">https://pb.yourdomain.com</span>
-<span class="ck">POCKETBASE_ADMIN_TOKEN</span>=<span class="cs">server-side admin operations only</span>
+<span class="cm"># PocketBase — internal URL only; browser never talks to PocketBase directly</span>
+<span class="ck">POCKETBASE_URL</span>=<span class="cs">http://localhost:8090</span>
+<span class="ck">POCKETBASE_ADMIN_EMAIL</span>=<span class="cs">admin email set during PocketBase first-run</span>
+<span class="ck">POCKETBASE_ADMIN_PASSWORD</span>=<span class="cs">admin password set during PocketBase first-run</span>
 
-<span class="cm"># Google Places — server-side only, never exposed to browser</span>
+<span class="cm"># Google Places (New) — server-side only, never exposed to browser</span>
 <span class="ck">GOOGLE_PLACES_API_KEY</span>=<span class="cs">your-key-here</span>
+
+<span class="cm"># Role group names (optional — defaults shown; override if you use different group names)</span>
+<span class="cm"># ROLE_GROUP_OWNER=cup-owner</span>
+<span class="cm"># ROLE_GROUP_COLLABORATOR=cup-collaborator</span>
+<span class="cm"># ROLE_GROUP_VIEWER=cup-viewer</span>
 </code></pre>
 
     <h3>Role Resolution Flow</h3>
-    <p>On every authenticated request the app resolves the current user's role by looking up their <span class="ic">sub</span> in the household record:</p>
+    <p>On every authenticated request the app resolves the current user's role directly from the <span class="ic">groups</span> claim stored in the session token — no database lookup required:</p>
     <ul class="feature-list">
-      <li><span class="ic">sub</span> matches <span class="ic">member_sub_1</span> or <span class="ic">member_sub_2</span> → Owner/Collaborator — full read and write</li>
-      <li><span class="ic">sub</span> appears in <span class="ic">viewer_subs</span> array → Viewer — read-only</li>
-      <li>No match in any field → access denied, redirect to an "access not granted" page</li>
+      <li>Session token contains <span class="ic">groups[]</span> from the PocketID OIDC token</li>
+      <li><span class="ic">roleFromGroups(session.user.groups)</span> returns <span class="ic">owner | collaborator | viewer | none</span></li>
+      <li>Group names default to <span class="ic">cup-owner</span>, <span class="ic">cup-collaborator</span>, <span class="ic">cup-viewer</span> — configurable via env vars</li>
+      <li>No matching group → access denied, redirect to an "access not granted" page</li>
     </ul>
+    <p>The household record is looked up separately (by matching <span class="ic">member_sub_1</span>, <span class="ic">member_sub_2</span>, or <span class="ic">viewer_subs</span>) to scope <span class="ic">owned_cups</span> queries client-side. This lookup is for data scoping, not for role determination.</p>
   </div>
 
   <!-- ══ 05 DATA MODEL ══ -->
@@ -420,14 +438,22 @@ code { color: var(--code-text); }
     <p>Three collections in PocketBase. All data is self-hosted.</p>
 
     <div class="schema">
-      <div class="schema-header">households — links PocketID users to a shared collection and defines roles</div>
+      <div class="schema-header">households — links PocketID users to a shared collection</div>
       <div class="schema-body">
         <div class="schema-field"><div class="field-name">id</div><div class="field-type">string</div><div class="field-desc">PocketBase auto-ID</div></div>
         <div class="schema-field"><div class="field-name">name</div><div class="field-type">string</div><div class="field-desc">Display name, e.g. "The Smith Collection"</div></div>
-        <div class="schema-field"><div class="field-name">member_sub_1</div><div class="field-type">string</div><div class="field-desc">PocketID <span class="ic">sub</span> claim for first owner/collaborator</div></div>
-        <div class="schema-field"><div class="field-name">member_sub_2</div><div class="field-type">string</div><div class="field-desc">PocketID <span class="ic">sub</span> claim for second owner/collaborator</div></div>
-        <div class="schema-field"><div class="field-name">viewer_subs</div><div class="field-type">json</div><div class="field-desc">JSON array of PocketID <span class="ic">sub</span> strings for view-only users. Empty array by default.</div></div>
+        <div class="schema-field"><div class="field-name">member_sub_1</div><div class="field-type">string</div><div class="field-desc">PocketID <span class="ic">sub</span> for first household member — used for household lookup (required). Role comes from PocketID group, not this field.</div></div>
+        <div class="schema-field"><div class="field-name">member_sub_2</div><div class="field-type">string</div><div class="field-desc">PocketID <span class="ic">sub</span> for second household member — used for household lookup. Role comes from PocketID group.</div></div>
+        <div class="schema-field"><div class="field-name">viewer_subs</div><div class="field-type">json</div><div class="field-desc">JSON array of PocketID <span class="ic">sub</span> strings for view-only members — used for household lookup client-side. Empty array by default.</div></div>
         <div class="schema-field"><div class="field-name">created</div><div class="field-type">datetime</div><div class="field-desc">Auto-managed by PocketBase</div></div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-icon">ℹ️</div>
+      <div class="callout-body">
+        <strong>Roles come from PocketID groups, not household fields</strong>
+        <p>The <span class="ic">member_sub_1</span>, <span class="ic">member_sub_2</span>, and <span class="ic">viewer_subs</span> fields are used by the client-side to find which household a user belongs to (for scoping <span class="ic">owned_cups</span> queries). They do <em>not</em> determine role. Role is determined exclusively by PocketID group membership — see Section 02 and Section 04.</p>
       </div>
     </div>
 
@@ -463,26 +489,11 @@ code { color: var(--code-text); }
     </div>
 
     <h3>PocketBase Access Rules</h3>
-    <table class="stack-table">
-      <thead><tr><th>Collection</th><th>List / View</th><th>Create / Update / Delete</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>cups</td>
-          <td>Any authenticated user whose <span class="ic">sub</span> appears in any household record</td>
-          <td>Admin only — catalog is curated via import script, not user-editable</td>
-        </tr>
-        <tr>
-          <td>owned_cups</td>
-          <td>Household members and viewers for that household</td>
-          <td>Members only (<span class="ic">member_sub_1</span> or <span class="ic">member_sub_2</span>) — viewers explicitly excluded</td>
-        </tr>
-        <tr>
-          <td>households</td>
-          <td>Members and viewers of that specific household</td>
-          <td>Admin only — household is created once during setup</td>
-        </tr>
-      </tbody>
-    </table>
+    <p>All three collections have unrestricted read rules (<span class="ic">""</span>) and admin-only write rules (<span class="ic">null</span>) at the PocketBase level. This is intentional — browser clients do not hold PocketBase auth tokens, so PocketBase's <span class="ic">@request.auth</span> rules cannot be used for enforcement. Security is provided at two other layers:</p>
+    <ul class="feature-list">
+      <li><strong>Network layer:</strong> PocketBase is not publicly exposed by default — all browser traffic goes through the authenticated Next.js <span class="ic">/api/pb</span> proxy, which requires a valid Auth.js session before forwarding.</li>
+      <li><strong>API layer:</strong> All mutating routes authenticate with PocketBase admin credentials server-side and check the user's role before proceeding.</li>
+    </ul>
 
     <div class="callout info">
       <div class="callout-icon">ℹ️</div>
@@ -561,11 +572,12 @@ code { color: var(--code-text); }
       <div class="screen-card">
         <div class="screen-name">/admin/import</div>
         <div class="screen-title">📥 Import</div>
-        <div class="screen-desc">Admin-only screen for CSV catalog import. Not in normal navigation. Protected by admin token check.</div>
+        <div class="screen-desc">CSV catalog import screen. Not in normal navigation — accessible from Settings. Protected by role check (owner or collaborator only).</div>
         <div class="screen-notes">
           <div class="screen-note">Upload CSV → preview → confirm import</div>
-          <div class="screen-note">Shows dry-run diff before writing</div>
-          <div class="screen-note">CLI script preferred — see Section 11</div>
+          <div class="screen-note">Dry-run preview shows what will be created or updated</div>
+          <div class="screen-note">Viewers see a 403 redirect; write role required</div>
+          <div class="screen-note">CLI script preferred for large imports — see Section 11</div>
         </div>
       </div>
     </div>
@@ -579,8 +591,8 @@ code { color: var(--code-text); }
     <h3>Location Awareness</h3>
     <p>On first load the app requests <span class="ic">navigator.geolocation</span> permission. If granted:</p>
     <ul class="feature-list">
-      <li>Map centers on current location with a blue pulsing "you are here" dot</li>
-      <li>Browse list sorts so cups within ~100km of current position appear first</li>
+      <li>Map centers on current location with a white "you are here" circle marker with a blue outline</li>
+      <li>Browse list sorts cups nearest to current position first (unowned before owned); no radius cutoff</li>
       <li>"Near Me" filter chip auto-applied on the Browse screen</li>
       <li>Nearby Starbucks lookup triggered automatically via the Google Places proxy route</li>
     </ul>
@@ -607,14 +619,32 @@ pb.collection(<span class="cs">'owned_cups'</span>).subscribe(<span class="cs">'
 
     <h3>Nearby Starbucks — Google Places Proxy</h3>
     <pre><code><span class="cm">// app/api/nearby-starbucks/route.ts</span>
-<span class="cm">// Accepts: ?lat=37.77&lng=-122.41&radius=2000</span>
-<span class="cm">// Returns: [{ name, address, lat, lng, place_id }]</span>
+<span class="cm">// Accepts: GET ?lat=37.77&lng=-122.41&radius=16093  (radius in metres; 16093 ≈ 10 miles)</span>
+<span class="cm">// Returns: { stores: [{ name, address, lat, lng, place_id }] }</span>
 <span class="cm">// API key is NEVER sent to the client</span>
 
-<span class="ck">const</span> url = <span class="cs">`https://maps.googleapis.com/maps/api/place/nearbysearch/json`</span>
-  + <span class="cs">`?location=</span><span class="cv">${lat}</span><span class="cs">,</span><span class="cv">${lng}</span><span class="cs">&radius=</span><span class="cv">${radius}</span><span class="cs">`</span>
-  + <span class="cs">`&keyword=starbucks&type=cafe`</span>
-  + <span class="cs">`&key=</span><span class="cv">${process.env.GOOGLE_PLACES_API_KEY}</span><span class="cs">`</span>
+<span class="cm">// Uses Places API (New) Text Search — POST endpoint, key in header not URL</span>
+<span class="ck">const</span> response = <span class="ck">await</span> fetch(
+  <span class="cs">"https://places.googleapis.com/v1/places:searchText"</span>,
+  {
+    method: <span class="cs">"POST"</span>,
+    headers: {
+      <span class="cs">"Content-Type"</span>: <span class="cs">"application/json"</span>,
+      <span class="cs">"X-Goog-Api-Key"</span>: process.env.GOOGLE_PLACES_API_KEY,
+      <span class="cs">"X-Goog-FieldMask"</span>: <span class="cs">"places.id,places.displayName,places.formattedAddress,places.location"</span>,
+    },
+    body: JSON.stringify({
+      textQuery: <span class="cs">"Starbucks"</span>,
+      maxResultCount: <span class="cv">20</span>,
+      locationBias: {
+        circle: {
+          center: { latitude: parseFloat(lat), longitude: parseFloat(lng) },
+          radius,  <span class="cm">// locationBias is a hint — results are filtered by haversine afterwards</span>
+        },
+      },
+    }),
+  }
+)
 </code></pre>
 
     <h3>Apple Maps Navigation</h3>
@@ -656,18 +686,18 @@ pb.collection(<span class="cs">'owned_cups'</span>).subscribe(<span class="cs">'
     <div class="section-number">Section 09</div>
     <h2>Hosting &amp; Infrastructure</h2>
 
-    <p>All services run on a NixOS home server alongside other self-hosted services. nginx handles TLS and reverse proxying. PocketBase runs as an OCI container. The Next.js app runs as a native systemd service managed by the NixOS module.</p>
+    <p>All services run on a NixOS home server alongside other self-hosted services. Nginx handles TLS and reverse proxying. PocketBase runs as an OCI container. The Next.js app runs as a native systemd service managed by the NixOS module.</p>
 
     <table class="stack-table">
       <thead><tr><th>Service</th><th>Port</th><th>Run As</th><th>Notes</th></tr></thead>
       <tbody>
         <tr><td>Next.js app</td><td>3000</td><td>systemd service</td><td>Built by Nix via buildNpmPackage, managed by module</td></tr>
         <tr><td>PocketBase</td><td>8090</td><td>OCI container</td><td>Data volume at configurable path; admin UI at <span class="ic">/_/</span></td></tr>
-        <tr><td>nginx</td><td>80 / 443</td><td>NixOS nginx module</td><td>Reverse proxy + Let's Encrypt; proxyWebsockets = true required on both vhosts for PocketBase SSE realtime</td></tr>
+        <tr><td>Nginx</td><td>80 / 443</td><td>NixOS Nginx module</td><td>Reverse proxy + Let's Encrypt; proxyWebsockets = true required on both vhosts for PocketBase SSE realtime</td></tr>
       </tbody>
     </table>
 
-    <h3>nginx vhost declarations</h3>
+    <h3>Nginx vhost declarations</h3>
     <pre><code>services.nginx.virtualHosts = {
   <span class="cs">"cups.yourdomain.com"</span> = {
     enableACME = <span class="cv">true</span>; forceSSL = <span class="cv">true</span>;
@@ -714,155 +744,45 @@ pb.collection(<span class="cs">'owned_cups'</span>).subscribe(<span class="cs">'
 └── AGENTS.md
 </code></pre>
 
-    <h3>flake.nix</h3>
-    <pre><code>{
-  description = <span class="cs">"Cup Collector — Starbucks cup collection tracker"</span>;
-  inputs = {
-    nixpkgs.url = <span class="cs">"github:NixOS/nixpkgs/nixos-unstable"</span>;
-    flake-utils.url = <span class="cs">"github:numtide/flake-utils"</span>;
-  };
+    <h3>Flake Outputs</h3>
+    <p>The flake exports three outputs, all defined in <span class="ic">flake.nix</span>:</p>
+    <ul class="feature-list">
+      <li><strong>packages.default</strong> — The Next.js app built with <span class="ic">buildNpmPackage</span> using <span class="ic">nodejs_24</span>. Produces a standalone output suitable for running as a Node process. <span class="ic">npmDepsHash</span> must be recomputed after any <span class="ic">package-lock.json</span> change (run <span class="ic">nix build</span> — it will fail and print the correct hash).</li>
+      <li><strong>packages.migrations</strong> — The PocketBase migrations directory, exported as a Nix path. Passed to <span class="ic">services.cupCollector.migrationsDir</span> in the consuming host's config so migrations run on startup.</li>
+      <li><strong>devShells.default</strong> — Development shell providing <span class="ic">nodejs_24</span> and <span class="ic">python3</span> (for docs-serve), plus shell hook aliases: <span class="ic">pb-serve</span>, <span class="ic">pocketid-serve</span>, <span class="ic">dev-next</span>, <span class="ic">import-cups</span>, <span class="ic">gen-auth-secret</span>, <span class="ic">docs-serve</span>, and <span class="ic">check</span>. PocketBase and PocketID run as OCI containers via podman; TypeScript tooling comes from npm devDependencies, not host packages.</li>
+      <li><strong>nixosModules.default</strong> — System-independent NixOS module that wraps <span class="ic">nixos/module.nix</span> and pre-wires <span class="ic">appPackage</span> to this flake's own built output.</li>
+    </ul>
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      <span class="ck">let</span> pkgs = nixpkgs.legacyPackages.${system}; <span class="ck">in</span> {
-
-        <span class="cm"># `nix build` — produces the Next.js app as a Nix package</span>
-        packages.default = pkgs.buildNpmPackage {
-          pname = <span class="cs">"cup-collector"</span>;
-          version = <span class="cs">"0.1.0"</span>;
-          src = ./app;
-          npmDepsHash = <span class="cs">"sha256-..."</span>; <span class="cm"># compute after first npm install; see note below</span>
-          buildPhase = <span class="cs">"npm run build"</span>;
-          installPhase = <span class="cs">''
-            mkdir -p $out
-            cp -r .next/standalone $out/
-            cp -r public $out/standalone/public
-            cp -r .next/static $out/standalone/.next/static
-          ''</span>;
-        };
-
-        <span class="cm"># `nix develop` — dev shell with all required tooling</span>
-        <span class="cm"># All node/npm/pocketbase commands MUST be run inside this shell</span>
-        devShells.default = pkgs.mkShell {
-          buildInputs = <span class="ck">with</span> pkgs; [
-            nodejs_20
-            pocketbase          <span class="cm"># available in nixpkgs</span>
-            nodePackages.typescript
-            nodePackages.ts-node
-          ];
-          shellHook = <span class="cs">''
-            echo "Cup Collector dev shell"
-            echo "  All app tooling is provided here — do not install node/npm on the host"
-            echo ""
-            echo "  Start PocketBase:  pocketbase serve --dir ./pocketbase/pb_data"
-            echo "  Start Next.js:     cd app && npm run dev"
-            echo "  Import cups:       npx ts-node scripts/import-cups.ts --file cups.csv"
-          ''</span>;
-        };
-
-      }) // {
-        <span class="cm"># NixOS module — exported at top level, system-independent</span>
-        nixosModules.default = import ./nixos/module.nix;
-      };
-}
-</code></pre>
-
-    <div class="callout info">
-      <div class="callout-icon">ℹ️</div>
-      <div class="callout-body">
-        <strong>Getting the npmDepsHash</strong>
-        <p>After scaffolding the app and running <span class="ic">npm install</span> inside <span class="ic">nix develop</span>, run <span class="ic">nix build</span> once from the repo root. It will fail and print the correct hash in the error output. Copy that value into <span class="ic">flake.nix</span>. Repeat whenever <span class="ic">package-lock.json</span> changes.</p>
-      </div>
-    </div>
-
-    <h3>nixos/module.nix</h3>
-    <pre><code>{ config, lib, pkgs, ... }:
-<span class="ck">let</span>
-  cfg = config.services.cupCollector;
-  app = pkgs.callPackage ../. {};  <span class="cm"># builds the Next.js package from this flake</span>
-<span class="ck">in</span> {
-  options.services.cupCollector = {
-    enable   = lib.mkEnableOption <span class="cs">"Cup Collector PWA"</span>;
-    domain   = lib.mkOption { type = lib.types.str; example = <span class="cs">"cups.example.com"</span>; };
-    pbDomain = lib.mkOption { type = lib.types.str; example = <span class="cs">"pb.example.com"</span>; };
-    port     = lib.mkOption { type = lib.types.port; default = <span class="cv">3000</span>; };
-    pbPort   = lib.mkOption { type = lib.types.port; default = <span class="cv">8090</span>; };
-    dataDir  = lib.mkOption { type = lib.types.path; default = <span class="cs">"/var/lib/cup-collector"</span>; };
-    envFile  = lib.mkOption {
-      type = lib.types.path;
-      description = <span class="cs">"Path to env file with secrets (see Section 04 for required variables)"</span>;
-    };
-  };
-
-  config = lib.mkIf cfg.enable {
-
-    <span class="cm"># PocketBase — runs as OCI container</span>
-    virtualisation.oci-containers.containers.cup-collector-pb = {
-      image = <span class="cs">"ghcr.io/muchobien/pocketbase:latest"</span>;
-      ports = [ <span class="cs">"127.0.0.1:</span><span class="cv">${toString cfg.pbPort}</span><span class="cs">:8090"</span> ];
-      volumes = [ <span class="cs">"</span><span class="cv">${cfg.dataDir}</span><span class="cs">/pb_data:/pb/pb_data"</span> ];
-      autoStart = <span class="cv">true</span>;
-    };
-
-    <span class="cm"># Next.js app — runs as native systemd service</span>
-    systemd.services.cup-collector = {
-      description = <span class="cs">"Cup Collector Next.js app"</span>;
-      wantedBy = [ <span class="cs">"multi-user.target"</span> ];
-      after = [ <span class="cs">"network.target"</span> ];
-      serviceConfig = {
-        ExecStart = <span class="cs">"</span><span class="cv">${pkgs.nodejs_20}</span><span class="cs">/bin/node </span><span class="cv">${app}</span><span class="cs">/standalone/server.js"</span>;
-        EnvironmentFile = cfg.envFile;
-        Environment = [
-          <span class="cs">"PORT=</span><span class="cv">${toString cfg.port}</span><span class="cs">"</span>
-          <span class="cs">"HOSTNAME=127.0.0.1"</span>
-          <span class="cs">"NODE_ENV=production"</span>
-        ];
-        DynamicUser = <span class="cv">true</span>;
-        StateDirectory = <span class="cs">"cup-collector"</span>;
-        Restart = <span class="cs">"on-failure"</span>;
-      };
-    };
-
-    <span class="cm"># nginx vhosts — added to whatever else is already on this host</span>
-    services.nginx.virtualHosts = {
-      <span class="cv">${cfg.domain}</span> = {
-        enableACME = <span class="cv">true</span>; forceSSL = <span class="cv">true</span>;
-        locations.<span class="cs">"/"</span> = {
-          proxyPass = <span class="cs">"http://127.0.0.1:</span><span class="cv">${toString cfg.port}</span><span class="cs">"</span>;
-          proxyWebsockets = <span class="cv">true</span>;
-        };
-      };
-      <span class="cv">${cfg.pbDomain}</span> = {
-        enableACME = <span class="cv">true</span>; forceSSL = <span class="cv">true</span>;
-        locations.<span class="cs">"/"</span> = {
-          proxyPass = <span class="cs">"http://127.0.0.1:</span><span class="cv">${toString cfg.pbPort}</span><span class="cs">"</span>;
-          proxyWebsockets = <span class="cv">true</span>;
-        };
-      };
-    };
-
-    <span class="cm"># Ensure data directory exists before container starts</span>
-    systemd.tmpfiles.rules = [
-      <span class="cs">"d </span><span class="cv">${cfg.dataDir}</span><span class="cs">/pb_data 0750 root root -"</span>
-    ];
-  };
-}
-</code></pre>
+    <h3>nixos/module.nix — key options</h3>
+    <table class="stack-table">
+      <thead><tr><th>Option</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>enable</td><td>bool</td><td>Enable the service</td></tr>
+        <tr><td>appPackage</td><td>package</td><td>The built Next.js package — set automatically by nixosModules.default</td></tr>
+        <tr><td>domain</td><td>str</td><td>Public domain for the app, e.g. <span class="ic">cups.example.com</span> — Nginx vhost + ACME cert</td></tr>
+        <tr><td>pbDomain</td><td>str?</td><td>Optional public PocketBase domain. Leave null (default) to keep PocketBase internal-only</td></tr>
+        <tr><td>migrationsDir</td><td>path</td><td>PocketBase migrations path — set to <span class="ic">inputs.cup-collector.packages.${system}.migrations</span></td></tr>
+        <tr><td>pbImage</td><td>str</td><td>PocketBase OCI image — pinned to a specific version for reproducibility</td></tr>
+        <tr><td>envFile</td><td>path</td><td>Path to secrets env file (managed by sops-nix or similar)</td></tr>
+        <tr><td>dataDir</td><td>path</td><td>PocketBase data directory — default <span class="ic">/var/lib/cup-collector</span>. Back this up.</td></tr>
+      </tbody>
+    </table>
+    <p>The module wires PocketBase as an OCI container, Next.js as a native systemd service (using <span class="ic">pkgs.nodejs_24</span>), and Nginx vhosts with ACME certificates. See <span class="ic">nixos/module.nix</span> in the repo for the full implementation.</p>
 
     <h3>Consuming the module from genebean/dots</h3>
     <pre><code><span class="cm"># In dots flake.nix inputs block:</span>
 cup-collector.url = <span class="cs">"github:genebean/cup-collector"</span>;
 
 <span class="cm"># In the relevant host's NixOS config:</span>
-{ inputs, config, ... }: {
+{ inputs, config, pkgs, ... }: {
   imports = [ inputs.cup-collector.nixosModules.default ];
 
   services.cupCollector = {
-    enable   = <span class="cv">true</span>;
-    domain   = <span class="cs">"cups.yourdomain.com"</span>;
-    pbDomain = <span class="cs">"pb.yourdomain.com"</span>;
-    envFile  = config.sops.secrets.<span class="cs">"cup-collector-env"</span>.path;
-    <span class="cm"># or: envFile = "/run/secrets/cup-collector-env";</span>
+    enable        = <span class="cv">true</span>;
+    domain        = <span class="cs">"cups.yourdomain.com"</span>;
+    migrationsDir = inputs.cup-collector.packages.${pkgs.system}.migrations;
+    envFile       = config.sops.secrets.<span class="cs">"cup-collector-env"</span>.path;
+    <span class="cm"># pbDomain = "pb.yourdomain.com";  # optional — omit to keep PocketBase internal-only</span>
   };
 }
 </code></pre>
@@ -873,7 +793,7 @@ cup-collector.url = <span class="cs">"github:genebean/cup-collector"</span>;
     <div class="section-number">Section 11</div>
     <h2>Data Loading Strategy</h2>
 
-    <p>The cup catalog is maintained by the collaborator in a spreadsheet (Google Sheets or Excel) and imported via CSV. This is a manual process: she updates the sheet, exports as CSV, and hands it to the owner who runs the import script from inside the dev shell.</p>
+    <p>The cup catalog is maintained by the collaborator in a spreadsheet (Google Sheets or Excel) and imported via CSV. For large catalog updates (new series, bulk corrections), the owner runs the CLI import script from inside the dev shell. For incremental updates (a handful of new cups), the owner or collaborator can use the web UI at <span class="ic">/admin/import</span> without needing a dev shell.</p>
 
     <h3>CSV Column Format</h3>
     <pre><code>city,region,country,country_code,series,year,lat,lng,image_url,notes
@@ -887,11 +807,12 @@ London,England,United Kingdom,GB,Been There,2020,51.5074,-0.1278,https://...,
     <h3>Import Script — scripts/import-cups.ts</h3>
     <ul class="feature-list">
       <li>Must be run inside the Nix dev shell: enter with <span class="ic">nix develop</span> first</li>
-      <li>Run: <span class="ic">npx ts-node scripts/import-cups.ts --file cups.csv</span></li>
-      <li>Dry-run preview: <span class="ic">npx ts-node scripts/import-cups.ts --file cups.csv --dry-run</span></li>
+      <li>Run: <span class="ic">import-cups --file cups.csv</span> (shell alias defined in flake.nix)</li>
+      <li>Dry-run preview: <span class="ic">import-cups --file cups.csv --dry-run</span></li>
       <li>Upsert logic: match on <span class="ic">city + series + year</span> — update if exists, create if not</li>
       <li>Safe to re-run at any time — will not duplicate records</li>
       <li>Images downloaded and saved to PocketBase; source URL stored in <span class="ic">image_credit</span></li>
+      <li>Web UI alternative: <span class="ic">/admin/import</span> — same upsert logic, accessible to owner and collaborator roles</li>
     </ul>
   </div>
 
@@ -947,7 +868,7 @@ London,England,United Kingdom,GB,Been There,2020,51.5074,-0.1278,https://...,
       <div class="callout-icon">🤖</div>
       <div class="callout-body">
         <strong>HTML-Only — No Generator, No Markdown</strong>
-        <p>All files in <span class="ic">docs/</span> are plain HTML. No Jekyll, Hugo, MkDocs, or any other tool. GitHub Pages serves them as static files with zero build step. Agents edit HTML directly. Markdown is not used for documentation. Navigation between pages uses standard <span class="ic">&lt;a href&gt;</span> links.</p>
+        <p>All files in <span class="ic">docs/</span> are plain HTML. No Jekyll, Hugo, MkDocs, or any other tool. GitHub Pages serves them as static files with zero build step. Agents edit HTML directly. Markdown is not used for documentation. Navigation between pages uses standard <span class="ic">&lt;a href&gt;</span> links. The dev shell provides a <span class="ic">docs-serve</span> command that serves the docs locally at <span class="ic">localhost:4000</span> for preview.</p>
         <p>Docs are tailored for this specific owner but must be complete enough for a different person to run their own self-hosted copy. End-user docs come first in the navigation so the owner can link family members to them directly.</p>
       </div>
     </div>
@@ -1018,7 +939,7 @@ jobs:
     <div class="doc-spec">
       <div class="doc-spec-header"><div class="doc-spec-path">docs/setup/prerequisites.html</div><div class="doc-spec-audience">Owner / self-hosters</div></div>
       <div class="doc-spec-body">
-        <p>What you need before starting: a NixOS server with nginx, PocketID already running, a domain with DNS configured, a Google Places API key, a GitHub/Forgejo account for the repo. Links to where to get each. Honest about which steps require technical comfort. Written to be usable by a different person self-hosting their own copy.</p>
+        <p>What you need before starting: a NixOS server with Nginx, PocketID already running, a domain with DNS configured, a Google Places API key, a GitHub/Forgejo account for the repo. Links to where to get each. Honest about which steps require technical comfort. Written to be usable by a different person self-hosting their own copy.</p>
       </div>
     </div>
 
@@ -1176,6 +1097,16 @@ jobs:
         <div class="decision-a">For this round, simplicity wins. The collaborator maintains the sheet, exports CSV, the owner runs the import script. No Google Sheets OAuth, no scheduled jobs, no network-dependent failure modes. Can be upgraded to automated sync later — the import script is already idempotent.</div>
       </div>
 
+      <div class="decision">
+        <div class="decision-q">Why PocketID groups for roles instead of household sub fields?</div>
+        <div class="decision-a"><strong>Diverged from original spec.</strong> The original design stored PocketID <span class="ic">sub</span> values in <span class="ic">member_sub_1</span>, <span class="ic">member_sub_2</span>, and <span class="ic">viewer_subs</span> on the household record and derived roles from those fields. The implementation instead uses PocketID group membership (<span class="ic">cup-owner</span>, <span class="ic">cup-collaborator</span>, <span class="ic">cup-viewer</span>) for role resolution, reading the <span class="ic">groups</span> claim from the OIDC token. The household fields are still present and are used for household lookup (scoping <span class="ic">owned_cups</span> queries by household), but they no longer determine role. This approach is simpler — no database query needed for role resolution — and PocketID groups are the natural place to manage access control in an OIDC-first architecture.</div>
+      </div>
+
+      <div class="decision">
+        <div class="decision-q">Why Places API (New) Text Search instead of the legacy Nearby Search?</div>
+        <div class="decision-a">The legacy <span class="ic">nearbysearch</span> endpoint is deprecated and was returning inconsistent results. The Places API (New) <span class="ic">searchText</span> POST endpoint is the current recommended approach. The API key is passed in a request header (<span class="ic">X-Goog-Api-Key</span>) rather than a URL query parameter, which is more secure and easier to audit. Google's <span class="ic">locationBias</span> is a soft hint rather than a hard radius, so a haversine post-filter enforces the actual radius constraint.</div>
+      </div>
+
     </div>
 
     <div class="callout agent">
@@ -1190,5 +1121,12 @@ jobs:
   </div>
 
 </div>
+
+<div style="max-width: 920px; margin: 0 auto; padding: 0 1.5rem 3rem;">
+  <nav class="page-nav">
+    <a class="prev" href="../index.html">Docs Home</a>
+  </nav>
+</div>
+
 </body>
 </html>

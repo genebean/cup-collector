@@ -21,6 +21,11 @@
   ul { padding-left: 1.25rem; }
   li { margin-bottom: 0.35rem; font-size: 0.92rem; }
   .callout { border-left: 3px solid #CBA258; background: #f5edd8; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
+  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
+  .page-nav a { color: #00704A; text-decoration: none; }
+  .page-nav a:hover { text-decoration: underline; }
+  .page-nav .prev::before { content: '← '; }
+  .page-nav .next::after { content: ' →'; }
 </style>
 </head>
 <body>
@@ -68,7 +73,12 @@
 </div>
 
 <h2>Nearby Starbucks</h2>
-<p>When location is active, the app automatically searches for Starbucks stores within about 2km of your position using Google's Places service (server-side — your location is never sent to Google directly). Blue store pins appear on the map. Tap any store pin to see its name, address, and a "Get directions" link that opens Apple Maps with turn-by-turn directions.</p>
+<p>When location is active, the app automatically searches for Starbucks stores within 10 miles of your position (configurable with the radius chips in the header) using Google's Places service — server-side, so your location is never sent to Google directly. Blue store pins appear on the map. Tap any store pin to see its name, address, and a "Get directions" link that opens Apple Maps with turn-by-turn directions.</p>
+
+<nav class="page-nav">
+  <a class="prev" href="traveling.html">Using While Traveling</a>
+  <a class="next" href="browsing.html">Browsing &amp; Searching</a>
+</nav>
 
 </body>
 </html>
