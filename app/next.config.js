@@ -35,14 +35,12 @@ const nextConfig = {
 
   images: {
     // Allow Next.js Image component to load cup photos from PocketBase.
-    // POCKETBASE_URL is set at build time in the Nix build, or via .env.local locally.
     remotePatterns: [
       {
         protocol: "https",
         hostname: process.env.POCKETBASE_HOST || "pb.yourdomain.com",
       },
       {
-        // Allow localhost for local development
         protocol: "http",
         hostname: "localhost",
         port: "8090",

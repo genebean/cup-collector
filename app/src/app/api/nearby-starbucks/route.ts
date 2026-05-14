@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 
-// Proxy route for Google Places Nearby Search.
+// Proxy route for Google Places API (New) — Text Search.
 // The API key NEVER leaves the server — it is read from the environment here
 // and is not included in any response sent to the browser.
 //
-// Usage: GET /api/nearby-starbucks?lat=37.77&lng=-122.41&radius=2000
-// Returns: Array of { name, address, lat, lng, place_id }
+// Usage: GET /api/nearby-starbucks?lat=37.77&lng=-122.41&radius=8047
+// Returns: { stores: Array of { name, address, lat, lng, place_id } }
+// radius is in meters (16093 ≈ 10 miles)
+
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export async function GET(request: NextRequest) {
-  // Require authentication — only logged-in users can trigger Places lookups
   const session = await auth();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -18,7 +28,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const lat = searchParams.get("lat");
   const lng = searchParams.get("lng");
-  const radius = searchParams.get("radius") || "2000"; // Default 2km radius
+  const radius = parseFloat(searchParams.get("radius") || "16093");
 
   if (!lat || !lng) {
     return NextResponse.json(
@@ -30,64 +40,67 @@ export async function GET(request: NextRequest) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
     console.error("GOOGLE_PLACES_API_KEY is not set");
-    return NextResponse.json(
-      { error: "Places API is not configured" },
-      { status: 503 }
-    );
+    return NextResponse.json({ stores: [] });
   }
 
-  const placesUrl =
-    `https://maps.googleapis.com/maps/api/place/nearbysearch/json` +
-    `?location=${lat},${lng}` +
-    `&radius=${radius}` +
-    `&keyword=starbucks` +
-    `&type=cafe` +
-    `&key=${apiKey}`;
-
   try {
-    const response = await fetch(placesUrl, {
-      // Cache results for 10 minutes — Starbucks locations don't change often
-      next: { revalidate: 600 },
-    });
+    const response = await fetch(
+      "https://places.googleapis.com/v1/places:searchText",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": apiKey,
+          "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location",
+        },
+        body: JSON.stringify({
+          textQuery: "Starbucks",
+          maxResultCount: 20,
+          locationBias: {
+            circle: {
+              center: { latitude: parseFloat(lat), longitude: parseFloat(lng) },
+              radius,
+            },
+          },
+        }),
+        // Cache results for 10 minutes — store locations don't change often
+        next: { revalidate: 600 },
+      }
+    );
 
     if (!response.ok) {
-      console.error("Google Places API error:", response.status);
-      return NextResponse.json(
-        { error: "Places API request failed" },
-        { status: 502 }
-      );
+      const body = await response.text();
+      console.error("Google Places API error:", response.status, body);
+      return NextResponse.json({ stores: [] });
     }
 
     const data = await response.json();
 
-    if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
-      console.error("Google Places API returned status:", data.status);
-      return NextResponse.json({ stores: [] });
-    }
+    const centerLat = parseFloat(lat);
+    const centerLng = parseFloat(lng);
 
-    // Transform the Places API response into a simpler shape.
-    // We only expose what the UI needs — never forward the raw Places response.
-    const stores = (data.results || []).map(
-      (place: {
-        name: string;
-        vicinity: string;
-        geometry: { location: { lat: number; lng: number } };
-        place_id: string;
+    const stores = (data.places ?? [])
+      .map((place: {
+        id: string;
+        displayName: { text: string };
+        formattedAddress: string;
+        location: { latitude: number; longitude: number };
       }) => ({
-        name: place.name,
-        address: place.vicinity,
-        lat: place.geometry.location.lat,
-        lng: place.geometry.location.lng,
-        place_id: place.place_id,
-      })
-    );
+        name: place.displayName?.text ?? "Starbucks",
+        address: place.formattedAddress ?? "",
+        lat: place.location.latitude,
+        lng: place.location.longitude,
+        place_id: place.id,
+      }))
+      // Google's locationBias is a hint, not a hard limit — filter to the actual radius
+      .filter((s: { lat: number; lng: number }) =>
+        haversineMeters(centerLat, centerLng, s.lat, s.lng) <= radius
+      );
 
+    console.log("[nearby-starbucks] stores after haversine filter:", stores.length);
     return NextResponse.json({ stores });
   } catch (err) {
     console.error("Failed to fetch from Google Places:", err);
-    return NextResponse.json(
-      { error: "Failed to reach Places API" },
-      { status: 502 }
-    );
+    return NextResponse.json({ stores: [] });
   }
 }

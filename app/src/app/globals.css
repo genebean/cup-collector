@@ -1,7 +1,14 @@
+/* Tailwind v4 — single import replaces @tailwind base/components/utilities */
 @import "tailwindcss";
+
+/* Leaflet CSS — required for map rendering. Must be imported globally so it's
+   available when MapView renders (Leaflet accesses DOM styles directly). */
 @import "leaflet/dist/leaflet.css";
 
-/* Starbucks-inspired palette matching the spec and PWA manifest */
+/* Custom design tokens — Tailwind v4 reads these as utility class sources.
+   Class names derive directly from the variable names:
+     --color-green-dark  →  bg-green-dark, text-green-dark, etc.
+     --color-gold        →  bg-gold, text-gold, border-gold, etc.  */
 @theme {
   --color-green-starbucks: #00704A;
   --color-green-dark: #1E3932;
@@ -11,8 +18,9 @@
   --color-cream: #FAF7F2;
 }
 
-/* Safe area insets for iPhone notch/home indicator.
-   The bottom nav must clear the home indicator. */
+/* ── Global styles ─────────────────────────────────────────────────────────── */
+
+/* Safe area insets for iPhone notch/home indicator */
 :root {
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -20,7 +28,6 @@
 body {
   /* Prevent iOS Safari rubber-band scroll on the root */
   overscroll-behavior: none;
-  /* Cream background from spec palette */
   background-color: #FAF7F2;
   /* System font stack — avoids a Google Fonts network fetch at build time,
      and SF Pro / Segoe UI are visually equivalent to Inter on target platforms */
@@ -32,10 +39,11 @@ body {
   padding-bottom: calc(0.5rem + var(--safe-bottom));
 }
 
+
 /* Pulsing "you are here" dot on the map */
 @keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(2); opacity: 0; }
+  0%   { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2);   opacity: 0; }
 }
 
 .you-are-here-pulse {

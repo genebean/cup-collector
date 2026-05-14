@@ -1,7 +1,9 @@
 import { auth, signOut } from "@/app/auth";
 import { redirect } from "next/navigation";
-import { resolveRole } from "@/lib/roles";
+import { resolveRole, canWrite } from "@/lib/roles";
 import { BottomNav } from "@/components/BottomNav";
+import { MapThemeSelector } from "@/components/MapThemeSelector";
+import Link from "next/link";
 
 // Settings is a server component — reads session and role server-side,
 // no client-side JS needed for this static page.
@@ -9,13 +11,14 @@ export default async function SettingsPage() {
   const session = await auth();
   if (!session?.user?.groups) redirect("/sign-in");
 
-  const { role, household } = await resolveRole(session.user.groups);
+  const { role, household } = await resolveRole(session.user.groups ?? []);
   if (role === "none") redirect("/access-denied");
 
-  const roleLabels = {
+  const roleLabels: Record<string, string> = {
     owner: "Owner",
     collaborator: "Collaborator",
     viewer: "Viewer",
+    none: "No access",
   };
 
   return (
@@ -39,10 +42,29 @@ export default async function SettingsPage() {
           </Section>
         )}
 
+        {/* Map preferences */}
+        <Section title="Map">
+          <div className="text-xs text-gray-500 px-4 pt-3 pb-1">Tile theme</div>
+          <MapThemeSelector />
+        </Section>
+
         {/* App info */}
         <Section title="App">
           <Row label="Version" value={process.env.npm_package_version ?? "0.1.0"} />
         </Section>
+
+        {/* Admin tools — owners and collaborators only */}
+        {canWrite(role) && (
+          <Section title="Admin">
+            <Link
+              href="/admin/import"
+              className="flex justify-between px-4 py-3 text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors"
+            >
+              <span className="font-medium text-green-starbucks">Import Cups</span>
+              <span className="text-green-starbucks">→</span>
+            </Link>
+          </Section>
+        )}
 
         {/* Sign out */}
         <form
@@ -51,10 +73,7 @@ export default async function SettingsPage() {
             await signOut({ redirectTo: "/" });
           }}
         >
-          <button
-            type="submit"
-            className="w-full py-3 rounded-xl bg-red-50 text-red-600 border border-red-200 font-semibold"
-          >
+          <button type="submit" className="w-full py-3 bg-red-50 text-red-600 border border-red-200 font-semibold rounded-xl cursor-pointer hover:bg-red-100 active:bg-red-200 transition-colors">
             Sign Out
           </button>
         </form>
