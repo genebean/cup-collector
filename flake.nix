@@ -28,11 +28,7 @@
           #   1. Set npmDepsHash = pkgs.lib.fakeHash;
           #   2. Run `nix build` — it fails with "got: sha256-..."
           #   3. Copy that hash here and run `nix build` again.
-          npmDepsHash = "sha256-KXWAy3FISWEERe0Alv3PQ7s0h+GBfCcBtgSw2wtPRtM=";
-
-          # --legacy-peer-deps matches how the lock file was generated;
-          # without it the offline install phase fails on unresolved peer deps.
-          npmFlags = [ "--legacy-peer-deps" ];
+          npmDepsHash = "sha256-zdDuyAbg/VF9LipilItQvDqS7nOoottQymGZNSKu9R4=";
 
           buildPhase = "npm run build";
 
@@ -116,6 +112,19 @@
               python3 -m http.server 4000 --directory "$PROJ_ROOT/docs"
             }
 
+            # Run the fast CI checks locally — useful before pushing.
+            # Covers: pre-commit hooks and next lint.
+            # (nix build, npm audit, and container checks are skipped — run those separately if needed.)
+            check() {
+              echo "==> pre-commit hooks"
+              pre-commit run --all-files || return 1
+              echo ""
+              echo "==> next lint"
+              (cd "$PROJ_ROOT/app" && npx next lint) || return 1
+              echo ""
+              echo "All checks passed."
+            }
+
             # Import cups from a CSV file into PocketBase.
             # Usage: import-cups --file cups.csv [--dry-run]
             # Requires POCKETBASE_ADMIN_EMAIL and POCKETBASE_ADMIN_PASSWORD in app/.env.local.
@@ -137,6 +146,7 @@
             echo "  gen-auth-secret   generate a new AUTH_SECRET value"
             echo "  import-cups       import cup catalog from CSV (--file cups.csv [--dry-run])"
             echo "  docs-serve        serve the HTML docs on http://localhost:4000"
+            echo "  check             run pre-commit hooks and next lint locally"
             echo ""
             echo "  First-time PocketID setup:"
             echo "    1. Run pocketid-serve, then open http://localhost:1411"
