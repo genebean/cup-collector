@@ -1,7 +1,11 @@
 import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 import type { JWT as _JWT } from "next-auth/jwt"; // import required for module augmentation below
 
 declare module "next-auth" {
+  interface User {
+    groups?: string[];
+  }
   interface Session {
     user: {
       name?: string | null;
@@ -17,6 +21,14 @@ declare module "next-auth" {
   }
 }
 
+// The dev-bypass Credentials provider is only included in development when
+// PLAYWRIGHT_BYPASS_AUTH=1 is set. This conditional is at module scope so
+// Next.js dead-code-eliminates the provider from the production bundle
+// (nix build runs with NODE_ENV=production — the provider never ships).
+const devBypassEnabled =
+  process.env.NODE_ENV === "development" &&
+  process.env.PLAYWRIGHT_BYPASS_AUTH === "1";
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     {
@@ -28,6 +40,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: process.env.POCKETID_CLIENT_SECRET,
       authorization: { params: { scope: "openid profile email groups" } },
     },
+    ...(devBypassEnabled
+      ? [
+          Credentials({
+            id: "dev-bypass",
+            name: "Dev Bypass",
+            credentials: {
+              role: { label: "Role", type: "text" },
+            },
+            authorize(_credentials, req) {
+              // Read role from the URL query param — query params are reliably
+              // forwarded by Auth.js to authorize(), unlike parsed form bodies.
+              const role = new URL(req.url).searchParams.get("role") ?? "cup-viewer";
+              return {
+                id: `dev-${role}`,
+                name: `Dev ${role}`,
+                email: `dev-${role}@playwright.local`,
+                groups: [role],
+              };
+            },
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     authorized({ auth: session, request }) {
@@ -43,10 +77,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, profile }) {
+    async jwt({ token, account, profile }) {
       if (profile) {
+        // OIDC path: groups come from the PocketID profile claim
         token.pocketIdSub = profile.sub as string;
         token.groups = (profile.groups as string[]) ?? [];
+      } else if (account?.provider === "dev-bypass") {
+        // Dev bypass path: role is encoded in providerAccountId ("dev-{role}")
+        // account is only set during sign-in, so this only runs once per session.
+        const id = (account.providerAccountId ?? "") as string;
+        token.groups = [id.replace(/^dev-/, "")];
       }
       return token;
     },

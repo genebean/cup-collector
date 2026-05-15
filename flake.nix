@@ -28,7 +28,7 @@
           #   1. Set npmDepsHash = pkgs.lib.fakeHash;
           #   2. Run `nix build` — it fails with "got: sha256-..."
           #   3. Copy that hash here and run `nix build` again.
-          npmDepsHash = "sha256-ty/k8Cx+981EmRbSzDi4sr/afZkZJ009a17zsFwLPKI=";
+          npmDepsHash = "sha256-86kGffmVCHED69T3UwEN2yIIyotayuNFUBLVM1e0ang=";
 
           buildPhase = "npm run build";
 
@@ -101,6 +101,24 @@
               cd "$PROJ_ROOT/app" && npm run dev
             }
 
+            # Start the Next.js dev server with the Playwright auth bypass enabled.
+            # Use this in one terminal, then run play-e2e in another.
+            dev-next-bypass() {
+              cd "$PROJ_ROOT/app" && PLAYWRIGHT_BYPASS_AUTH=1 npm run dev
+            }
+
+            # Install Playwright's Chrome browser to ~/.cache/ms-playwright.
+            # Run once after `npm install` or when @playwright/test is updated.
+            playwright-install() {
+              (cd "$PROJ_ROOT/app" && npx playwright install chrome)
+            }
+
+            # Run Playwright e2e tests against the dev server.
+            # Requires dev-next-bypass running in another terminal first.
+            play-e2e() {
+              (cd "$PROJ_ROOT/app" && PLAYWRIGHT_BYPASS_AUTH=1 npx playwright test "$@")
+            }
+
             # Print a fresh AUTH_SECRET — paste into app/.env.local.
             gen-auth-secret() {
               openssl rand -base64 32
@@ -143,13 +161,16 @@
 
             echo "Cup Collector dev shell"
             echo ""
-            echo "  pb-serve          start PocketBase on :8090 via podman (applies migrations)"
-            echo "  pocketid-serve    start PocketID OIDC provider on :1411 via podman"
-            echo "  dev-next          start Next.js dev server on :3000"
-            echo "  gen-auth-secret   generate a new AUTH_SECRET value"
-            echo "  import-cups       import cup catalog from CSV (--file cups.csv [--dry-run])"
-            echo "  docs-serve        serve the HTML docs on http://localhost:4000"
-            echo "  check             run pre-commit hooks and next lint locally"
+            echo "  pb-serve            start PocketBase on :8090 via podman (applies migrations)"
+            echo "  pocketid-serve      start PocketID OIDC provider on :1411 via podman"
+            echo "  dev-next            start Next.js dev server on :3000"
+            echo "  dev-next-bypass     start Next.js dev server with Playwright auth bypass"
+            echo "  gen-auth-secret     generate a new AUTH_SECRET value"
+            echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run])"
+            echo "  docs-serve          serve the HTML docs on http://localhost:4000"
+            echo "  check               run pre-commit hooks and next lint locally"
+            echo "  playwright-install  install Playwright's Chrome (one-time setup)"
+            echo "  play-e2e            run Playwright e2e tests (requires dev-next-bypass)"
             echo ""
             echo "  First-time PocketID setup:"
             echo "    1. Run pocketid-serve, then open http://localhost:1411"

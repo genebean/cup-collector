@@ -22,6 +22,9 @@ app/test-results/
 # Playwright artifacts
 .playwright-mcp/
 screenshot-*.png
+app/playwright/.auth/
+app/playwright-report/
+app/test-results/playwright/
 
 # Test data
 test-cups.csv
