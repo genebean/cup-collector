@@ -4,11 +4,12 @@
 // Leaflet directly accesses the browser DOM and will crash during server-side
 // rendering. See app/src/app/map/page.tsx for the dynamic import.
 
-import { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, useMapEvents } from "react-leaflet";
 import type { CupWithOwnership, NearbyStore } from "@/types";
 import { useRouter } from "next/navigation";
 import { useMapTheme } from "@/hooks/useMapTheme";
+import { MapBottomSheet } from "@/components/MapBottomSheet";
 
 const TILES = {
   light: {
@@ -57,6 +58,30 @@ function WorldViewResetter({ tick }: { tick: number }) {
   return null;
 }
 
+// Listens to Leaflet map events and reports which cups fall within the current viewport
+function BoundsTracker({
+  cups,
+  onVisibleCupsChange,
+}: {
+  cups: CupWithOwnership[];
+  onVisibleCupsChange: (cups: CupWithOwnership[]) => void;
+}) {
+  const map = useMapEvents({
+    moveend() {
+      const bounds = map.getBounds();
+      onVisibleCupsChange(cups.filter((c) => bounds.contains([c.lat, c.lng])));
+    },
+  });
+
+  // Re-filter whenever the cups data changes (initial load, real-time updates)
+  useEffect(() => {
+    const bounds = map.getBounds();
+    onVisibleCupsChange(cups.filter((c) => bounds.contains([c.lat, c.lng])));
+  }, [cups, map, onVisibleCupsChange]);
+
+  return null;
+}
+
 // Adjusts zoom when the radius chip changes (only when a location is active)
 function ZoomUpdater({ location, zoom }: { location: { lat: number; lng: number } | null; zoom: number }) {
   const map = useMap();
@@ -81,12 +106,15 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
   const router = useRouter();
   const { isDark } = useMapTheme();
   const tiles = isDark ? TILES.dark : TILES.light;
+  const [visibleCups, setVisibleCups] = useState<CupWithOwnership[]>([]);
+  const handleVisibleCupsChange = useCallback((c: CupWithOwnership[]) => setVisibleCups(c), []);
 
   // Default world view when no location is available
   const defaultCenter: [number, number] = [20, 0];
   const defaultZoom = 2;
 
   return (
+    <div className="relative w-full h-full">
     <MapContainer
       center={defaultCenter}
       zoom={defaultZoom}
@@ -99,6 +127,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
       <LocationUpdater location={userLocation} zoom={targetZoom} />
       <ZoomUpdater location={userLocation} zoom={targetZoom} />
       <WorldViewResetter tick={worldViewTick} />
+      <BoundsTracker cups={cups} onVisibleCupsChange={handleVisibleCupsChange} />
 
       {/* "You are here" — white dot with blue ring */}
       {userLocation && (
@@ -177,5 +206,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
         </CircleMarker>
       ))}
     </MapContainer>
+    <MapBottomSheet cups={visibleCups} />
+    </div>
   );
 }

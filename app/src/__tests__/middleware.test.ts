@@ -29,7 +29,7 @@ describe("Next.js route-interception file placement", () => {
   });
 
   it(`does not use the deprecated filename ${deprecatedFile}`, () => {
-    if (PROXY_FILENAME === MIDDLEWARE_FILENAME) return; // same name in older Next.js — skip
+    if ((PROXY_FILENAME as string) === MIDDLEWARE_FILENAME) return; // same name in older Next.js — skip
     expect(existsSync(join(srcDir, deprecatedFile))).toBe(false);
   });
 
