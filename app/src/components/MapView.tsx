@@ -28,6 +28,7 @@ interface MapViewProps {
   stores: NearbyStore[];
   userLocation: { lat: number; lng: number } | null;
   targetZoom: number;
+  worldViewTick?: number;
 }
 
 // Flies to user location on first acquisition
@@ -42,6 +43,17 @@ function LocationUpdater({ location, zoom }: { location: { lat: number; lng: num
     }
   }, [location, zoom, map]);
 
+  return null;
+}
+
+// Flies to the world overview when the globe button is pressed
+function WorldViewResetter({ tick }: { tick: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (tick > 0) {
+      map.flyTo([20, 0], 2, { duration: 1.5 });
+    }
+  }, [tick, map]);
   return null;
 }
 
@@ -65,7 +77,7 @@ function ZoomUpdater({ location, zoom }: { location: { lat: number; lng: number 
   return null;
 }
 
-export default function MapView({ cups, stores, userLocation, targetZoom }: MapViewProps) {
+export default function MapView({ cups, stores, userLocation, targetZoom, worldViewTick = 0 }: MapViewProps) {
   const router = useRouter();
   const { isDark } = useMapTheme();
   const tiles = isDark ? TILES.dark : TILES.light;
@@ -86,6 +98,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom }: MapV
 
       <LocationUpdater location={userLocation} zoom={targetZoom} />
       <ZoomUpdater location={userLocation} zoom={targetZoom} />
+      <WorldViewResetter tick={worldViewTick} />
 
       {/* "You are here" — white dot with blue ring */}
       {userLocation && (
