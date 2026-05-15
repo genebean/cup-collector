@@ -30,39 +30,38 @@ const devBypassEnabled =
   process.env.PLAYWRIGHT_BYPASS_AUTH === "1";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
-    {
-      id: "pocketid",
-      name: "PocketID",
-      type: "oidc",
-      issuer: process.env.POCKETID_ISSUER_URL,
-      clientId: process.env.POCKETID_CLIENT_ID,
-      clientSecret: process.env.POCKETID_CLIENT_SECRET,
-      authorization: { params: { scope: "openid profile email groups" } },
-    },
-    ...(devBypassEnabled
-      ? [
-          Credentials({
-            id: "dev-bypass",
-            name: "Dev Bypass",
-            credentials: {
-              role: { label: "Role", type: "text" },
-            },
-            authorize(_credentials, req) {
-              // Read role from the URL query param — query params are reliably
-              // forwarded by Auth.js to authorize(), unlike parsed form bodies.
-              const role = new URL(req.url).searchParams.get("role") ?? "cup-viewer";
-              return {
-                id: `dev-${role}`,
-                name: `Dev ${role}`,
-                email: `dev-${role}@playwright.local`,
-                groups: [role],
-              };
-            },
-          }),
-        ]
-      : []),
-  ],
+  providers: devBypassEnabled
+    ? [
+        Credentials({
+          id: "dev-bypass",
+          name: "Dev Bypass",
+          credentials: {
+            role: { label: "Role", type: "text" },
+          },
+          authorize(_credentials, req) {
+            // Read role from the URL query param — query params are reliably
+            // forwarded by Auth.js to authorize(), unlike parsed form bodies.
+            const role = new URL(req.url).searchParams.get("role") ?? "cup-viewer";
+            return {
+              id: `dev-${role}`,
+              name: `Dev ${role}`,
+              email: `dev-${role}@playwright.local`,
+              groups: [role],
+            };
+          },
+        }),
+      ]
+    : [
+        {
+          id: "pocketid",
+          name: "PocketID",
+          type: "oidc",
+          issuer: process.env.POCKETID_ISSUER_URL,
+          clientId: process.env.POCKETID_CLIENT_ID,
+          clientSecret: process.env.POCKETID_CLIENT_SECRET,
+          authorization: { params: { scope: "openid profile email groups" } },
+        },
+      ],
   callbacks: {
     authorized({ auth: session, request }) {
       if (!session?.user) return false;

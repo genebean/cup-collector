@@ -1,22 +1,40 @@
 import { defineConfig } from "@playwright/test";
+import { PB_URL, PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD } from "./playwright/test-pb.ts";
 
-// Playwright manages the dev server lifecycle via webServer below.
+// Playwright manages the full test environment lifecycle:
+//   globalSetup  → starts PocketBase on :8091, seeds test data
+//   webServer    → starts Next.js pointing at the test PocketBase
+//   globalTeardown → stops the PocketBase container
 // Run `play-e2e` from the nix dev shell — no separate terminal needed.
-// If a dev server is already running on :3000 it will be reused (local dev only).
 export default defineConfig({
   testDir: "./e2e",
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Single worker avoids a race condition where parallel tests competing for the
+  // same dev server cause CSS transition timing issues in the bottom-sheet navigation
+  // test. With only 11 tests the parallelism gain is negligible.
+  workers: 1,
   reporter: [["html", { outputFolder: "playwright-report", open: "never" }]],
   outputDir: "test-results/playwright",
 
-  // Start the Next.js dev server with the auth bypass before any test runs,
-  // and kill it automatically when tests finish (even on failure).
-  // reuseExistingServer lets local devs keep their own dev-next-bypass running.
+  globalSetup: "./playwright/global-setup.ts",
+  globalTeardown: "./playwright/global-teardown.ts",
+
+  // Start the Next.js dev server pointed at the test PocketBase instance.
+  // Always start fresh so the server picks up the test POCKETBASE_URL.
   webServer: {
-    command: "PLAYWRIGHT_BYPASS_AUTH=1 npm run dev",
+    command: [
+      `PLAYWRIGHT_BYPASS_AUTH=1`,
+      `POCKETBASE_URL=${PB_URL}`,
+      `POCKETBASE_ADMIN_EMAIL=${PB_ADMIN_EMAIL}`,
+      `POCKETBASE_ADMIN_PASSWORD=${PB_ADMIN_PASSWORD}`,
+      // AUTH_SECRET and NEXTAUTH_URL are required by Auth.js in CI where .env.local is absent.
+      // This value is test-only — never used in production.
+      `AUTH_SECRET=playwright-test-only-do-not-use-in-production-1234`,
+      `NEXTAUTH_URL=http://127.0.0.1:3000`,
+      `npm run dev`,
+    ].join(" "),
     url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120 * 1000,
   },
 
