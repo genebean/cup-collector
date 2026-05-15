@@ -2,6 +2,10 @@ import nextPWA from "@ducanh2912/next-pwa";
 
 const withPWA = nextPWA({
   dest: "public",
+  // Disable the PWA service worker in dev — avoids injecting the workbox webpack
+  // plugin, which conflicted with Next.js 16 and forced Turbopack on. The SW is
+  // only useful in production anyway (offline caching, installability).
+  disable: process.env.NODE_ENV === "development",
   // Network First for API/data routes — always try live data, fall back to cache
   // Cache First for static assets — icons, fonts, cup images load fast offline
   runtimeCaching: [
@@ -28,10 +32,6 @@ const nextConfig = {
   // standalone output is required for the Nix build — produces a self-contained
   // Node server that doesn't need node_modules at runtime.
   output: "standalone",
-
-  // Empty turbopack config tells Next.js 16 we're intentionally using Turbopack
-  // even though @ducanh2912/next-pwa injects a webpack config internally.
-  turbopack: {},
 
   // Allow Playwright's 127.0.0.1 origin to access /_next/webpack-hmr in dev.
   allowedDevOrigins: ["127.0.0.1"],
