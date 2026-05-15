@@ -118,6 +118,14 @@ After any `package-lock.json` change, run `nix build` from the repo root. It
 will fail and print the correct hash in the error output. Copy that value into
 `flake.nix` as `npmDepsHash`.
 
+**Run `nix build` before pushing** any change to `flake.nix`, `next.config.js`,
+`package.json`, or `package-lock.json`. The Nix sandbox is the authoritative
+build environment — CI failures here are hard to debug remotely.
+
+**Run `check` before pushing** any code change. It runs pre-commit hooks, unit
+tests with coverage, and ESLint — the same checks CI runs. Fix any failures
+before opening or updating a PR.
+
 ---
 
 ## Dev Shell Helper Commands
@@ -133,7 +141,9 @@ These are defined in `flake.nix` and available inside `nix develop`:
 | `import-cups --file cups.csv --dry-run` | Preview import without writing |
 | `gen-auth-secret` | Generate a new AUTH_SECRET value |
 | `docs-serve` | Serve the docs site at localhost:4000 |
-| `check` | Run pre-commit hooks and `next lint` locally (fast CI check) |
+| `check` | Run pre-commit hooks, unit tests with coverage, and ESLint locally (fast CI check) |
+| `play-e2e` | Run Playwright e2e tests (starts and stops the dev server automatically) |
+| `playwright-install` | Install Playwright's Chrome browser (one-time setup after `npm install`) |
 
 ---
 
@@ -280,6 +290,11 @@ server-side only, personal use stays in free tier.
 - If a change affects the spec, update `docs/reference/spec.html` in the same commit
 - Do not bundle unrelated changes in one commit
 - `package-lock.json` changes must be committed — required for `buildNpmPackage`
+- After pushing new commits to a PR branch, update the PR description with
+  `gh pr edit <N> --body "..."` — base it on `git log main..HEAD`, not memory
+- When writing `gh pr create/edit` bodies containing backticks, use `PREOF` (not
+  `EOF`) as the heredoc delimiter — backticks inside `$(cat <<'EOF'...EOF)` are
+  interpreted as command substitution by the outer shell
 
 ---
 
