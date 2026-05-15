@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CupWithOwnership } from "@/types";
 import { getFileUrl } from "@/lib/pocketbase";
+import { countryCodeToFlag } from "@/lib/country";
 
 interface CupCardProps {
   cup: CupWithOwnership;
@@ -70,15 +71,4 @@ export function CupCard({ cup }: CupCardProps) {
       </div>
     </Link>
   );
-}
-
-// Convert ISO 3166-1 alpha-2 country code to flag emoji
-// Works by converting each letter to a regional indicator symbol
-function countryCodeToFlag(code: string): string {
-  if (!code || code.length !== 2) return "";
-  return code
-    .toUpperCase()
-    .split("")
-    .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
-    .join("");
 }

@@ -58,17 +58,23 @@ cup-collector/
 │   ├── public/
 │   │   ├── manifest.json  # PWA manifest
 │   │   └── icons/         # PWA icons (192, 512, 512-maskable)
+│   ├── playwright.config.ts
+│   ├── e2e/               # Playwright e2e tests (run via `play-e2e` in dev shell)
+│   ├── playwright/        # Playwright global setup/teardown helpers and test-pb constants
 │   └── src/
-│       ├── middleware.ts  # Auth.js route protection (must be named middleware.ts)
+│       ├── proxy.ts       # Auth.js route protection (Next.js 16 proxy convention)
+│       ├── __tests__/     # Vitest unit tests — one file per src/lib/ module
 │       ├── types/         # Shared TypeScript types
-│       ├── lib/
+│       ├── lib/           # Pure functions — unit tested, included in coverage report
 │       │   ├── pocketbase.ts  # PocketBase client (browser → proxy, server → direct)
-│       │   └── roles.ts       # Role resolution from PocketID groups
-│       ├── hooks/
+│       │   ├── roles.ts       # Role resolution from PocketID groups
+│       │   ├── country.ts     # Country code → flag emoji (ISO 3166-1 alpha-2)
+│       │   └── geo.ts         # Haversine distance calculation
+│       ├── hooks/         # React hooks — browser-dependent, e2e tested only
 │       │   ├── useMapTheme.ts     # Map tile theme preference (system/light/dark)
 │       │   └── useNearbyRadius.ts # Nearby search radius preference
-│       ├── components/    # Shared UI components
-│       └── app/           # Next.js App Router pages and API routes
+│       ├── components/    # React components — e2e tested only
+│       └── app/           # Next.js App Router pages and API routes — e2e tested only
 │           ├── auth.ts    # Auth.js / next-auth v5 config (PocketID OIDC)
 │           ├── layout.tsx
 │           ├── map/       # Map screen (default home)
@@ -231,6 +237,46 @@ Viewers can browse and search but cannot write. Role is checked:
 2. **UI layer** — write controls are not rendered for viewer-role users
 
 Both layers must stay in sync whenever role logic changes.
+
+---
+
+## Testing Strategy
+
+**Tests are expected wherever practical.** Every new function added to `src/lib/`
+must have unit tests. Every new user-facing feature, page, or role-gated behaviour
+must have e2e coverage. Do not add code without tests.
+
+Two layers of automated tests — each covers what it's suited for:
+
+| Layer | Tool | What it covers |
+|---|---|---|
+| Unit tests | Vitest | `src/lib/` — pure functions with no React, browser, or Next.js dependencies |
+| E2e tests | Playwright | All user-facing behaviour: pages, components, auth, role gating, API routes |
+
+### The Separation Rule
+
+**`src/lib/` is the unit-testable layer.** Every file added there must be a pure
+function module — no React, no browser APIs, no Next.js imports. Each module gets
+a corresponding test file in `src/__tests__/`. These are the only files included
+in the vitest coverage report.
+
+**Everything outside `src/lib/` is e2e territory.** React pages (`src/app/`),
+components (`src/components/`), hooks (`src/hooks/`), and API routes are tested by
+Playwright running against a real PocketBase instance. They are explicitly excluded
+from the vitest `coverage.include` setting — do not add them.
+
+**Do not mock PocketBase, Next.js APIs, or Auth.js in unit tests.** If logic
+requires those to be testable, extract it as a pure function into `src/lib/`, or
+cover it in the e2e suite instead.
+
+### Coverage Numbers
+
+Vitest only reports coverage for `src/lib/`. A high percentage there means the
+pure-logic layer is well tested. Zero coverage on UI code is expected and
+intentional — Playwright handles it.
+
+Run `check` from the dev shell before pushing — it runs unit tests (with coverage)
+and ESLint in one step.
 
 ---
 

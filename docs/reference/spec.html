@@ -1040,6 +1040,7 @@ jobs:
       <li><strong>Docs rule:</strong> All docs are plain HTML in <span class="ic">docs/</span>. No generator. Edit HTML directly. Do not convert to Markdown or introduce a build step.</li>
       <li><strong>Owner context:</strong> Owner is not an app developer. Comment generously. Avoid patterns that require deep framework knowledge to maintain. Prefer explicit over implicit.</li>
       <li><strong>Reference:</strong> <span class="ic">docs/reference/spec.html</span> is the authoritative design document — read it before making any structural changes.</li>
+      <li><strong>Testing strategy:</strong> Tests are expected wherever practical — every new <span class="ic">src/lib/</span> function gets a unit test, every new user-facing feature gets e2e coverage. Two layers: Vitest unit tests for <span class="ic">src/lib/</span> (pure functions only), Playwright e2e tests for all UI behaviour. The vitest <span class="ic">coverage.include</span> is scoped to <span class="ic">src/lib/**</span> only; React pages, components, hooks, and API routes are intentionally excluded from unit test coverage. Do not mock PocketBase or Next.js APIs in unit tests — extract pure logic into <span class="ic">src/lib/</span> or cover it in the e2e suite instead.</li>
     </ul>
   </div>
 
@@ -1114,6 +1115,13 @@ jobs:
       <div class="decision">
         <div class="decision-q">Why Places API (New) Text Search instead of the legacy Nearby Search?</div>
         <div class="decision-a">The legacy <span class="ic">nearbysearch</span> endpoint is deprecated and was returning inconsistent results. The Places API (New) <span class="ic">searchText</span> POST endpoint is the current recommended approach. The API key is passed in a request header (<span class="ic">X-Goog-Api-Key</span>) rather than a URL query parameter, which is more secure and easier to audit. Google's <span class="ic">locationBias</span> is a soft hint rather than a hard radius, so a haversine post-filter enforces the actual radius constraint.</div>
+      </div>
+
+    </div>
+
+      <div class="decision">
+        <div class="decision-q">Why is the unit test coverage scope limited to <span class="ic">src/lib/</span>?</div>
+        <div class="decision-a">React pages, components, hooks, and Next.js API routes require either a browser environment (jsdom) or extensive mocking of framework internals (useRouter, useSession, React Query, PocketBase) to unit test. That mocking surface creates false confidence — mocked tests can pass while the real integration fails. The e2e suite (Playwright + real PocketBase) covers all UI behaviour meaningfully. Vitest is scoped to <span class="ic">src/lib/</span>, which contains only pure functions with no framework dependencies. This keeps coverage numbers honest: a high percentage in <span class="ic">src/lib/</span> actually means something. The rule: if a function needs React or a browser to run, it belongs in <span class="ic">src/components/</span>, <span class="ic">src/hooks/</span>, or <span class="ic">src/app/</span> and is covered by e2e tests. If it is pure logic, it belongs in <span class="ic">src/lib/</span> and gets a unit test.</div>
       </div>
 
     </div>
