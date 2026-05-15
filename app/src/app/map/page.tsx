@@ -20,6 +20,7 @@ export default function MapPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const { radiusMeters, setRadius } = useNearbyRadius();
+  const [worldViewTick, setWorldViewTick] = useState(0);
 
   // Request geolocation on mount — falls back gracefully if denied
   useEffect(() => {
@@ -112,9 +113,7 @@ export default function MapPage() {
           <button
             className="text-xl"
             title="World view"
-            onClick={() => {
-              // Handled inside MapView via a ref — placeholder for now
-            }}
+            onClick={() => setWorldViewTick((t) => t + 1)}
           >
             🌍
           </button>
@@ -149,6 +148,7 @@ export default function MapPage() {
           stores={stores}
           userLocation={userLocation}
           targetZoom={targetZoom}
+          worldViewTick={worldViewTick}
         />
       </div>
 
