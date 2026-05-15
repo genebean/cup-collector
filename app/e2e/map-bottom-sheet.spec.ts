@@ -39,12 +39,14 @@ test.describe("map bottom sheet", () => {
     await expect(expandButton).toBeVisible({ timeout: 10_000 });
     await expandButton.click();
 
-    // If there are cup rows in the list, tapping the first navigates to /cup/[id]
+    // Cup row buttons exist in the DOM even when the sheet is collapsed (they're just
+    // below the viewport via CSS transform). Wait for the first row to be *visible*
+    // so the slide-up transition has completed before we try to interact.
     const firstRow = page.getByRole("button", { name: /^View .+ cup$/ }).first();
-    const hasRows = (await firstRow.count()) > 0;
+    const hasRows = await firstRow.isVisible({ timeout: 5_000 }).catch(() => false);
     if (hasRows) {
       await firstRow.click();
-      await expect(page).toHaveURL(/\/cup\//);
+      await expect(page).toHaveURL(/\/cup\//, { timeout: 10_000 });
     } else {
       // No cups in current viewport — empty state message is shown
       await expect(page.getByText("No cups visible")).toBeVisible();
