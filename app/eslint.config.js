@@ -29,8 +29,8 @@ export default tseslint.config(
     },
   },
 
-  // Ignore build output and deps
+  // Ignore build output, deps, and test infrastructure dirs
   {
-    ignores: [".next/**", "node_modules/**"],
+    ignores: [".next/**", "node_modules/**", "e2e/**", "playwright/**"],
   },
 );
