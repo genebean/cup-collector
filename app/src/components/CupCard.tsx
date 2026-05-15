@@ -22,7 +22,7 @@ export function CupCard({ cup }: CupCardProps) {
   return (
     <Link
       href={`/cup/${cup.id}`}
-      className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 hover:bg-cream active:bg-gray-50 transition-colors"
+      className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 hover:bg-cream dark:hover:bg-gray-700 active:bg-gray-50 dark:active:bg-gray-600 transition-colors"
     >
       {/* Cup image or placeholder */}
       <div
@@ -45,13 +45,13 @@ export function CupCard({ cup }: CupCardProps) {
       {/* Cup metadata */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-900 truncate">{cup.city}</span>
+          <span className="font-semibold text-gray-900 dark:text-gray-100 truncate">{cup.city}</span>
           {/* Flag emoji from ISO country code */}
           <span className="text-sm" title={cup.country}>
             {countryCodeToFlag(cup.country_code)}
           </span>
         </div>
-        <div className="text-xs text-gray-500 truncate">
+        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
           {cup.series} · {cup.year}
           {cup.region ? ` · ${cup.region}` : ""}
         </div>
@@ -60,11 +60,11 @@ export function CupCard({ cup }: CupCardProps) {
       {/* Ownership status badge */}
       <div className="flex-shrink-0">
         {cup.isOwned ? (
-          <span className="text-xs font-medium text-green-starbucks bg-green-50 px-2 py-0.5 rounded-full">
+          <span className="text-xs font-medium text-green-starbucks dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
             Owned
           </span>
         ) : (
-          <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+          <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
             Needed
           </span>
         )}

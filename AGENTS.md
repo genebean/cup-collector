@@ -71,8 +71,8 @@ cup-collector/
 │       │   ├── country.ts     # Country code → flag emoji (ISO 3166-1 alpha-2)
 │       │   └── geo.ts         # Haversine distance calculation
 │       ├── hooks/         # React hooks — browser-dependent, e2e tested only
-│       │   ├── useMapTheme.ts     # Map tile theme preference (system/light/dark)
-│       │   └── useNearbyRadius.ts # Nearby search radius preference
+│       │   ├── useNearbyRadius.ts # Nearby search radius preference
+│       │   └── useUiTheme.ts      # UI dark mode preference; applies .dark to <html>
 │       ├── components/    # React components — e2e tested only
 │       └── app/           # Next.js App Router pages and API routes — e2e tested only
 │           ├── auth.ts    # Auth.js / next-auth v5 config (PocketID OIDC)

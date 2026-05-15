@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap, useMapEvents } from "react-leaflet";
 import type { CupWithOwnership, NearbyStore } from "@/types";
 import { useRouter } from "next/navigation";
-import { useMapTheme } from "@/hooks/useMapTheme";
+import { useUiTheme } from "@/hooks/useUiTheme";
 import { MapBottomSheet } from "@/components/MapBottomSheet";
 
 const TILES = {
@@ -104,7 +104,7 @@ function ZoomUpdater({ location, zoom }: { location: { lat: number; lng: number 
 
 export default function MapView({ cups, stores, userLocation, targetZoom, worldViewTick = 0 }: MapViewProps) {
   const router = useRouter();
-  const { isDark } = useMapTheme();
+  const { isDark } = useUiTheme();
   const tiles = isDark ? TILES.dark : TILES.light;
   const [visibleCups, setVisibleCups] = useState<CupWithOwnership[]>([]);
   const handleVisibleCupsChange = useCallback((c: CupWithOwnership[]) => setVisibleCups(c), []);
