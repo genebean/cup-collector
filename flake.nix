@@ -102,7 +102,8 @@
             }
 
             # Start the Next.js dev server with the Playwright auth bypass enabled.
-            # Use this in one terminal, then run play-e2e in another.
+            # Optional — play-e2e starts and stops its own server automatically.
+            # Use this when you want to manually inspect auth-bypass behaviour.
             dev-next-bypass() {
               cd "$PROJ_ROOT/app" && PLAYWRIGHT_BYPASS_AUTH=1 npm run dev
             }
@@ -113,10 +114,10 @@
               (cd "$PROJ_ROOT/app" && npx playwright install chrome)
             }
 
-            # Run Playwright e2e tests against the dev server.
-            # Requires dev-next-bypass running in another terminal first.
+            # Run Playwright e2e tests.
+            # Automatically starts and stops the dev server — no separate terminal needed.
             play-e2e() {
-              (cd "$PROJ_ROOT/app" && PLAYWRIGHT_BYPASS_AUTH=1 npx playwright test "$@")
+              (cd "$PROJ_ROOT/app" && npx playwright test "$@")
             }
 
             # Print a fresh AUTH_SECRET — paste into app/.env.local.
@@ -164,13 +165,13 @@
             echo "  pb-serve            start PocketBase on :8090 via podman (applies migrations)"
             echo "  pocketid-serve      start PocketID OIDC provider on :1411 via podman"
             echo "  dev-next            start Next.js dev server on :3000"
-            echo "  dev-next-bypass     start Next.js dev server with Playwright auth bypass"
+            echo "  dev-next-bypass     start Next.js dev server with auth bypass (optional; play-e2e auto-starts one)"
             echo "  gen-auth-secret     generate a new AUTH_SECRET value"
             echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run])"
             echo "  docs-serve          serve the HTML docs on http://localhost:4000"
             echo "  check               run pre-commit hooks and next lint locally"
             echo "  playwright-install  install Playwright's Chrome (one-time setup)"
-            echo "  play-e2e            run Playwright e2e tests (requires dev-next-bypass)"
+            echo "  play-e2e            run Playwright e2e tests (starts/stops dev server automatically)"
             echo ""
             echo "  First-time PocketID setup:"
             echo "    1. Run pocketid-serve, then open http://localhost:1411"

@@ -1,16 +1,25 @@
 import { defineConfig } from "@playwright/test";
 
-// E2E tests require the dev server to be running with the auth bypass enabled.
-// Use `dev-next-bypass` in one terminal, then `play-e2e` in another (from nix develop).
-//
-// CI integration is deferred — it requires orchestrating Next.js + PocketBase
-// startup and is tracked separately.
+// Playwright manages the dev server lifecycle via webServer below.
+// Run `play-e2e` from the nix dev shell — no separate terminal needed.
+// If a dev server is already running on :3000 it will be reused (local dev only).
 export default defineConfig({
   testDir: "./e2e",
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [["html", { outputFolder: "playwright-report", open: "never" }]],
   outputDir: "test-results/playwright",
+
+  // Start the Next.js dev server with the auth bypass before any test runs,
+  // and kill it automatically when tests finish (even on failure).
+  // reuseExistingServer lets local devs keep their own dev-next-bypass running.
+  webServer: {
+    command: "PLAYWRIGHT_BYPASS_AUTH=1 npm run dev",
+    url: "http://127.0.0.1:3000",
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  },
+
   use: {
     baseURL: "http://127.0.0.1:3000",
     trace: "on-first-retry",

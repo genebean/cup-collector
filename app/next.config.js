@@ -33,6 +33,9 @@ const nextConfig = {
   // even though @ducanh2912/next-pwa injects a webpack config internally.
   turbopack: {},
 
+  // Allow Playwright's 127.0.0.1 origin to access /_next/webpack-hmr in dev.
+  allowedDevOrigins: ["127.0.0.1"],
+
   images: {
     // Allow Next.js Image component to load cup photos from PocketBase.
     remotePatterns: [
