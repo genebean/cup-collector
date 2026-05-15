@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../favicon.ico">
 <title>Cup Collector — Project Specification</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -340,7 +341,7 @@ code { color: var(--code-text); }
     <div class="section-number">Section 04</div>
     <h2>Authentication &amp; User Model</h2>
 
-    <p>Authentication is handled by PocketID (self-hosted OIDC provider). Auth.js (next-auth v5) acts as the OIDC client in the Next.js app. Each user has their own PocketID account. A household record in PocketBase links users to a shared collection and determines their role.</p>
+    <p>Authentication is handled by PocketID (self-hosted OIDC provider). Auth.js (next-auth v5) acts as the OIDC client in the Next.js app. Each user has their own PocketID account. Role is determined entirely by the user's PocketID group membership — no database lookup required. A household record in PocketBase links users to a shared cup collection for data scoping (filtering <span class="ic">owned_cups</span> queries), but it plays no part in role resolution.</p>
 
     <h3>PocketID App Registration</h3>
     <p>Register the app in the PocketID admin panel before first deployment. Required values:</p>
@@ -380,6 +381,14 @@ code { color: var(--code-text); }
     <span class="ck">authorization</span>: { params: { scope: <span class="cs">"openid profile email groups"</span> } },
   }],
   callbacks: {
+    authorized({ auth: session, request }) {
+      <span class="ck">if</span> (!session?.user) <span class="ck">return</span> <span class="cv">false</span>              <span class="cm">// not signed in → to /sign-in</span>
+      <span class="ck">const</span> groups = session.user.groups ?? []
+      <span class="ck">const</span> knownGroups = [ROLE_GROUP_OWNER, ROLE_GROUP_COLLABORATOR, ROLE_GROUP_VIEWER]
+      <span class="ck">if</span> (!groups.some(g => knownGroups.includes(g)))
+        <span class="ck">return</span> Response.redirect(<span class="ck">new</span> URL(<span class="cs">"/access-denied"</span>, request.url))
+      <span class="ck">return</span> <span class="cv">true</span>
+    },
     async jwt({ token, profile }) {
       <span class="ck">if</span> (profile) {
         token.pocketIdSub = profile.sub           <span class="cm">// stored for household lookup</span>
