@@ -40,6 +40,7 @@ export interface OwnedCup {
   replacement_note: string; // optional free-text reason (e.g. "cracked lid")
   // Where the cup was acquired — pre-populated from nearby Starbucks list
   acquired_store_name: string;
+  acquired_store_address: string;
   acquired_store_lat: number;
   acquired_store_lng: number;
   created: string;

@@ -12,10 +12,13 @@ async function goToSeattleCup(page: Page) {
 }
 
 // Remove ownership if it was set during a test so the database is clean for the next one.
+// Uses waitFor rather than count() because the owned-state query is async — count() returns
+// immediately and can see 0 before React has rendered the button, silently skipping cleanup.
 async function cleanupOwnership(page: Page) {
   await goToSeattleCup(page);
   const removeBtn = page.getByRole("button", { name: "Remove from Collection" });
-  if ((await removeBtn.count()) > 0) {
+  const isOwned = await removeBtn.waitFor({ state: "visible", timeout: 5_000 }).then(() => true).catch(() => false);
+  if (isOwned) {
     await removeBtn.click();
     await expect(page.getByRole("button", { name: /Mark as Owned/ })).toBeVisible({ timeout: 5_000 });
   }
@@ -131,8 +134,9 @@ test.describe("cup condition — cup-owner", () => {
 
     // Button updates to confirmed state
     await expect(page.getByText("✓ Acquired here")).toBeVisible({ timeout: 5_000 });
-    // Condition card shows the store name
+    // Condition card shows the store name and address (address is an Apple Maps link)
     await expect(page.getByText("Starbucks - Test Ave").first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /1 Test Ave, Seattle, WA/ })).toBeVisible();
   });
 });
 

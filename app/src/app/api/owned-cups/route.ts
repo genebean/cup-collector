@@ -57,6 +57,7 @@ export async function PATCH(req: NextRequest) {
     "needs_replacing",
     "replacement_note",
     "acquired_store_name",
+    "acquired_store_address",
     "acquired_store_lat",
     "acquired_store_lng",
   ];

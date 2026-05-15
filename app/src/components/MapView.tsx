@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { useUiTheme } from "@/hooks/useUiTheme";
 import { MapBottomSheet } from "@/components/MapBottomSheet";
 
+const MAP_POSITION_KEY = "map_position";
+
 const TILES = {
   light: {
     url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -32,15 +34,31 @@ interface MapViewProps {
   worldViewTick?: number;
 }
 
-// Flies to user location on first acquisition
+// Saves map center+zoom to sessionStorage on every pan/zoom so position
+// is restored when the user navigates away and back.
+function MapPositionSaver() {
+  useMapEvents({
+    moveend(e) {
+      const c = e.target.getCenter();
+      const z = e.target.getZoom();
+      sessionStorage.setItem(MAP_POSITION_KEY, JSON.stringify({ lat: c.lat, lng: c.lng, zoom: z }));
+    },
+  });
+  return null;
+}
+
+// Flies to user location on first load — skipped when a saved position exists
+// (i.e. the user navigated away and came back).
 function LocationUpdater({ location, zoom }: { location: { lat: number; lng: number } | null; zoom: number }) {
   const map = useMap();
   const hasFlownTo = useRef(false);
 
   useEffect(() => {
     if (location && !hasFlownTo.current) {
-      map.flyTo([location.lat, location.lng], zoom, { duration: 1.5 });
       hasFlownTo.current = true;
+      if (!sessionStorage.getItem(MAP_POSITION_KEY)) {
+        map.flyTo([location.lat, location.lng], zoom, { duration: 1.5 });
+      }
     }
   }, [location, zoom, map]);
 
@@ -109,9 +127,12 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
   const [visibleCups, setVisibleCups] = useState<CupWithOwnership[]>([]);
   const handleVisibleCupsChange = useCallback((c: CupWithOwnership[]) => setVisibleCups(c), []);
 
-  // Default world view when no location is available
-  const defaultCenter: [number, number] = [20, 0];
-  const defaultZoom = 2;
+  // Restore saved map position (set when user previously panned/zoomed); fall back to world view.
+  const savedPos = (() => {
+    try { return JSON.parse(sessionStorage.getItem(MAP_POSITION_KEY) ?? "null"); } catch { return null; }
+  })();
+  const defaultCenter: [number, number] = savedPos ? [savedPos.lat, savedPos.lng] : [20, 0];
+  const defaultZoom: number = savedPos ? savedPos.zoom : 2;
 
   return (
     <div className="relative w-full h-full">
@@ -124,6 +145,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
       {/* key forces a remount when switching so stale tiles don't linger */}
       <TileLayer key={isDark ? "dark" : "light"} attribution={tiles.attribution} url={tiles.url} />
 
+      <MapPositionSaver />
       <LocationUpdater location={userLocation} zoom={targetZoom} />
       <ZoomUpdater location={userLocation} zoom={targetZoom} />
       <WorldViewResetter tick={worldViewTick} />
