@@ -94,6 +94,13 @@ export default async function globalSetup() {
 }
 
 async function seedTestData(pb: PocketBase): Promise<void> {
+  // The dev-bypass auth provider sets pocketIdSub = providerAccountId = "dev-cup-owner".
+  // member_sub_1 matches so the household is correctly associated with the test owner.
+  await pb.collection("households").create({
+    name: "Test Household",
+    member_sub_1: "dev-cup-owner",
+  });
+
   const cups = [
     { city: "Seattle", region: "WA", country: "United States", country_code: "US", series: "Been There", year: 2018, lat: 47.6062, lng: -122.3321 },
     { city: "Atlanta", region: "GA", country: "United States", country_code: "US", series: "Been There", year: 2019, lat: 33.749, lng: -84.388 },

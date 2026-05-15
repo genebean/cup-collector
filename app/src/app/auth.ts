@@ -86,6 +86,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // account is only set during sign-in, so this only runs once per session.
         const id = (account.providerAccountId ?? "") as string;
         token.groups = [id.replace(/^dev-/, "")];
+        // Set a synthetic sub so requireWriter() and marked_by_sub work in tests.
+        // providerAccountId is "dev-cup-owner" etc. — stable across test runs.
+        token.pocketIdSub = id;
       }
       return token;
     },
