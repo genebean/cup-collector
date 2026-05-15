@@ -18,6 +18,14 @@ export default function CupDetailPage() {
   const router = useRouter();
   const [household, setHousehold] = useState<Household | null>(null);
 
+  // Condition edit state — null = form closed; object = form open with draft values.
+  // Initialized from ownedRecord when the user opens the form, so no useEffect sync needed.
+  const [conditionDraft, setConditionDraft] = useState<{
+    needs_replacing: boolean;
+    replacement_note: string;
+  } | null>(null);
+  const editingCondition = conditionDraft !== null;
+
   const canWrite = canWriteRole(roleFromGroups(session?.user?.groups ?? []));
   const { radiusMeters } = useNearbyRadius();
 
@@ -101,6 +109,38 @@ export default function CupDetailPage() {
     },
   });
 
+  // Update condition (needs_replacing + replacement_note) on an existing owned record
+  const updateCondition = useMutation({
+    mutationFn: (update: { needs_replacing: boolean; replacement_note: string }) =>
+      fetch(`/api/owned-cups?id=${ownedRecord!.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(update),
+      }).then((r) => { if (!r.ok) throw new Error("Failed to update condition"); return r.json(); }),
+    onSettled: () => {
+      setConditionDraft(null);
+      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, household?.id] });
+      queryClient.invalidateQueries({ queryKey: ["owned_cups", household?.id] });
+    },
+  });
+
+  // Record the Starbucks where the cup was acquired — pre-populated from the nearby list
+  const recordStore = useMutation({
+    mutationFn: (store: NearbyStore) =>
+      fetch(`/api/owned-cups?id=${ownedRecord!.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          acquired_store_name: store.name,
+          acquired_store_lat: store.lat,
+          acquired_store_lng: store.lng,
+        }),
+      }).then((r) => { if (!r.ok) throw new Error("Failed to record store"); return r.json(); }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, household?.id] });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen text-gray-400">
@@ -177,27 +217,140 @@ export default function CupDetailPage() {
             </div>
           )}
 
-          {/* Nearby Starbucks */}
+          {/* Condition — only shown when owned and user can edit.
+              Lets the user flag that a cup needs replacing and record an optional note. */}
+          {isOwned && canWrite && ownedRecord && ownedRecord.id !== "optimistic" && (
+            <div className="bg-white rounded-xl p-4 text-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-gray-700">Condition</h2>
+                {!editingCondition && (
+                  <button
+                    onClick={() => setConditionDraft({
+                      needs_replacing: ownedRecord.needs_replacing ?? false,
+                      replacement_note: ownedRecord.replacement_note ?? "",
+                    })}
+                    className="text-xs text-green-starbucks font-medium"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {editingCondition && conditionDraft ? (
+                <div className="space-y-3">
+                  {/* Needs replacing toggle */}
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={conditionDraft.needs_replacing}
+                      onChange={(e) =>
+                        setConditionDraft((d) => d ? {
+                          ...d,
+                          needs_replacing: e.target.checked,
+                          // Clear note when unchecking
+                          replacement_note: e.target.checked ? d.replacement_note : "",
+                        } : d)
+                      }
+                      className="rounded"
+                    />
+                    <span className="text-gray-700">Needs replacing</span>
+                  </label>
+
+                  {/* Reason field — only shown when needs_replacing is checked */}
+                  {conditionDraft.needs_replacing && (
+                    <input
+                      type="text"
+                      placeholder="Reason (optional) — e.g. cracked lid"
+                      value={conditionDraft.replacement_note}
+                      onChange={(e) =>
+                        setConditionDraft((d) => d ? { ...d, replacement_note: e.target.value } : d)
+                      }
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:border-green-starbucks"
+                    />
+                  )}
+
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => setConditionDraft(null)}
+                      className="flex-1 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm cursor-pointer hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => updateCondition.mutate(conditionDraft)}
+                      disabled={updateCondition.isPending}
+                      className="flex-1 py-2 bg-green-dark text-white rounded-lg text-sm font-medium cursor-pointer hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {updateCondition.isPending ? "Saving…" : "Save"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {ownedRecord.needs_replacing ? (
+                    <div className="text-orange-600 font-medium">
+                      ⚠ Needs replacing
+                      {ownedRecord.replacement_note && (
+                        <span className="font-normal text-gray-500"> — {ownedRecord.replacement_note}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-green-starbucks font-medium">✓ In good condition</div>
+                  )}
+                  {/* Show recorded acquisition store if present */}
+                  {ownedRecord.acquired_store_name && (
+                    <div className="text-gray-500 text-xs mt-1">
+                      Acquired at: {ownedRecord.acquired_store_name}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Nearby Starbucks.
+              When the cup is owned, each store row includes an "Acquired here" button
+              to record where the cup was obtained. */}
           {storesData?.stores && storesData.stores.length > 0 && (
             <div>
               <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Nearby Starbucks</h2>
               <div className="space-y-2">
-                {storesData.stores.map((store) => (
-                  <div key={store.place_id} className="bg-white dark:bg-gray-800 rounded-xl p-3 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium dark:text-gray-100">{store.name}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{store.address}</div>
+                {storesData.stores.map((store) => {
+                  const isAcquiredHere = ownedRecord?.acquired_store_name === store.name;
+                  return (
+                    <div key={store.place_id} className="bg-white dark:bg-gray-800 rounded-xl p-3 flex items-center gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium dark:text-gray-100">{store.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{store.address}</div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* Record acquisition store — only shown when owned and can write */}
+                        {isOwned && canWrite && ownedRecord && ownedRecord.id !== "optimistic" && (
+                          <button
+                            onClick={() => recordStore.mutate(store)}
+                            disabled={recordStore.isPending}
+                            title={isAcquiredHere ? "Recorded as acquisition store" : "Mark as where this cup was acquired"}
+                            className={`px-2 py-1 rounded text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                              isAcquiredHere
+                                ? "bg-green-100 text-green-starbucks"
+                                : "bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-starbucks"
+                            }`}
+                          >
+                            {isAcquiredHere ? "✓ Acquired here" : "Acquired here"}
+                          </button>
+                        )}
+                        <a
+                          href={`https://maps.apple.com/?daddr=${store.lat},${store.lng}&dirflg=d`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-xs font-medium"
+                        >
+                          Maps →
+                        </a>
+                      </div>
                     </div>
-                    <a
-                      href={`https://maps.apple.com/?daddr=${store.lat},${store.lng}&dirflg=d`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-3 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-xs font-medium flex-shrink-0"
-                    >
-                      Maps →
-                    </a>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

@@ -145,36 +145,44 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
         </CircleMarker>
       )}
 
-      {/* Cup pins — green = owned, orange = needed */}
-      {cups.map((cup) => (
-        <CircleMarker
-          key={cup.id}
-          center={[cup.lat, cup.lng]}
-          radius={7}
-          pathOptions={{
-            color: cup.isOwned ? "#00704A" : "#ea580c",
-            fillColor: cup.isOwned ? "#00704A" : "#f97316",
-            fillOpacity: 0.85,
-            weight: 2,
-          }}
-        >
-          <Popup>
-            <div className="text-sm">
-              <div className="font-semibold">{cup.city}</div>
-              <div className="text-gray-500">{cup.series} · {cup.year}</div>
-              <div className={cup.isOwned ? "text-green-700 mb-1" : "text-orange-600 mb-1"}>
-                {cup.isOwned ? "✓ Owned" : "Needed"}
+      {/* Cup pins:
+            green  = owned and in good condition
+            orange = unowned OR owned but needs replacing (both are action items) */}
+      {cups.map((cup) => {
+        const needsReplacing = cup.isOwned && cup.ownedRecord?.needs_replacing;
+        // A cup that needs replacing is visually treated like an unowned cup so
+        // it stands out as something that requires action.
+        const isGreen = cup.isOwned && !needsReplacing;
+        return (
+          <CircleMarker
+            key={cup.id}
+            center={[cup.lat, cup.lng]}
+            radius={7}
+            pathOptions={{
+              color: isGreen ? "#00704A" : "#ea580c",
+              fillColor: isGreen ? "#00704A" : "#f97316",
+              fillOpacity: 0.85,
+              weight: 2,
+            }}
+          >
+            <Popup>
+              <div className="text-sm">
+                <div className="font-semibold">{cup.city}</div>
+                <div className="text-gray-500">{cup.series} · {cup.year}</div>
+                <div className={isGreen ? "text-green-700 mb-1" : "text-orange-600 mb-1"}>
+                  {needsReplacing ? "⚠ Needs replacing" : cup.isOwned ? "✓ Owned" : "Needed"}
+                </div>
+                <button
+                  onClick={() => router.push(`/cup/${cup.id}`)}
+                  className="text-green-700 underline text-xs"
+                >
+                  View details →
+                </button>
               </div>
-              <button
-                onClick={() => router.push(`/cup/${cup.id}`)}
-                className="text-green-700 underline text-xs"
-              >
-                View details →
-              </button>
-            </div>
-          </Popup>
-        </CircleMarker>
-      ))}
+            </Popup>
+          </CircleMarker>
+        );
+      })}
 
       {/* Nearby Starbucks pins — blue — tap shows popup with directions link */}
       {stores.map((store) => (

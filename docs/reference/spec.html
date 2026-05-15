@@ -493,6 +493,11 @@ code { color: var(--code-text); }
         <div class="schema-field"><div class="field-name">marked_by_sub</div><div class="field-type">string</div><div class="field-desc">PocketID <span class="ic">sub</span> of the user who marked it owned — for attribution</div></div>
         <div class="schema-field"><div class="field-name">acquired_date</div><div class="field-type">date</div><div class="field-desc">Optional — when the cup was acquired</div></div>
         <div class="schema-field"><div class="field-name">own_photo</div><div class="field-type">file</div><div class="field-desc">Optional owner photo; shown instead of catalog image when present</div></div>
+        <div class="schema-field"><div class="field-name">needs_replacing</div><div class="field-type">boolean</div><div class="field-desc">Flags cup as an action item (cracked lid, etc.) — map pins and badges show orange like unowned</div></div>
+        <div class="schema-field"><div class="field-name">replacement_note</div><div class="field-type">text</div><div class="field-desc">Optional free-text reason for replacement (e.g. "cracked lid", "gift for someone")</div></div>
+        <div class="schema-field"><div class="field-name">acquired_store_name</div><div class="field-type">text</div><div class="field-desc">Name of the Starbucks where the cup was obtained — pre-populated from the nearby Starbucks list</div></div>
+        <div class="schema-field"><div class="field-name">acquired_store_lat</div><div class="field-type">number</div><div class="field-desc">Latitude of the acquisition store</div></div>
+        <div class="schema-field"><div class="field-name">acquired_store_lng</div><div class="field-type">number</div><div class="field-desc">Longitude of the acquisition store</div></div>
         <div class="schema-field"><div class="field-name">created</div><div class="field-type">datetime</div><div class="field-desc">Auto — serves as "added to collection" timestamp</div></div>
       </div>
     </div>

@@ -37,32 +37,36 @@ export function MapBottomSheet({ cups }: Props) {
             No cups visible — pan or zoom to find cups
           </p>
         ) : (
-          cups.map((cup) => (
-            <button
-              key={cup.id}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600"
-              aria-label={`View ${cup.city} cup`}
-              onClick={() => router.push(`/cup/${cup.id}`)}
-            >
-              <span
-                className="w-3 h-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: cup.isOwned ? "#00704A" : "#f97316" }}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium dark:text-gray-100 truncate">{cup.city}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {cup.series} · {cup.year}
-                </div>
-              </div>
-              <span
-                className={`text-xs font-medium flex-shrink-0 ${
-                  cup.isOwned ? "text-green-700 dark:text-green-400" : "text-orange-600 dark:text-orange-400"
-                }`}
+          cups.map((cup) => {
+            const needsReplacing = cup.isOwned && cup.ownedRecord?.needs_replacing;
+            const isGreen = cup.isOwned && !needsReplacing;
+            return (
+              <button
+                key={cup.id}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600"
+                aria-label={`View ${cup.city} cup`}
+                onClick={() => router.push(`/cup/${cup.id}`)}
               >
-                {cup.isOwned ? "Owned" : "Needed"}
-              </span>
-            </button>
-          ))
+                <span
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: isGreen ? "#00704A" : "#f97316" }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium dark:text-gray-100 truncate">{cup.city}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {cup.series} · {cup.year}
+                  </div>
+                </div>
+                <span
+                  className={`text-xs font-medium flex-shrink-0 ${
+                    isGreen ? "text-green-700 dark:text-green-400" : "text-orange-600 dark:text-orange-400"
+                  }`}
+                >
+                  {needsReplacing ? "Needs Replacing" : cup.isOwned ? "Owned" : "Needed"}
+                </span>
+              </button>
+            );
+          })
         )}
       </div>
     </div>

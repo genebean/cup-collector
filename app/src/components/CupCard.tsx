@@ -57,9 +57,14 @@ export function CupCard({ cup }: CupCardProps) {
         </div>
       </div>
 
-      {/* Ownership status badge */}
+      {/* Ownership status badge.
+          Needs-replacing cups show orange like unowned — both are action items. */}
       <div className="flex-shrink-0">
-        {cup.isOwned ? (
+        {cup.isOwned && cup.ownedRecord?.needs_replacing ? (
+          <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
+            Needs Replacing
+          </span>
+        ) : cup.isOwned ? (
           <span className="text-xs font-medium text-green-starbucks dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
             Owned
           </span>

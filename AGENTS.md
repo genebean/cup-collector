@@ -196,10 +196,18 @@ Which cups the household has collected. Ownership = record existence.
 | `marked_by_sub` | string | PocketID `sub` of who marked it owned |
 | `acquired_date` | date | Optional acquisition date |
 | `own_photo` | file | Optional owner photo |
+| `needs_replacing` | boolean | Flags cup as action item (cracked lid, etc.) |
+| `replacement_note` | text | Optional reason for replacing |
+| `acquired_store_name` | text | Name of the Starbucks where cup was obtained |
+| `acquired_store_lat` | number | Latitude of that store |
+| `acquired_store_lng` | number | Longitude of that store |
 | `created` | datetime | Auto — serves as "added to collection" timestamp |
 
 A cup is owned if and only if a record exists in `owned_cups` with the matching
 household ID and cup ID. To un-own, delete the record.
+
+Cups with `needs_replacing: true` are visually treated like unowned cups (orange
+map pins, orange badge) because they are action items requiring attention.
 
 ### PocketBase Access Rules
 
