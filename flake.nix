@@ -205,25 +205,27 @@
             check()              { cc-check "$@"; }
             import-cups()        { cc-import-cups "$@"; }
 
-            echo "Cup Collector dev shell"
-            echo ""
-            echo "  pb-serve            start PocketBase on :8090 via podman (applies migrations)"
-            echo "  pocketid-serve      start PocketID OIDC provider on :1411 via podman"
-            echo "  dev-next            start Next.js dev server on :3000"
-            echo "  dev-next-bypass     start Next.js dev server with auth bypass (optional; play-e2e auto-starts one)"
-            echo "  gen-auth-secret     generate a new AUTH_SECRET value"
-            echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run])"
-            echo "  docs-serve          serve the HTML docs on http://localhost:4000"
-            echo "  check               run pre-commit hooks, unit tests, and lint"
-            echo "  playwright-install  install Playwright's Chrome (one-time setup)"
-            echo "  play-e2e            run Playwright e2e tests (starts/stops dev server automatically)"
-            echo ""
-            echo "  All commands are also available as cc-* binaries (e.g. nix develop -c cc-check)."
-            echo ""
-            echo "  First-time PocketID setup:"
-            echo "    1. Run pocketid-serve, then open http://localhost:1411"
-            echo "    2. Create admin account, add an OIDC application"
-            echo "    3. Copy client ID/secret into app/.env.local"
+            if [[ $- == *i* ]]; then
+              echo "Cup Collector dev shell"
+              echo ""
+              echo "  pb-serve            start PocketBase on :8090 via podman (applies migrations)"
+              echo "  pocketid-serve      start PocketID OIDC provider on :1411 via podman"
+              echo "  dev-next            start Next.js dev server on :3000"
+              echo "  dev-next-bypass     start Next.js dev server with auth bypass (optional; play-e2e auto-starts one)"
+              echo "  gen-auth-secret     generate a new AUTH_SECRET value"
+              echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run])"
+              echo "  docs-serve          serve the HTML docs on http://localhost:4000"
+              echo "  check               run pre-commit hooks, unit tests, and lint"
+              echo "  playwright-install  install Playwright's Chrome (one-time setup)"
+              echo "  play-e2e            run Playwright e2e tests (starts/stops dev server automatically)"
+              echo ""
+              echo "  All commands are also available as cc-* binaries (e.g. nix develop -c cc-check)."
+              echo ""
+              echo "  First-time PocketID setup:"
+              echo "    1. Run pocketid-serve, then open http://localhost:1411"
+              echo "    2. Create admin account, add an OIDC application"
+              echo "    3. Copy client ID/secret into app/.env.local"
+            fi
           '';
         };
 
