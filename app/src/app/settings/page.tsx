@@ -2,7 +2,7 @@ import { auth, signOut } from "@/app/auth";
 import { redirect } from "next/navigation";
 import { resolveRole, canWrite } from "@/lib/roles";
 import { BottomNav } from "@/components/BottomNav";
-import { MapThemeSelector } from "@/components/MapThemeSelector";
+import { UiThemeSelector } from "@/components/UiThemeSelector";
 import Link from "next/link";
 
 // Settings is a server component — reads session and role server-side,
@@ -22,7 +22,7 @@ export default async function SettingsPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-cream">
+    <div className="flex flex-col h-screen bg-cream dark:bg-gray-900">
       <header className="bg-green-dark text-white px-4 py-3 flex-shrink-0">
         <h1 className="font-bold text-lg">Settings</h1>
       </header>
@@ -42,10 +42,9 @@ export default async function SettingsPage() {
           </Section>
         )}
 
-        {/* Map preferences */}
-        <Section title="Map">
-          <div className="text-xs text-gray-500 px-4 pt-3 pb-1">Tile theme</div>
-          <MapThemeSelector />
+        {/* Appearance — controls the UI light/dark mode; map tiles follow automatically */}
+        <Section title="Appearance">
+          <UiThemeSelector />
         </Section>
 
         {/* App info */}
@@ -58,10 +57,10 @@ export default async function SettingsPage() {
           <Section title="Admin">
             <Link
               href="/admin/import"
-              className="flex justify-between px-4 py-3 text-sm hover:bg-gray-50 active:bg-gray-100 transition-colors"
+              className="flex justify-between px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-colors"
             >
-              <span className="font-medium text-green-starbucks">Import Cups</span>
-              <span className="text-green-starbucks">→</span>
+              <span className="font-medium text-green-starbucks dark:text-green-400">Import Cups</span>
+              <span className="text-green-starbucks dark:text-green-400">→</span>
             </Link>
           </Section>
         )}
@@ -73,7 +72,7 @@ export default async function SettingsPage() {
             await signOut({ redirectTo: "/" });
           }}
         >
-          <button type="submit" className="w-full py-3 bg-red-50 text-red-600 border border-red-200 font-semibold rounded-xl cursor-pointer hover:bg-red-100 active:bg-red-200 transition-colors">
+          <button type="submit" className="w-full py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 font-semibold rounded-xl cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 transition-colors">
             Sign Out
           </button>
         </form>
@@ -87,10 +86,10 @@ export default async function SettingsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1">
+      <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 px-1">
         {title}
       </h2>
-      <div className="bg-white rounded-xl divide-y divide-gray-100">{children}</div>
+      <div className="bg-white dark:bg-gray-800 rounded-xl divide-y divide-gray-100 dark:divide-gray-700">{children}</div>
     </div>
   );
 }
@@ -98,8 +97,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between px-4 py-3 text-sm">
-      <span className="text-gray-500">{label}</span>
-      <span className="font-medium text-gray-800">{value}</span>
+      <span className="text-gray-500 dark:text-gray-400">{label}</span>
+      <span className="font-medium text-gray-800 dark:text-gray-100">{value}</span>
     </div>
   );
 }

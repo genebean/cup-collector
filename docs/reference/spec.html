@@ -569,11 +569,13 @@ code { color: var(--code-text); }
       <div class="screen-card">
         <div class="screen-name">/settings</div>
         <div class="screen-title">⚙️ Settings</div>
-        <div class="screen-desc">Account info, household name, role display, sign out.</div>
+        <div class="screen-desc">Account info, household name, role display, appearance preferences, sign out.</div>
         <div class="screen-notes">
           <div class="screen-note">Shows user's name from PocketID</div>
           <div class="screen-note">Shows household name</div>
           <div class="screen-note">Shows user's role: Owner / Collaborator / Viewer</div>
+          <div class="screen-note">Appearance section: UI theme (System / Light / Dark); map tiles follow the same setting automatically</div>
+          <div class="screen-note">UI theme preference stored in <span class="ic">localStorage</span> as <span class="ic">ui_theme</span>; applies <span class="ic">.dark</span> class to <span class="ic">&lt;html&gt;</span></div>
           <div class="screen-note">Sign Out button</div>
           <div class="screen-note">App version number</div>
         </div>
@@ -1118,6 +1120,11 @@ jobs:
       </div>
 
     </div>
+
+      <div class="decision">
+        <div class="decision-q">Why <span class="ic">darkMode: class</span> via <span class="ic">@variant dark (&amp;:is(.dark *))</span> in Tailwind v4?</div>
+        <div class="decision-a">The app has deliberate brand colors (header green, gold accents, bottom nav) that should never change between light and dark — they are fixed brand colors, not neutral surfaces. Class-based dark mode lets those elements stay constant while allowing neutral surfaces (cards, backgrounds, text) to adapt. The <span class="ic">.dark</span> class is toggled on <span class="ic">&lt;html&gt;</span> by the <span class="ic">useUiTheme</span> hook, which reads the <span class="ic">ui_theme</span> localStorage key (System / Light / Dark). System mode follows <span class="ic">prefers-color-scheme</span>. The <span class="ic">UiThemeInitializer</span> component (rendered inside <span class="ic">Providers</span>) applies the class on every page load without requiring the Settings page to be open.</div>
+      </div>
 
       <div class="decision">
         <div class="decision-q">Why is the unit test coverage scope limited to <span class="ic">src/lib/</span>?</div>

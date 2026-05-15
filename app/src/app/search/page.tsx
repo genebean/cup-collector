@@ -55,7 +55,7 @@ export default function SearchPage() {
   }, [cups, ownedCups, ownedCupIds, search]);
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen dark:bg-gray-900">
       <header className="bg-green-dark text-white px-4 py-3 flex-shrink-0">
         <h1 className="font-bold text-lg mb-2">Search</h1>
         <input
@@ -70,9 +70,9 @@ export default function SearchPage() {
 
       <main className="flex-1 overflow-y-auto pb-20">
         {!search.trim() ? (
-          <div className="text-center text-gray-400 py-16">Start typing to search cups.</div>
+          <div className="text-center text-gray-400 dark:text-gray-500 py-16">Start typing to search cups.</div>
         ) : results.length === 0 ? (
-          <div className="text-center text-gray-400 py-16">No cups found for &ldquo;{search}&rdquo;.</div>
+          <div className="text-center text-gray-400 dark:text-gray-500 py-16">No cups found for &ldquo;{search}&rdquo;.</div>
         ) : (
           results.map((cup) => <CupCard key={cup.id} cup={cup} />)
         )}

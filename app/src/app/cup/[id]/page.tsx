@@ -122,7 +122,7 @@ export default function CupDetailPage() {
     : null;
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen dark:bg-gray-900">
       <header className="bg-green-dark text-white px-4 py-3 flex items-center gap-3 flex-shrink-0">
         <button onClick={() => router.back()} className="text-xl">←</button>
         <div>
@@ -145,7 +145,7 @@ export default function CupDetailPage() {
 
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
           {/* Metadata */}
-          <div className="bg-white rounded-xl p-4 space-y-2 text-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 space-y-2 text-sm">
             <Row label="City" value={cup.city} />
             {cup.region && <Row label="Region" value={cup.region} />}
             <Row label="Country" value={cup.country} />
@@ -161,7 +161,7 @@ export default function CupDetailPage() {
                 <button
                   onClick={() => removeOwned.mutate()}
                   disabled={removeOwned.isPending}
-                  className="w-full py-3 bg-red-50 text-red-600 border border-red-200 font-semibold rounded-xl cursor-pointer hover:bg-red-100 active:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 font-semibold rounded-xl cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 active:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {removeOwned.isPending ? "Removing…" : "Remove from Collection"}
                 </button>
@@ -180,19 +180,19 @@ export default function CupDetailPage() {
           {/* Nearby Starbucks */}
           {storesData?.stores && storesData.stores.length > 0 && (
             <div>
-              <h2 className="font-semibold text-gray-700 mb-2">Nearby Starbucks</h2>
+              <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Nearby Starbucks</h2>
               <div className="space-y-2">
                 {storesData.stores.map((store) => (
-                  <div key={store.place_id} className="bg-white rounded-xl p-3 flex items-center justify-between">
+                  <div key={store.place_id} className="bg-white dark:bg-gray-800 rounded-xl p-3 flex items-center justify-between">
                     <div>
-                      <div className="text-sm font-medium">{store.name}</div>
-                      <div className="text-xs text-gray-500">{store.address}</div>
+                      <div className="text-sm font-medium dark:text-gray-100">{store.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{store.address}</div>
                     </div>
                     <a
                       href={`https://maps.apple.com/?daddr=${store.lat},${store.lng}&dirflg=d`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="ml-3 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium flex-shrink-0"
+                      className="ml-3 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-xs font-medium flex-shrink-0"
                     >
                       Maps →
                     </a>
@@ -212,8 +212,8 @@ export default function CupDetailPage() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
-      <span className="text-gray-500">{label}</span>
-      <span className="font-medium text-gray-800">{value}</span>
+      <span className="text-gray-500 dark:text-gray-400">{label}</span>
+      <span className="font-medium text-gray-800 dark:text-gray-100">{value}</span>
     </div>
   );
 }

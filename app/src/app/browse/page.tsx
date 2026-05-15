@@ -105,7 +105,7 @@ export default function BrowsePage() {
   const totalCount = cups.length;
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen dark:bg-gray-900">
       <OfflineBanner />
 
       <header className="bg-green-dark text-white px-4 py-3 flex-shrink-0">
@@ -147,7 +147,7 @@ export default function BrowsePage() {
 
       <main className="flex-1 overflow-y-auto pb-20">
         {displayedCups.length === 0 ? (
-          <div className="text-center text-gray-400 py-16">No cups match your search.</div>
+          <div className="text-center text-gray-400 dark:text-gray-500 py-16">No cups match your search.</div>
         ) : (
           displayedCups.map((cup) => <CupCard key={cup.id} cup={cup} />)
         )}
