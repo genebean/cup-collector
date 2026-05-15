@@ -4,7 +4,7 @@ import { join } from "node:path";
 const authDir = join(import.meta.dirname, "../playwright/.auth");
 
 test.describe("settings page — cup-owner", () => {
-  test.use({ storageState: join(authDir, "cup-owner.json") });
+  test.use({ storageState: join(authDir, "owner.json") });
 
   test("shows role as Owner and Import Cups admin link", async ({ page }) => {
     await page.goto("/settings");
@@ -19,7 +19,7 @@ test.describe("settings page — cup-owner", () => {
 });
 
 test.describe("settings page — cup-viewer", () => {
-  test.use({ storageState: join(authDir, "cup-viewer.json") });
+  test.use({ storageState: join(authDir, "viewer.json") });
 
   test("shows role as Viewer and hides Import Cups link", async ({ page }) => {
     await page.goto("/settings");
@@ -29,7 +29,7 @@ test.describe("settings page — cup-viewer", () => {
 });
 
 test.describe("dark mode — settings", () => {
-  test.use({ storageState: join(authDir, "cup-owner.json") });
+  test.use({ storageState: join(authDir, "owner.json") });
 
   // Clear the stored UI theme preference before each test so tests don't
   // affect each other. The page is loaded first so we have the right origin.

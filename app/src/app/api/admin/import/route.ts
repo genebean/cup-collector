@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/auth";
-import { resolveRole } from "@/lib/roles";
 import { getAdminPocketBase } from "@/lib/pocketbase";
 
 interface CsvRow {
@@ -65,8 +64,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { role } = await resolveRole(session.user.groups ?? []);
-  if (role === "viewer" || role === "none") {
+  if (session.user.householdRole !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

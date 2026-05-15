@@ -2,21 +2,16 @@
 
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { BottomNav } from "@/components/BottomNav";
 import { CupCard } from "@/components/CupCard";
 import type { Cup, OwnedCup, CupWithOwnership } from "@/types";
 
 export default function SearchPage() {
+  const { data: session } = useSession();
+  const householdId = session?.user?.householdId ?? null;
   const [search, setSearch] = useState("");
-  const [householdId, setHouseholdId] = useState<string | null>(null);
-
-  useEffect(() => {
-    getPocketBase().collection("households").getList(1, 1)
-      .then((r) => setHouseholdId(r.items[0]?.id ?? null))
-      .catch(() => {});
-  }, []);
 
   const { data: cups = [] } = useQuery<Cup[]>({
     queryKey: ["cups"],

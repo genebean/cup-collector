@@ -94,11 +94,11 @@ export default async function globalSetup() {
 }
 
 async function seedTestData(pb: PocketBase): Promise<void> {
-  // The dev-bypass auth provider sets pocketIdSub = providerAccountId = "dev-cup-owner".
-  // member_sub_1 matches so the household is correctly associated with the test owner.
+  // The dev-bypass auth provider generates groups like "test-household-owner" and
+  // "test-household-viewer". The JWT callback uses group_slug to resolve the household.
   await pb.collection("households").create({
     name: "Test Household",
-    member_sub_1: "dev-cup-owner",
+    group_slug: "test-household",
   });
 
   const cups = [

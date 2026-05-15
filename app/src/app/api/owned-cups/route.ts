@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/auth";
-import { roleFromGroups, canWrite } from "@/lib/roles";
 import { getAdminPocketBase } from "@/lib/pocketbase";
 
 async function requireWriter() {
   const session = await auth();
   if (!session?.user?.pocketIdSub) return null;
-  const role = roleFromGroups(session.user.groups ?? []);
-  if (!canWrite(role)) return null;
+  if (session.user.householdRole !== "owner") return null;
   return session;
 }
 
@@ -22,15 +20,12 @@ export async function POST(req: NextRequest) {
   const { cup_id } = await req.json();
   if (!cup_id) return NextResponse.json({ error: "cup_id required" }, { status: 400 });
 
+  const householdId = session.user.householdId;
+  if (!householdId) return NextResponse.json({ error: "No household found for this user" }, { status: 400 });
+
   const pb = await getAdminPocketBase();
-
-  // Get the single household
-  const households = await pb.collection("households").getList(1, 1);
-  const household = households.items[0];
-  if (!household) return NextResponse.json({ error: "No household configured" }, { status: 500 });
-
   const record = await pb.collection("owned_cups").create({
-    household_id: household.id,
+    household_id: householdId,
     cup_id,
     marked_by_sub: session.user.pocketIdSub,
   });

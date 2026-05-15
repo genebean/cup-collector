@@ -3,20 +3,19 @@
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { getPocketBase, getFileUrl } from "@/lib/pocketbase";
-import { roleFromGroups, canWrite as canWriteRole } from "@/lib/roles";
 import { useNearbyRadius } from "@/hooks/useNearbyRadius";
 import { BottomNav } from "@/components/BottomNav";
-import type { Cup, OwnedCup, NearbyStore, Household } from "@/types";
+import type { Cup, OwnedCup, NearbyStore } from "@/types";
 
 export default function CupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: session } = useSession();
   const queryClient = useQueryClient();
   const router = useRouter();
-  const [household, setHousehold] = useState<Household | null>(null);
+  const householdId = session?.user?.householdId ?? null;
 
   // Condition edit state — null = form closed; object = form open with draft values.
   // Initialized from ownedRecord when the user opens the form, so no useEffect sync needed.
@@ -34,17 +33,8 @@ export default function CupDetailPage() {
     onConfirm: () => void;
   } | null>(null);
 
-  const canWrite = canWriteRole(roleFromGroups(session?.user?.groups ?? []));
+  const canWrite = session?.user?.householdRole === "owner";
   const { radiusMeters } = useNearbyRadius();
-
-  // Fetch the single household — needed to scope the owned_cups query
-  useEffect(() => {
-    const pb = getPocketBase();
-    pb.collection("households")
-      .getList<Household>(1, 1)
-      .then((r) => setHousehold(r.items[0] ?? null))
-      .catch(() => {});
-  }, []);
 
   const { data: cup, isLoading } = useQuery<Cup>({
     queryKey: ["cup", id],
@@ -52,18 +42,18 @@ export default function CupDetailPage() {
   });
 
   const { data: ownedRecord } = useQuery<OwnedCup | null>({
-    queryKey: ["owned_cup", id, household?.id],
+    queryKey: ["owned_cup", id, householdId],
     queryFn: async () => {
-      if (!household) return null;
+      if (!householdId) return null;
       try {
         return await getPocketBase()
           .collection("owned_cups")
-          .getFirstListItem<OwnedCup>(`cup_id="${id}" && household_id="${household.id}"`);
+          .getFirstListItem<OwnedCup>(`cup_id="${id}" && household_id="${householdId}"`);
       } catch {
         return null; // Record not found = not owned
       }
     },
-    enabled: !!household,
+    enabled: !!householdId,
   });
 
   const isOwned = !!ownedRecord;
@@ -87,15 +77,15 @@ export default function CupDetailPage() {
         body: JSON.stringify({ cup_id: id }),
       }).then((r) => { if (!r.ok) throw new Error("Failed to mark owned"); return r.json(); }),
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ["owned_cup", id, household?.id] });
-      queryClient.setQueryData(["owned_cup", id, household?.id], { id: "optimistic" });
+      await queryClient.cancelQueries({ queryKey: ["owned_cup", id, householdId] });
+      queryClient.setQueryData(["owned_cup", id, householdId], { id: "optimistic" });
     },
     onError: () => {
-      queryClient.setQueryData(["owned_cup", id, household?.id], null);
+      queryClient.setQueryData(["owned_cup", id, householdId], null);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, household?.id] });
-      queryClient.invalidateQueries({ queryKey: ["owned_cups", household?.id] });
+      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, householdId] });
+      queryClient.invalidateQueries({ queryKey: ["owned_cups", householdId] });
     },
   });
 
@@ -105,15 +95,15 @@ export default function CupDetailPage() {
       fetch(`/api/owned-cups?id=${ownedRecord!.id}`, { method: "DELETE" })
         .then((r) => { if (!r.ok) throw new Error("Failed to remove"); }),
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ["owned_cup", id, household?.id] });
-      queryClient.setQueryData(["owned_cup", id, household?.id], null);
+      await queryClient.cancelQueries({ queryKey: ["owned_cup", id, householdId] });
+      queryClient.setQueryData(["owned_cup", id, householdId], null);
     },
     onError: () => {
-      queryClient.setQueryData(["owned_cup", id, household?.id], ownedRecord);
+      queryClient.setQueryData(["owned_cup", id, householdId], ownedRecord);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, household?.id] });
-      queryClient.invalidateQueries({ queryKey: ["owned_cups", household?.id] });
+      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, householdId] });
+      queryClient.invalidateQueries({ queryKey: ["owned_cups", householdId] });
     },
   });
 
@@ -127,8 +117,8 @@ export default function CupDetailPage() {
       }).then((r) => { if (!r.ok) throw new Error("Failed to update condition"); return r.json(); }),
     onSettled: () => {
       setConditionDraft(null);
-      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, household?.id] });
-      queryClient.invalidateQueries({ queryKey: ["owned_cups", household?.id] });
+      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, householdId] });
+      queryClient.invalidateQueries({ queryKey: ["owned_cups", householdId] });
     },
   });
 
@@ -146,7 +136,7 @@ export default function CupDetailPage() {
         }),
       }).then((r) => { if (!r.ok) throw new Error("Failed to record store"); return r.json(); }),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, household?.id] });
+      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, householdId] });
     },
   });
 
@@ -174,15 +164,15 @@ export default function CupDetailPage() {
       return r2.json();
     },
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ["owned_cup", id, household?.id] });
-      queryClient.setQueryData(["owned_cup", id, household?.id], { id: "optimistic" });
+      await queryClient.cancelQueries({ queryKey: ["owned_cup", id, householdId] });
+      queryClient.setQueryData(["owned_cup", id, householdId], { id: "optimistic" });
     },
     onError: () => {
-      queryClient.setQueryData(["owned_cup", id, household?.id], null);
+      queryClient.setQueryData(["owned_cup", id, householdId], null);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, household?.id] });
-      queryClient.invalidateQueries({ queryKey: ["owned_cups", household?.id] });
+      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, householdId] });
+      queryClient.invalidateQueries({ queryKey: ["owned_cups", householdId] });
     },
   });
 

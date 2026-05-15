@@ -8,7 +8,7 @@ const authDir = join(import.meta.dirname, "../playwright/.auth");
 
 // Roles to pre-authenticate. Each produces one storageState JSON file.
 // "no-group" is intentionally not a known role — it tests the access-denied path.
-const ROLES = ["cup-owner", "cup-viewer", "no-group"] as const;
+const ROLES = ["owner", "viewer", "no-group"] as const;
 
 for (const role of ROLES) {
   setup(`authenticate as ${role}`, async ({ request }) => {

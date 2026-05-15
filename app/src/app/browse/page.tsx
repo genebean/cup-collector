@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { haversineMi } from "@/lib/geo";
 import { BottomNav } from "@/components/BottomNav";
@@ -13,9 +14,10 @@ type Filter = "all" | "needed" | string; // string covers series/country filter 
 
 export default function BrowsePage() {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const householdId = session?.user?.householdId ?? null;
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
-  const [householdId, setHouseholdId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
@@ -23,12 +25,6 @@ export default function BrowsePage() {
       (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => {}
     );
-  }, []);
-
-  useEffect(() => {
-    getPocketBase().collection("households").getList(1, 1)
-      .then((r) => setHouseholdId(r.items[0]?.id ?? null))
-      .catch(() => {});
   }, []);
 
   const { data: cups = [] } = useQuery<Cup[]>({
