@@ -138,10 +138,10 @@
               pre-commit run --all-files || return 1
               echo ""
               echo "==> unit tests"
-              (cd "$PROJ_ROOT/app" && npm test) || return 1
+              (cd "$PROJ_ROOT/app" && npm run test:coverage) || return 1
               echo ""
               echo "==> next lint"
-              (cd "$PROJ_ROOT/app" && npx next lint) || return 1
+              (cd "$PROJ_ROOT/app" && npm run lint) || return 1
               echo ""
               echo "All checks passed."
             }
