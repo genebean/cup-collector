@@ -136,20 +136,26 @@ before opening or updating a PR.
 
 ## Dev Shell Helper Commands
 
-These are defined in `flake.nix` and available inside `nix develop`:
+These are defined in `flake.nix` as `cc-*` binaries and available inside `nix develop`.
+Each command has two forms:
+
+- **Short alias** (interactive): `check`, `play-e2e`, etc. — works inside `nix develop`
+- **Full binary** (scriptable): `cc-check`, `cc-play-e2e`, etc. — callable from outside
+  the interactive shell via `nix develop -c cc-<name>` (useful in CI, editor tasks, etc.)
 
 | Command | What it does |
 |---|---|
-| `pb-serve` | Start PocketBase on localhost:8090 |
-| `pocketid-serve` | Start PocketID container on localhost:1411 |
-| `dev-next` | Start Next.js dev server on localhost:3000 |
+| `pb-serve` / `cc-pb-serve` | Start PocketBase on localhost:8090 |
+| `pocketid-serve` / `cc-pocketid-serve` | Start PocketID container on localhost:1411 |
+| `dev-next` / `cc-dev-next` | Start Next.js dev server on localhost:3000 |
+| `dev-next-bypass` / `cc-dev-next-bypass` | Start Next.js dev server with Playwright auth bypass |
 | `import-cups --file cups.csv` | Import cup catalog from CSV |
 | `import-cups --file cups.csv --dry-run` | Preview import without writing |
-| `gen-auth-secret` | Generate a new AUTH_SECRET value |
-| `docs-serve` | Serve the docs site at localhost:4000 |
-| `check` | Run pre-commit hooks, unit tests with coverage, and ESLint locally (fast CI check) |
-| `play-e2e` | Run Playwright e2e tests (starts and stops the dev server automatically) |
-| `playwright-install` | Install Playwright's Chrome browser (one-time setup after `npm install`) |
+| `gen-auth-secret` / `cc-gen-auth-secret` | Generate a new AUTH_SECRET value |
+| `docs-serve` / `cc-docs-serve` | Serve the docs site at localhost:4000 |
+| `check` / `cc-check` | Run pre-commit hooks, unit tests with coverage, and ESLint locally (fast CI check) |
+| `play-e2e` / `cc-play-e2e` | Run Playwright e2e tests (starts and stops the dev server automatically) |
+| `playwright-install` / `cc-playwright-install` | Install Playwright's Chrome browser (one-time setup after `npm install`) |
 
 ---
 
