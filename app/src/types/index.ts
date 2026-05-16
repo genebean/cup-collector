@@ -26,6 +26,8 @@ export interface Cup {
   lat: number; // City centroid latitude
   lng: number; // City centroid longitude
   notes: string;
+  hobbydb_url: string;   // Direct URL to this cup's hobbyDB record, if known
+  more_info_url: string; // Fallback external reference (e.g. starbucks-mugs.com)
 }
 
 export interface OwnedCup {

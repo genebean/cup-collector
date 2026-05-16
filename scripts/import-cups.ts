@@ -7,7 +7,7 @@
 //   npx ts-node scripts/import-cups.ts --file cups.csv --dry-run
 //
 // Expected CSV columns:
-//   city, region, country, country_code, series, year, lat, lng, image_url, notes
+//   city, region, country, country_code, series, year, lat, lng, image_url, hobbydb_url, more_info_url, notes
 //
 // Upsert logic: match on (city + series + year) — update if exists, create if not.
 // Safe to re-run at any time — will not duplicate records.
@@ -58,6 +58,8 @@ interface CsvRow {
   lat: number;
   lng: number;
   image_url: string;
+  hobbydb_url: string;
+  more_info_url: string;
   notes: string;
 }
 
@@ -88,6 +90,8 @@ function parseCSV(filePath: string): CsvRow[] {
       lat: parseFloat(row.lat) || 0,
       lng: parseFloat(row.lng) || 0,
       image_url: row.image_url ?? "",
+      hobbydb_url: row.hobbydb_url ?? "",
+      more_info_url: row.more_info_url ?? "",
       notes: row.notes ?? "",
     });
   }
@@ -164,8 +168,9 @@ async function main() {
         year: row.year,
         lat: row.lat,
         lng: row.lng,
-        // Store source URL for attribution tracking
         image_credit: row.image_url || undefined,
+        hobbydb_url: row.hobbydb_url || undefined,
+        more_info_url: row.more_info_url || undefined,
         notes: row.notes,
       };
 

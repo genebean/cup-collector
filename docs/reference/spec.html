@@ -479,6 +479,8 @@ code { color: var(--code-text); }
         <div class="schema-field"><div class="field-name">lat</div><div class="field-type">number</div><div class="field-desc">Latitude of city centroid for map pin placement</div></div>
         <div class="schema-field"><div class="field-name">lng</div><div class="field-type">number</div><div class="field-desc">Longitude of city centroid for map pin placement</div></div>
         <div class="schema-field"><div class="field-name">notes</div><div class="field-type">text</div><div class="field-desc">Optional freeform notes (variants, limited editions, etc.)</div></div>
+        <div class="schema-field"><div class="field-name">hobbydb_url</div><div class="field-type">string</div><div class="field-desc">Optional. Direct URL to this cup's hobbyDB record for collector reference</div></div>
+        <div class="schema-field"><div class="field-name">more_info_url</div><div class="field-type">string</div><div class="field-desc">Optional. Fallback external reference URL (e.g. starbucks-mugs.com) when hobbydb_url is absent</div></div>
       </div>
     </div>
 
@@ -810,13 +812,13 @@ cup-collector.url = <span class="cs">"github:genebean/cup-collector"</span>;
     <p>The cup catalog is maintained by the collaborator in a spreadsheet (Google Sheets or Excel) and imported via CSV. For large catalog updates (new series, bulk corrections), the owner runs the CLI import script from inside the dev shell. For incremental updates (a handful of new cups), the owner or collaborator can use the web UI at <span class="ic">/admin/import</span> without needing a dev shell.</p>
 
     <h3>CSV Column Format</h3>
-    <pre><code>city,region,country,country_code,series,year,lat,lng,image_url,notes
-San Francisco,California,United States,US,You Are Here,2021,37.7749,-122.4194,https://...,
-Tokyo,,Japan,JP,You Are Here,2019,35.6762,139.6503,https://...,
-London,England,United Kingdom,GB,Been There,2020,51.5074,-0.1278,https://...,
+    <pre><code>city,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes
+San Francisco,California,United States,US,You Are Here,2021,37.7749,-122.4194,https://...,,
+Tokyo,,Japan,JP,You Are Here,2019,35.6762,139.6503,https://...,https://hobbydb.com/...,
+London,England,United Kingdom,GB,Been There,2020,51.5074,-0.1278,https://...,,https://starbucks-mugs.com/...,
 </code></pre>
 
-    <p>The <span class="ic">image_url</span> column accepts a public URL. The import script downloads the image and stores it in PocketBase file storage. Images are not linked externally after import — the URL is stored only in <span class="ic">image_credit</span> for attribution.</p>
+    <p>The <span class="ic">image_url</span> column accepts a public URL. The import script downloads the image and stores it in PocketBase file storage. Images are not linked externally after import — the URL is stored only in <span class="ic">image_credit</span> for attribution. The <span class="ic">hobbydb_url</span> and <span class="ic">more_info_url</span> columns are optional; existing CSV files without them still import cleanly.</p>
 
     <h3>Import Script — scripts/import-cups.ts</h3>
     <ul class="feature-list">
