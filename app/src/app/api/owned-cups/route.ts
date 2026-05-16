@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
 }
 
 // PATCH /api/owned-cups?id=<owned_cup_id>
-// Body: any subset of { needs_replacing, replacement_note, acquired_store_name,
-//                       acquired_store_lat, acquired_store_lng }
-// Updates condition/acquisition details on an existing owned_cups record.
+// Two modes depending on Content-Type:
+//   multipart/form-data — own_photo file upload; replaces the personal photo
+//   application/json    — condition/acquisition field updates
 export async function PATCH(req: NextRequest) {
   const session = await requireWriter();
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -44,6 +44,29 @@ export async function PATCH(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
+  const pb = await getAdminPocketBase();
+
+  // File upload path — own_photo replacement
+  if ((req.headers.get("content-type") ?? "").includes("multipart/form-data")) {
+    const formData = await req.formData();
+    const photo = formData.get("own_photo");
+    if (!photo || !(photo instanceof File)) {
+      return NextResponse.json({ error: "own_photo file required" }, { status: 400 });
+    }
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+    if (!allowed.includes(photo.type)) {
+      return NextResponse.json(
+        { error: `Unsupported image type: ${photo.type}. Allowed: jpeg, png, webp, heic.` },
+        { status: 415 }
+      );
+    }
+    const pbForm = new FormData();
+    pbForm.append("own_photo", photo);
+    const record = await pb.collection("owned_cups").update(id, pbForm);
+    return NextResponse.json(record);
+  }
+
+  // JSON path — condition/acquisition fields
   const body = await req.json();
 
   // Only allow the condition/acquisition fields — never let callers overwrite
@@ -65,9 +88,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "No updatable fields provided" }, { status: 400 });
   }
 
-  const pb = await getAdminPocketBase();
   const record = await pb.collection("owned_cups").update(id, update);
-
   return NextResponse.json(record);
 }
 

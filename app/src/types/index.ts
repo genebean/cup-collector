@@ -30,6 +30,7 @@ export interface Cup {
 
 export interface OwnedCup {
   id: string;
+  collectionId: string; // PocketBase collection identifier — needed for own_photo URL construction
   household_id: string;
   cup_id: string;
   marked_by_sub: string; // PocketID sub of whoever marked it owned

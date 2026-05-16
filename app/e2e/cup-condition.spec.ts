@@ -143,9 +143,11 @@ test.describe("cup condition — cup-owner", () => {
 test.describe("cup condition — cup-viewer", () => {
   test.use({ storageState: join(authDir, "viewer.json") });
 
-  test("condition card is not shown for viewers", async ({ page }) => {
+  test("viewer sees condition card but no edit or remove controls", async ({ page }) => {
     await goToSeattleCup(page);
-    // Condition heading should not appear — viewers have no write access
+    // Seattle cup is not owned for the test household — no condition card shown
     await expect(page.getByRole("heading", { name: "Condition", level: 2 })).not.toBeVisible();
+    // Viewers never see the Edit or Remove controls regardless of ownership
+    await expect(page.getByRole("button", { name: "Remove from Collection" })).not.toBeVisible();
   });
 });
