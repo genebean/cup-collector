@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { getPocketBase, getFileUrl } from "@/lib/pocketbase";
 import { useNearbyRadius } from "@/hooks/useNearbyRadius";
@@ -35,6 +35,15 @@ export default function CupDetailPage() {
 
   const canWrite = session?.user?.householdRole === "owner";
   const { radiusMeters } = useNearbyRadius();
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setLightboxOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxOpen]);
 
   const { data: cup, isLoading } = useQuery<Cup>({
     queryKey: ["cup", id],
@@ -176,6 +185,23 @@ export default function CupDetailPage() {
     },
   });
 
+  // Upload personal photo for an owned cup
+  const uploadPhoto = useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("own_photo", file);
+      const r = await fetch(`/api/owned-cups?id=${ownedRecord!.id}`, {
+        method: "PATCH",
+        body: form,
+      });
+      if (!r.ok) throw new Error("Failed to upload photo");
+      return r.json();
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, householdId] });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen text-gray-400">
@@ -192,9 +218,12 @@ export default function CupDetailPage() {
     );
   }
 
-  const imageUrl = cup.image
-    ? getFileUrl(cup.collectionId, cup.id, cup.image)
+  const ownPhotoUrl = ownedRecord?.own_photo
+    ? getFileUrl(ownedRecord.collectionId, ownedRecord.id, ownedRecord.own_photo)
     : null;
+  const imageUrl = ownPhotoUrl ?? (cup.image
+    ? getFileUrl(cup.collectionId, cup.id, cup.image)
+    : null);
 
   return (
     <div className="flex flex-col h-screen dark:bg-gray-900">
@@ -207,14 +236,47 @@ export default function CupDetailPage() {
       </header>
 
       <main className="flex-1 overflow-y-auto pb-24">
-        {/* Hero image */}
-        <div className="w-full h-56 bg-green-starbucks flex items-center justify-center">
+        {/* Hero image — shows own_photo when present, falls back to catalog image.
+            Tapping the image when one exists opens a full-size lightbox. */}
+        <div
+          className={`relative w-full h-56 bg-green-starbucks flex items-center justify-center ${imageUrl ? "cursor-zoom-in" : ""}`}
+          onClick={() => { if (imageUrl) setLightboxOpen(true); }}
+        >
           {imageUrl ? (
             <Image src={imageUrl} alt={`${cup.city} cup`} fill className="object-contain" unoptimized />
           ) : (
             <span className="text-white text-6xl font-bold opacity-30">
               {cup.city.charAt(0)}
             </span>
+          )}
+          {/* Camera button — owners only, visible once the real owned record is confirmed */}
+          {canWrite && isOwned && ownedRecord && ownedRecord.id !== "optimistic" && (
+            <>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadPhoto.mutate(file);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click(); }}
+                disabled={uploadPhoto.isPending}
+                aria-label="Upload personal photo"
+                className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploadPhoto.isPending ? (
+                  <span className="text-xs">…</span>
+                ) : (
+                  <span className="text-base">📷</span>
+                )}
+              </button>
+            </>
           )}
         </div>
 
@@ -486,6 +548,22 @@ export default function CupDetailPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Lightbox — full-size image, scales down to fit, never upscales */}
+      {lightboxOpen && imageUrl && (
+        <div
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/90 cursor-zoom-out"
+          onClick={() => setLightboxOpen(false)}
+          aria-label="Close full-size image"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageUrl}
+            alt={`${cup.city} cup — full size`}
+            style={{ maxWidth: "100vw", maxHeight: "100dvh", width: "auto", height: "auto", objectFit: "contain" }}
+          />
         </div>
       )}
 

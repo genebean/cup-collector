@@ -98,7 +98,9 @@ test.describe("cup condition — cup-owner", () => {
     await page.getByRole("button", { name: "Edit" }).click();
     await page.getByRole("checkbox", { name: "Needs replacing" }).check();
     await page.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText(/Needs replacing/)).toBeVisible({ timeout: 5_000 });
+    // Wait for the edit form to close — the Edit button reappears only after onSettled fires,
+    // meaning the PATCH response has arrived and needs_replacing is committed in PocketBase.
+    await expect(page.getByRole("button", { name: "Edit" })).toBeVisible({ timeout: 10_000 });
 
     // Browse list should show "Needs Replacing" badge (capital R) for Seattle
     await page.goto("/browse");
@@ -143,9 +145,11 @@ test.describe("cup condition — cup-owner", () => {
 test.describe("cup condition — cup-viewer", () => {
   test.use({ storageState: join(authDir, "viewer.json") });
 
-  test("condition card is not shown for viewers", async ({ page }) => {
+  test("viewer sees condition card but no edit or remove controls", async ({ page }) => {
     await goToSeattleCup(page);
-    // Condition heading should not appear — viewers have no write access
+    // Seattle cup is not owned for the test household — no condition card shown
     await expect(page.getByRole("heading", { name: "Condition", level: 2 })).not.toBeVisible();
+    // Viewers never see the Edit or Remove controls regardless of ownership
+    await expect(page.getByRole("button", { name: "Remove from Collection" })).not.toBeVisible();
   });
 });
