@@ -39,11 +39,18 @@ test.describe("map bottom sheet", () => {
     await expect(expandButton).toBeVisible({ timeout: 10_000 });
     await expandButton.click();
 
-    // Cup row buttons exist in the DOM even when the sheet is collapsed (they're just
-    // below the viewport via CSS transform). Wait for the first row to be *visible*
-    // so the slide-up transition has completed before we try to interact.
+    // Wait for the 300ms slide-up CSS transition to fully complete before interacting.
+    // Without this, headless Playwright under CPU load (multiple workers) can click
+    // during the animation and hit the BottomNav "Map" link behind the sheet instead
+    // of the cup row button.
+    await page.waitForFunction(() => {
+      const sheet = document.querySelector("[data-testid='bottom-sheet']");
+      if (!sheet) return false;
+      return new DOMMatrix(window.getComputedStyle(sheet).transform).m42 === 0;
+    }, { timeout: 5_000 });
+
     const firstRow = page.getByRole("button", { name: /^View .+ cup$/ }).first();
-    const hasRows = await firstRow.isVisible({ timeout: 5_000 }).catch(() => false);
+    const hasRows = await firstRow.isVisible({ timeout: 2_000 }).catch(() => false);
     if (hasRows) {
       await firstRow.click();
       await expect(page).toHaveURL(/\/cup\//, { timeout: 10_000 });
