@@ -10,13 +10,17 @@ import { OfflineBanner } from "@/components/OfflineBanner";
 import { CupCard } from "@/components/CupCard";
 import type { Cup, OwnedCup, CupWithOwnership } from "@/types";
 
-type Filter = "all" | "needed" | string; // string covers series/country filter values
+type StatusFilter = "all" | "needed" | "owned";
 
 export default function BrowsePage() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const householdId = session?.user?.householdId ?? null;
-  const [filter, setFilter] = useState<Filter>("all");
+
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [seriesFilter, setSeriesFilter] = useState("");   // "" = no filter
+  const [countryFilter, setCountryFilter] = useState(""); // "" = no filter
+  const [nearMe, setNearMe] = useState(false);
   const [search, setSearch] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
@@ -57,8 +61,8 @@ export default function BrowsePage() {
 
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
   const seriesList = [...new Set(cups.map((c) => c.series))].sort();
+  const countryList = [...new Set(cups.map((c) => c.country))].sort();
 
-  // Merge ownership, apply search and filter, sort "needed near me" first
   const displayedCups: CupWithOwnership[] = useMemo(() => {
     let result: CupWithOwnership[] = cups.map((cup) => ({
       ...cup,
@@ -66,7 +70,6 @@ export default function BrowsePage() {
       ownedRecord: ownedCups.find((o) => o.cup_id === cup.id),
     }));
 
-    // Text search across city, country, series
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -77,28 +80,38 @@ export default function BrowsePage() {
       );
     }
 
-    // Filter chips
-    if (filter === "needed") {
-      result = result.filter((c) => !c.isOwned);
-    } else if (filter !== "all") {
-      result = result.filter((c) => c.series === filter);
-    }
+    if (statusFilter === "needed") result = result.filter((c) => !c.isOwned);
+    if (statusFilter === "owned")  result = result.filter((c) => c.isOwned);
+    if (seriesFilter)              result = result.filter((c) => c.series === seriesFilter);
+    if (countryFilter)             result = result.filter((c) => c.country === countryFilter);
 
-    // When location is available, float unowned nearby cups to the top
-    if (userLocation) {
+    // Near Me — explicit opt-in sort toggle
+    if (nearMe && userLocation) {
       result.sort((a, b) => {
         if (a.isOwned !== b.isOwned) return a.isOwned ? 1 : -1;
-        const distA = haversineMi(userLocation, a);
-        const distB = haversineMi(userLocation, b);
-        return distA - distB;
+        return haversineMi(userLocation, a) - haversineMi(userLocation, b);
       });
     }
 
     return result;
-  }, [cups, ownedCups, ownedCupIds, filter, search, userLocation]);
+  }, [cups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, nearMe, search, userLocation]);
 
   const ownedCount = ownedCupIds.size;
   const totalCount = cups.length;
+
+  const chipClass = (active: boolean) =>
+    `flex-shrink-0 text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
+      active
+        ? "bg-gold text-green-dark border-gold"
+        : "border-white/30 text-white/80 hover:border-white/60"
+    }`;
+
+  const selectClass = (active: boolean) =>
+    `w-full appearance-none text-xs font-medium px-3 py-1 pr-7 rounded-full border bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/50 transition-colors ${
+      active
+        ? "bg-gold text-green-dark border-gold"
+        : "border-white/30 text-white/80 hover:border-white/60"
+    }`;
 
   return (
     <div className="flex flex-col h-screen dark:bg-gray-900">
@@ -116,6 +129,7 @@ export default function BrowsePage() {
             {totalCount} cups · {ownedCount} owned
           </span>
         </div>
+
         {/* Search bar */}
         <input
           type="search"
@@ -124,25 +138,42 @@ export default function BrowsePage() {
           onChange={(e) => setSearch(e.target.value)}
           className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-gray-900 bg-white/90 placeholder-gray-400 focus:outline-none"
         />
-        {/* Filter chips */}
-        <div className="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide">
-          {[
-            { value: "all", label: "All" },
-            { value: "needed", label: "Still Need" },
-            ...seriesList.map((s) => ({ value: s, label: s })),
-          ].map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => setFilter(value)}
-              className={`flex-shrink-0 text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
-                filter === value
-                  ? "bg-gold text-green-dark border-gold"
-                  : "border-white/30 text-white/80 hover:border-white/60"
-              }`}
+
+        {/* Series + Country selects — side by side, full width on mobile */}
+        <div className="flex gap-2 mt-2">
+          <div className="relative flex-1">
+            <select
+              value={seriesFilter}
+              onChange={(e) => setSeriesFilter(e.target.value)}
+              className={selectClass(!!seriesFilter)}
             >
-              {label}
-            </button>
-          ))}
+              <option value="">Series…</option>
+              {seriesList.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] leading-none text-white/60">▾</span>
+          </div>
+
+          <div className="relative flex-1">
+            <select
+              value={countryFilter}
+              onChange={(e) => setCountryFilter(e.target.value)}
+              className={selectClass(!!countryFilter)}
+            >
+              <option value="">Country…</option>
+              {countryList.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] leading-none text-white/60">▾</span>
+          </div>
+        </div>
+
+        {/* Status chips + Near Me — always fit on one row */}
+        <div className="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide">
+          <button className={chipClass(statusFilter === "all")} onClick={() => setStatusFilter("all")}>All</button>
+          <button className={chipClass(statusFilter === "needed")} onClick={() => setStatusFilter("needed")}>Still Need</button>
+          <button className={chipClass(statusFilter === "owned")} onClick={() => setStatusFilter("owned")}>Already Have</button>
+          {userLocation && (
+            <button className={chipClass(nearMe)} onClick={() => setNearMe((v) => !v)}>Near Me</button>
+          )}
         </div>
       </header>
 

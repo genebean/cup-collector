@@ -57,5 +57,19 @@ export default defineConfig({
       name: "chrome",
       dependencies: ["setup"],
     },
+    // Mobile viewport smoke test — limited to browse spec to avoid doubling suite runtime.
+    // Uses iPhone 14 viewport + touch UA; Chrome binary runs the actual rendering.
+    {
+      name: "iphone",
+      dependencies: ["setup"],
+      testMatch: /browse\.spec\.ts/,
+      use: {
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        channel: "chrome",
+        serviceWorkers: "block",
+      },
+    },
   ],
 });
