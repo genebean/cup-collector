@@ -1,25 +1,17 @@
 import { auth, signOut } from "@/app/auth";
 import { redirect } from "next/navigation";
-import { resolveRole, canWrite } from "@/lib/roles";
 import { BottomNav } from "@/components/BottomNav";
 import { UiThemeSelector } from "@/components/UiThemeSelector";
 import Link from "next/link";
 
-// Settings is a server component — reads session and role server-side,
+// Settings is a server component — reads session server-side,
 // no client-side JS needed for this static page.
 export default async function SettingsPage() {
   const session = await auth();
-  if (!session?.user?.groups) redirect("/sign-in");
+  if (!session?.user?.householdId) redirect("/sign-in");
 
-  const { role, household } = await resolveRole(session.user.groups ?? []);
-  if (role === "none") redirect("/access-denied");
-
-  const roleLabels: Record<string, string> = {
-    owner: "Owner",
-    collaborator: "Collaborator",
-    viewer: "Viewer",
-    none: "No access",
-  };
+  const role = session.user.householdRole;
+  const roleLabel = role === "owner" ? "Owner" : role === "viewer" ? "Viewer" : "No access";
 
   return (
     <div className="flex flex-col h-screen bg-cream dark:bg-gray-900">
@@ -32,13 +24,13 @@ export default async function SettingsPage() {
         <Section title="Account">
           <Row label="Name" value={session.user.name ?? "—"} />
           <Row label="Email" value={session.user.email ?? "—"} />
-          <Row label="Role" value={roleLabels[role] ?? role} />
+          <Row label="Role" value={roleLabel} />
         </Section>
 
         {/* Household info */}
-        {household && (
+        {session.user.householdName && (
           <Section title="Household">
-            <Row label="Name" value={household.name} />
+            <Row label="Name" value={session.user.householdName} />
           </Section>
         )}
 
@@ -52,8 +44,8 @@ export default async function SettingsPage() {
           <Row label="Version" value={process.env.npm_package_version ?? "0.1.0"} />
         </Section>
 
-        {/* Admin tools — owners and collaborators only */}
-        {canWrite(role) && (
+        {/* Admin tools — owners only */}
+        {role === "owner" && (
           <Section title="Admin">
             <Link
               href="/admin/import"

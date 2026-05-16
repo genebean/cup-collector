@@ -13,7 +13,7 @@ async function goToSeattleCup(page: Page) {
 }
 
 test.describe("cup detail — cup-owner", () => {
-  test.use({ storageState: join(authDir, "cup-owner.json") });
+  test.use({ storageState: join(authDir, "owner.json") });
 
   test("shows cup metadata for a seeded cup", async ({ page }) => {
     await goToSeattleCup(page);
@@ -30,7 +30,7 @@ test.describe("cup detail — cup-owner", () => {
 });
 
 test.describe("cup detail — cup-viewer", () => {
-  test.use({ storageState: join(authDir, "cup-viewer.json") });
+  test.use({ storageState: join(authDir, "viewer.json") });
 
   test("shows cup metadata", async ({ page }) => {
     await goToSeattleCup(page);

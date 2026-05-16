@@ -1,38 +1,32 @@
-import { getPocketBase } from "@/lib/pocketbase";
-import type { Household, UserRole } from "@/types";
+import type { UserRole } from "@/types";
 
-// Group names must match the PocketID groups assigned to users.
-// Defaults work out of the box; override via env vars if needed.
-const OWNER_GROUP = process.env.ROLE_GROUP_OWNER ?? "cup-owner";
-const COLLABORATOR_GROUP = process.env.ROLE_GROUP_COLLABORATOR ?? "cup-collaborator";
-const VIEWER_GROUP = process.env.ROLE_GROUP_VIEWER ?? "cup-viewer";
+// Groups in PocketID follow the convention "{household-slug}-owner" and
+// "{household-slug}-viewer". The slug links to the households.group_slug field
+// in PocketBase, so household membership is managed entirely in PocketID —
+// no raw OIDC subs needed when adding members.
 
-// Derive a role from the PocketID groups claim (included when "groups" scope is requested).
-export function roleFromGroups(groups: string[]): UserRole {
-  if (groups.includes(OWNER_GROUP)) return "owner";
-  if (groups.includes(COLLABORATOR_GROUP)) return "collaborator";
-  if (groups.includes(VIEWER_GROUP)) return "viewer";
-  return "none";
+export interface HouseholdMembership {
+  slug: string;
+  role: "owner" | "viewer";
 }
 
-// Resolve role and fetch the single household record (needed for owned_cups queries).
-export async function resolveRole(groups: string[]): Promise<{
-  role: UserRole;
-  household: Household | null;
-}> {
-  const role = roleFromGroups(groups);
-  if (role === "none") return { role: "none", household: null };
+// Parse JWT groups into household memberships. Groups that don't match the
+// convention are silently ignored (they may be unrelated PocketID groups).
+export function parseHouseholdGroups(groups: string[]): HouseholdMembership[] {
+  return groups.flatMap((g): HouseholdMembership[] => {
+    if (g.endsWith("-owner")) return [{ slug: g.slice(0, -6), role: "owner" }];
+    if (g.endsWith("-viewer")) return [{ slug: g.slice(0, -7), role: "viewer" }];
+    return [];
+  });
+}
 
-  try {
-    const pb = getPocketBase();
-    const records = await pb.collection("households").getList<Household>(1, 1);
-    return { role, household: records.items[0] ?? null };
-  } catch {
-    return { role, household: null };
-  }
+// Derive a UserRole from a household membership (used in UI permission checks).
+export function roleFromMembership(membership: HouseholdMembership | null | undefined): UserRole {
+  if (!membership) return "none";
+  return membership.role; // "owner" | "viewer" — both are valid UserRole values
 }
 
 // Check whether a role has write access.
 export function canWrite(role: UserRole): boolean {
-  return role === "owner" || role === "collaborator";
+  return role === "owner";
 }

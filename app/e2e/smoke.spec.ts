@@ -20,7 +20,7 @@ test("sign-in page shows app name and sign-in button", async ({ page }) => {
 });
 
 test.describe("cup-owner", () => {
-  test.use({ storageState: join(authDir, "cup-owner.json") });
+  test.use({ storageState: join(authDir, "owner.json") });
 
   test("can access the app without being redirected", async ({ page }) => {
     await page.goto("/map");
@@ -29,7 +29,7 @@ test.describe("cup-owner", () => {
 });
 
 test.describe("cup-viewer", () => {
-  test.use({ storageState: join(authDir, "cup-viewer.json") });
+  test.use({ storageState: join(authDir, "viewer.json") });
 
   test("can access the app without being redirected", async ({ page }) => {
     await page.goto("/map");

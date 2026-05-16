@@ -1,6 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import type { JWT as _JWT } from "next-auth/jwt"; // import required for module augmentation below
+import { getAdminPocketBase } from "@/lib/pocketbase";
+import { parseHouseholdGroups } from "@/lib/roles";
 
 declare module "next-auth" {
   interface User {
@@ -13,11 +15,17 @@ declare module "next-auth" {
       image?: string | null;
       pocketIdSub?: string;
       groups?: string[];
+      householdId?: string | null;
+      householdName?: string | null;
+      householdRole?: "owner" | "viewer" | null;
     };
   }
   interface JWT {
     pocketIdSub?: string;
     groups?: string[];
+    householdId?: string | null;
+    householdName?: string | null;
+    householdRole?: "owner" | "viewer" | null;
   }
 }
 
@@ -41,12 +49,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           authorize(_credentials, req) {
             // Read role from the URL query param — query params are reliably
             // forwarded by Auth.js to authorize(), unlike parsed form bodies.
-            const role = new URL(req.url).searchParams.get("role") ?? "cup-viewer";
+            const role = new URL(req.url).searchParams.get("role") ?? "viewer";
+            // Groups follow the same "{slug}-{role}" convention as production.
+            // The test household has group_slug "test-household".
             return {
               id: `dev-${role}`,
               name: `Dev ${role}`,
               email: `dev-${role}@playwright.local`,
-              groups: [role],
+              groups: [`test-household-${role}`],
             };
           },
         }),
@@ -64,14 +74,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       ],
   callbacks: {
     authorized({ auth: session, request }) {
+      // Unauthenticated: let Auth.js redirect to /sign-in (return false).
       if (!session?.user) return false;
-      const groups = (session.user as { groups?: string[] }).groups ?? [];
-      const knownGroups = [
-        process.env.ROLE_GROUP_OWNER ?? "cup-owner",
-        process.env.ROLE_GROUP_COLLABORATOR ?? "cup-collaborator",
-        process.env.ROLE_GROUP_VIEWER ?? "cup-viewer",
-      ];
-      if (!groups.some((g) => knownGroups.includes(g))) {
+      // Authenticated but no resolved household: redirect to /access-denied.
+      const user = session.user as { householdId?: string | null };
+      if (!user.householdId) {
         return Response.redirect(new URL("/access-denied", request.url));
       }
       return true;
@@ -82,14 +89,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.pocketIdSub = profile.sub as string;
         token.groups = (profile.groups as string[]) ?? [];
       } else if (account?.provider === "dev-bypass") {
-        // Dev bypass path: role is encoded in providerAccountId ("dev-{role}")
+        // Dev bypass path: role is encoded in providerAccountId ("dev-{role}").
         // account is only set during sign-in, so this only runs once per session.
         const id = (account.providerAccountId ?? "") as string;
-        token.groups = [id.replace(/^dev-/, "")];
-        // Set a synthetic sub so requireWriter() and marked_by_sub work in tests.
-        // providerAccountId is "dev-cup-owner" etc. — stable across test runs.
+        // Groups follow the same convention as production: "{slug}-{role}".
+        // The role suffix is everything after "dev-" (e.g. "dev-owner" → "owner").
+        const roleLabel = id.replace(/^dev-/, "");
+        token.groups = [`test-household-${roleLabel}`];
+        // Stable synthetic sub for requireWriter() and marked_by_sub in tests.
         token.pocketIdSub = id;
       }
+
+      // Resolve household once at sign-in (householdId === undefined means not yet looked up;
+      // null means looked up but no matching household found — skip on subsequent refreshes).
+      if (token.groups && token.householdId === undefined) {
+        const memberships = parseHouseholdGroups(token.groups as string[]);
+        if (memberships.length > 0) {
+          // For now use the first matching household. A household switcher is future work.
+          const { slug, role } = memberships[0];
+          try {
+            const pb = await getAdminPocketBase();
+            const h = await pb.collection("households")
+              .getFirstListItem(`group_slug="${slug}"`);
+            token.householdId = h.id as string;
+            token.householdName = h.name as string;
+            token.householdRole = role;
+          } catch {
+            token.householdId = null;
+            token.householdRole = null;
+          }
+        } else {
+          token.householdId = null;
+          token.householdRole = null;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -99,6 +133,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       if (Array.isArray(t.groups)) {
         session.user.groups = t.groups as string[];
+      }
+      if (typeof t.householdId === "string" || t.householdId === null) {
+        session.user.householdId = t.householdId as string | null;
+      }
+      if (typeof t.householdName === "string" || t.householdName === null) {
+        session.user.householdName = t.householdName as string | null;
+      }
+      if (t.householdRole === "owner" || t.householdRole === "viewer" || t.householdRole === null) {
+        session.user.householdRole = t.householdRole as "owner" | "viewer" | null;
       }
       return session;
     },

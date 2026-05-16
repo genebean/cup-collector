@@ -4,7 +4,7 @@ import { join } from "node:path";
 const authDir = join(import.meta.dirname, "../playwright/.auth");
 
 test.describe("map bottom sheet", () => {
-  test.use({ storageState: join(authDir, "cup-owner.json") });
+  test.use({ storageState: join(authDir, "owner.json") });
 
   test("handle renders and sheet expands and collapses on tap", async ({ page }) => {
     await page.goto("/map");

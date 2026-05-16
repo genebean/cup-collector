@@ -4,7 +4,7 @@ import { join } from "node:path";
 const authDir = join(import.meta.dirname, "../playwright/.auth");
 
 test.describe("browse page — real PocketBase data", () => {
-  test.use({ storageState: join(authDir, "cup-owner.json") });
+  test.use({ storageState: join(authDir, "owner.json") });
 
   test("shows seeded cups and correct count in header", async ({ page }) => {
     await page.goto("/browse");

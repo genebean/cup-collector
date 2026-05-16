@@ -17,8 +17,8 @@ const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 export default function MapPage() {
   const { data: session } = useSession();
   const queryClient = useQueryClient();
+  const householdId = session?.user?.householdId ?? null;
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [householdId, setHouseholdId] = useState<string | null>(null);
   const { radiusMeters, setRadius } = useNearbyRadius();
   const [worldViewTick, setWorldViewTick] = useState(0);
 
@@ -33,17 +33,6 @@ export default function MapPage() {
       }
     );
   }, []);
-
-  // Fetch household ID for this user (needed to scope owned_cups queries)
-  useEffect(() => {
-    if (!session?.user?.pocketIdSub) return;
-    const pb = getPocketBase();
-    const sub = session.user.pocketIdSub;
-    pb.collection("households")
-      .getFirstListItem(`member_sub_1="${sub}" || member_sub_2="${sub}" || viewer_subs~"${sub}"`)
-      .then((h) => setHouseholdId(h.id))
-      .catch(() => {/* Will redirect via middleware if no household */});
-  }, [session]);
 
   // Fetch all cups from the catalog
   const { data: cups = [] } = useQuery<Cup[]>({

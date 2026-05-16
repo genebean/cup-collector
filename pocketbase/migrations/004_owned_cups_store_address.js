@@ -16,8 +16,7 @@ migrate(
   // Revert (down)
   (db) => {
     const col = db.findCollectionByNameOrId("owned_cups");
-    const field = col.fields.getByName("acquired_store_address");
-    if (field) col.fields.remove(field);
+    col.fields.removeByName("acquired_store_address");
     db.save(col);
   }
 );

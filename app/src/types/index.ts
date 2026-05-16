@@ -1,14 +1,14 @@
 // Core data types mirroring the PocketBase collections defined in the spec.
 // See docs/reference/spec.html §05 for the authoritative data model.
 
-export type UserRole = "owner" | "collaborator" | "viewer" | "none";
+// collaborator intentionally omitted — no feature today distinguishes it from owner.
+// Add it back when household management (invite/remove members) is built.
+export type UserRole = "owner" | "viewer" | "none";
 
 export interface Household {
   id: string;
   name: string;
-  member_sub_1: string;
-  member_sub_2: string;
-  viewer_subs: string[];
+  group_slug: string; // matches PocketID group prefix: "{slug}-owner" / "{slug}-viewer"
   created: string;
 }
 

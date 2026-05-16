@@ -25,7 +25,7 @@ async function cleanupOwnership(page: Page) {
 }
 
 test.describe("cup condition — cup-owner", () => {
-  test.use({ storageState: join(authDir, "cup-owner.json") });
+  test.use({ storageState: join(authDir, "owner.json") });
 
   test.afterEach(async ({ page }) => {
     await cleanupOwnership(page);
@@ -141,7 +141,7 @@ test.describe("cup condition — cup-owner", () => {
 });
 
 test.describe("cup condition — cup-viewer", () => {
-  test.use({ storageState: join(authDir, "cup-viewer.json") });
+  test.use({ storageState: join(authDir, "viewer.json") });
 
   test("condition card is not shown for viewers", async ({ page }) => {
     await goToSeattleCup(page);

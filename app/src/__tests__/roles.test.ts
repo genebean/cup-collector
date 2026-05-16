@@ -1,43 +1,57 @@
-import { describe, it, expect, vi } from "vitest";
-import { roleFromGroups, canWrite, resolveRole } from "@/lib/roles";
+import { describe, it, expect } from "vitest";
+import { parseHouseholdGroups, roleFromMembership, canWrite } from "@/lib/roles";
 
-// Mock getPocketBase so resolveRole's catch path can be exercised without a
-// running server. This tests error-handling logic, not database behaviour.
-vi.mock("@/lib/pocketbase", () => ({
-  getPocketBase: vi.fn(() => ({
-    collection: () => ({
-      getList: vi.fn().mockRejectedValue(new Error("connection refused")),
-    }),
-  })),
-}));
-
-describe("roleFromGroups", () => {
-  it("returns 'owner' for cup-owner group", () => {
-    expect(roleFromGroups(["cup-owner"])).toBe("owner");
+describe("parseHouseholdGroups", () => {
+  it("parses an owner group", () => {
+    expect(parseHouseholdGroups(["my-household-owner"])).toEqual([
+      { slug: "my-household", role: "owner" },
+    ]);
   });
 
-  it("returns 'collaborator' for cup-collaborator group", () => {
-    expect(roleFromGroups(["cup-collaborator"])).toBe("collaborator");
+  it("parses a viewer group", () => {
+    expect(parseHouseholdGroups(["my-household-viewer"])).toEqual([
+      { slug: "my-household", role: "viewer" },
+    ]);
   });
 
-  it("returns 'viewer' for cup-viewer group", () => {
-    expect(roleFromGroups(["cup-viewer"])).toBe("viewer");
+  it("ignores unrelated groups", () => {
+    expect(parseHouseholdGroups(["admin", "superuser"])).toEqual([]);
   });
 
-  it("returns 'none' for empty groups", () => {
-    expect(roleFromGroups([])).toBe("none");
+  it("returns empty for empty groups", () => {
+    expect(parseHouseholdGroups([])).toEqual([]);
   });
 
-  it("returns 'none' for unrecognised groups", () => {
-    expect(roleFromGroups(["admin", "superuser"])).toBe("none");
+  it("parses multiple household memberships", () => {
+    const result = parseHouseholdGroups(["home-owner", "work-viewer", "irrelevant"]);
+    expect(result).toEqual([
+      { slug: "home", role: "owner" },
+      { slug: "work", role: "viewer" },
+    ]);
   });
 
-  it("owner takes priority when user has multiple groups", () => {
-    expect(roleFromGroups(["cup-viewer", "cup-owner"])).toBe("owner");
+  it("handles slugs with hyphens", () => {
+    expect(parseHouseholdGroups(["my-test-household-owner"])).toEqual([
+      { slug: "my-test-household", role: "owner" },
+    ]);
+  });
+});
+
+describe("roleFromMembership", () => {
+  it("returns 'owner' for owner membership", () => {
+    expect(roleFromMembership({ slug: "home", role: "owner" })).toBe("owner");
   });
 
-  it("collaborator takes priority over viewer", () => {
-    expect(roleFromGroups(["cup-viewer", "cup-collaborator"])).toBe("collaborator");
+  it("returns 'viewer' for viewer membership", () => {
+    expect(roleFromMembership({ slug: "home", role: "viewer" })).toBe("viewer");
+  });
+
+  it("returns 'none' for null", () => {
+    expect(roleFromMembership(null)).toBe("none");
+  });
+
+  it("returns 'none' for undefined", () => {
+    expect(roleFromMembership(undefined)).toBe("none");
   });
 });
 
@@ -46,37 +60,11 @@ describe("canWrite", () => {
     expect(canWrite("owner")).toBe(true);
   });
 
-  it("returns true for collaborator", () => {
-    expect(canWrite("collaborator")).toBe(true);
-  });
-
   it("returns false for viewer", () => {
     expect(canWrite("viewer")).toBe(false);
   });
 
   it("returns false for none", () => {
     expect(canWrite("none")).toBe(false);
-  });
-});
-
-
-describe("resolveRole", () => {
-  it("returns none role and null household immediately for unrecognised groups (no PocketBase call)", async () => {
-    const result = await resolveRole([]);
-    expect(result.role).toBe("none");
-    expect(result.household).toBeNull();
-  });
-
-  it("returns the correct role and null household when PocketBase throws", async () => {
-    // getPocketBase is mocked to throw — exercises the catch block.
-    const result = await resolveRole(["cup-viewer"]);
-    expect(result.role).toBe("viewer");
-    expect(result.household).toBeNull();
-  });
-
-  it("returns owner role and null household when PocketBase throws", async () => {
-    const result = await resolveRole(["cup-owner"]);
-    expect(result.role).toBe("owner");
-    expect(result.household).toBeNull();
   });
 });
