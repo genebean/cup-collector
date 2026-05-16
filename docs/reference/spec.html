@@ -437,7 +437,7 @@ code { color: var(--code-text); }
       <li>Group names default to <span class="ic">cup-owner</span>, <span class="ic">cup-collaborator</span>, <span class="ic">cup-viewer</span> — configurable via env vars</li>
       <li>No matching group → access denied, redirect to an "access not granted" page</li>
     </ul>
-    <p>The household record is looked up separately (by matching <span class="ic">member_sub_1</span>, <span class="ic">member_sub_2</span>, or <span class="ic">viewer_subs</span>) to scope <span class="ic">owned_cups</span> queries client-side. This lookup is for data scoping, not for role determination.</p>
+    <p>The household record is looked up at sign-in by matching the user's PocketID group slug (e.g. <span class="ic">smith-family-owner</span> → slug <span class="ic">smith-family</span>) against the <span class="ic">group_slug</span> field on each household record. A user may belong to groups for multiple households; all matching households are resolved and stored in the JWT. The <strong>Settings</strong> screen shows a switcher when more than one household is resolved. This lookup is for data scoping, not for role determination.</p>
   </div>
 
   <!-- ══ 05 DATA MODEL ══ -->
@@ -447,13 +447,11 @@ code { color: var(--code-text); }
     <p>Three collections in PocketBase. All data is self-hosted.</p>
 
     <div class="schema">
-      <div class="schema-header">households — links PocketID users to a shared collection</div>
+      <div class="schema-header">households — links PocketID user groups to a shared collection</div>
       <div class="schema-body">
         <div class="schema-field"><div class="field-name">id</div><div class="field-type">string</div><div class="field-desc">PocketBase auto-ID</div></div>
         <div class="schema-field"><div class="field-name">name</div><div class="field-type">string</div><div class="field-desc">Display name, e.g. "The Smith Collection"</div></div>
-        <div class="schema-field"><div class="field-name">member_sub_1</div><div class="field-type">string</div><div class="field-desc">PocketID <span class="ic">sub</span> for first household member — used for household lookup (required). Role comes from PocketID group, not this field.</div></div>
-        <div class="schema-field"><div class="field-name">member_sub_2</div><div class="field-type">string</div><div class="field-desc">PocketID <span class="ic">sub</span> for second household member — used for household lookup. Role comes from PocketID group.</div></div>
-        <div class="schema-field"><div class="field-name">viewer_subs</div><div class="field-type">json</div><div class="field-desc">JSON array of PocketID <span class="ic">sub</span> strings for view-only members — used for household lookup client-side. Empty array by default.</div></div>
+        <div class="schema-field"><div class="field-name">group_slug</div><div class="field-type">string</div><div class="field-desc">Base slug for the household's PocketID groups, e.g. <span class="ic">smith-family</span>. The app derives group names as <span class="ic">{slug}-owner</span>, <span class="ic">{slug}-collaborator</span>, <span class="ic">{slug}-viewer</span>. Used at sign-in to match the user's group membership to a household record.</div></div>
         <div class="schema-field"><div class="field-name">created</div><div class="field-type">datetime</div><div class="field-desc">Auto-managed by PocketBase</div></div>
       </div>
     </div>
@@ -462,7 +460,7 @@ code { color: var(--code-text); }
       <div class="callout-icon">ℹ️</div>
       <div class="callout-body">
         <strong>Roles come from PocketID groups, not household fields</strong>
-        <p>The <span class="ic">member_sub_1</span>, <span class="ic">member_sub_2</span>, and <span class="ic">viewer_subs</span> fields are used by the client-side to find which household a user belongs to (for scoping <span class="ic">owned_cups</span> queries). They do <em>not</em> determine role. Role is determined exclusively by PocketID group membership — see Section 02 and Section 04.</p>
+        <p>The <span class="ic">group_slug</span> field is used at sign-in to find which household(s) a user belongs to (for scoping <span class="ic">owned_cups</span> queries and populating the household switcher). It does <em>not</em> determine role. Role is determined exclusively by PocketID group membership — see Section 02 and Section 04.</p>
       </div>
     </div>
 
@@ -1043,7 +1041,7 @@ jobs:
       <li><strong>Data model summary:</strong> The three PocketBase collections and their relationships and access rules</li>
       <li><strong>Auth flow:</strong> PocketID OIDC → Auth.js → session with <span class="ic">pocketIdSub</span> → household lookup → role resolution</li>
       <li><strong>Role enforcement:</strong> Happens at both the UI layer and PocketBase rules layer — both must be maintained</li>
-      <li><strong>Do not change without reading the spec:</strong> PocketBase collection structure, access rules, household schema, OIDC callback path, PWA manifest <span class="ic">start_url</span> and <span class="ic">display</span> fields, viewer_subs logic</li>
+      <li><strong>Do not change without reading the spec:</strong> PocketBase collection structure, access rules, household schema (<span class="ic">group_slug</span> field), OIDC callback path, PWA manifest <span class="ic">start_url</span> and <span class="ic">display</span> fields</li>
       <li><strong>Docs rule:</strong> All docs are plain HTML in <span class="ic">docs/</span>. No generator. Edit HTML directly. Do not convert to Markdown or introduce a build step.</li>
       <li><strong>Owner context:</strong> Owner is not an app developer. Comment generously. Avoid patterns that require deep framework knowledge to maintain. Prefer explicit over implicit.</li>
       <li><strong>Reference:</strong> <span class="ic">docs/reference/spec.html</span> is the authoritative design document — read it before making any structural changes.</li>
@@ -1115,8 +1113,10 @@ jobs:
       </div>
 
       <div class="decision">
-        <div class="decision-q">Why PocketID groups for roles instead of household sub fields?</div>
-        <div class="decision-a"><strong>Diverged from original spec.</strong> The original design stored PocketID <span class="ic">sub</span> values in <span class="ic">member_sub_1</span>, <span class="ic">member_sub_2</span>, and <span class="ic">viewer_subs</span> on the household record and derived roles from those fields. The implementation instead uses PocketID group membership (<span class="ic">cup-owner</span>, <span class="ic">cup-collaborator</span>, <span class="ic">cup-viewer</span>) for role resolution, reading the <span class="ic">groups</span> claim from the OIDC token. The household fields are still present and are used for household lookup (scoping <span class="ic">owned_cups</span> queries by household), but they no longer determine role. This approach is simpler — no database query needed for role resolution — and PocketID groups are the natural place to manage access control in an OIDC-first architecture.</div>
+        <div class="decision-q">Why drive permissions from PocketID groups and support multiple households per user?</div>
+        <div class="decision-a"><strong>Diverged from original spec.</strong> Two goals drove this change together: (1) drive as much access control as practical through PocketID rather than the app's own database, and (2) allow a user to belong to more than one household (e.g. helping curate a friend's collection) without schema changes.<br><br>
+        The original design stored PocketID <span class="ic">sub</span> values in <span class="ic">member_sub_1</span>, <span class="ic">member_sub_2</span>, and <span class="ic">viewer_subs</span> on the household record. Role and household membership were both derived by looking up those fields at sign-in. The replacement: household records carry a single <span class="ic">group_slug</span> field (e.g. <span class="ic">smith-family</span>). PocketID groups follow the naming convention <span class="ic">{slug}-owner</span>, <span class="ic">{slug}-viewer</span>. At sign-in the JWT callback reads the <span class="ic">groups</span> claim from the OIDC token, strips the role suffix to recover the slug, and queries PocketBase for matching households. Role comes from the suffix; household comes from the slug match. All matched households are stored in the JWT as <span class="ic">householdMemberships</span>. Adding a user to a second household is just a PocketID group assignment — no database changes needed.<br><br>
+        When more than one household is resolved, the Settings screen shows a household switcher. Switching is instant: Auth.js <span class="ic">session.update()</span> swaps the active <span class="ic">householdId</span> without a sign-out. The net result: PocketID is the single source of truth for who has access to what, and the app's database holds only cup data.</div>
       </div>
 
       <div class="decision">
