@@ -241,14 +241,15 @@ export default function CupDetailPage() {
           )}
 
           {/* Owned state: unified card with condition info + remove button.
-              Condition section only appears once the optimistic record is replaced. */}
-          {isOwned && canWrite && (
+              Condition section only appears once the optimistic record is replaced.
+              Read-only view is shown to all roles; edit controls are owner-only. */}
+          {isOwned && (
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 text-sm">
               {ownedRecord && ownedRecord.id !== "optimistic" && (
                 <>
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="font-semibold text-gray-700 dark:text-gray-200">Condition</h2>
-                    {!editingCondition && (
+                    {canWrite && !editingCondition && (
                       <button
                         onClick={() => setConditionDraft({
                           needs_replacing: ownedRecord.needs_replacing ?? false,
@@ -263,7 +264,7 @@ export default function CupDetailPage() {
                     )}
                   </div>
 
-                  {editingCondition && conditionDraft ? (
+                  {canWrite && editingCondition && conditionDraft ? (
                     <div className="space-y-3">
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
@@ -380,17 +381,19 @@ export default function CupDetailPage() {
                     </div>
                   )}
 
-                  <div className="border-t border-gray-100 dark:border-gray-700 mt-4 mb-1" />
+                  {canWrite && <div className="border-t border-gray-100 dark:border-gray-700 mt-4 mb-1" />}
                 </>
               )}
 
-              <button
-                onClick={() => removeOwned.mutate()}
-                disabled={removeOwned.isPending}
-                className="w-full py-2.5 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {removeOwned.isPending ? "Removing…" : "Remove from Collection"}
-              </button>
+              {canWrite && (
+                <button
+                  onClick={() => removeOwned.mutate()}
+                  disabled={removeOwned.isPending}
+                  className="w-full py-2.5 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {removeOwned.isPending ? "Removing…" : "Remove from Collection"}
+                </button>
+              )}
             </div>
           )}
 
