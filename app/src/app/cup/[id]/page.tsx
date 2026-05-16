@@ -228,7 +228,7 @@ export default function CupDetailPage() {
   return (
     <div className="flex flex-col h-screen dark:bg-gray-900">
       <header className="bg-green-dark text-white px-4 py-3 flex items-center gap-3 flex-shrink-0">
-        <button onClick={() => router.back()} className="text-xl">←</button>
+        <button onClick={() => router.back()} className="text-xl cursor-pointer">←</button>
         <div>
           <h1 className="font-bold text-lg leading-tight">{cup.city}</h1>
           <p className="text-xs text-white/60">{cup.series} · {cup.year}</p>
@@ -268,7 +268,7 @@ export default function CupDetailPage() {
                 onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click(); }}
                 disabled={uploadPhoto.isPending}
                 aria-label="Upload personal photo"
-                className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploadPhoto.isPending ? (
                   <span className="text-xs">…</span>
@@ -289,6 +289,34 @@ export default function CupDetailPage() {
             <Row label="Series" value={cup.series} />
             <Row label="Year" value={String(cup.year)} />
             {cup.notes && <Row label="Notes" value={cup.notes} />}
+            {(cup.hobbydb_url || cup.more_info_url) && (
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                {cup.hobbydb_url && (
+                  <a
+                    href={cup.hobbydb_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    HobbyDB ↗
+                  </a>
+                )}
+                {cup.more_info_url && (() => {
+                  let host = "More info";
+                  try { host = new URL(cup.more_info_url).hostname.replace(/^www\./, ""); } catch { /* use fallback */ }
+                  return (
+                    <a
+                      href={cup.more_info_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      {host} ↗
+                    </a>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Mark as Owned — standalone; only shown when not owned */}
@@ -319,7 +347,7 @@ export default function CupDetailPage() {
                           acquired_store_name: ownedRecord.acquired_store_name ?? "",
                           acquired_store_address: ownedRecord.acquired_store_address ?? "",
                         })}
-                        className="text-xs text-green-starbucks font-medium"
+                        className="text-xs text-green-starbucks font-medium cursor-pointer"
                       >
                         Edit
                       </button>

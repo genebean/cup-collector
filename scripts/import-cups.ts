@@ -7,15 +7,15 @@
 //   npx ts-node scripts/import-cups.ts --file cups.csv --dry-run
 //
 // Expected CSV columns:
-//   city, region, country, country_code, series, year, lat, lng, image_url, notes
+//   city, region, country, country_code, series, year, lat, lng, image_url, hobbydb_url, more_info_url, notes
 //
 // Upsert logic: match on (city + series + year) — update if exists, create if not.
 // Safe to re-run at any time — will not duplicate records.
 
 import * as fs from "fs";
 import * as path from "path";
-import * as readline from "readline";
 import PocketBase from "pocketbase";
+import { parseCSV, rowMatchesExisting, type CsvRow } from "./cup-import";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
@@ -47,52 +47,7 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
 }
 
 // ── CSV parsing ───────────────────────────────────────────────────────────────
-
-interface CsvRow {
-  city: string;
-  region: string;
-  country: string;
-  country_code: string;
-  series: string;
-  year: number;
-  lat: number;
-  lng: number;
-  image_url: string;
-  notes: string;
-}
-
-function parseCSV(filePath: string): CsvRow[] {
-  const content = fs.readFileSync(filePath, "utf-8");
-  const lines = content.split("\n").filter((l) => l.trim());
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-
-  const rows: CsvRow[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    // Simple CSV split — does not handle quoted commas; for the expected format this is fine
-    const values = lines[i].split(",").map((v) => v.trim());
-    const row: Record<string, string> = {};
-    headers.forEach((h, idx) => { row[h] = values[idx] ?? ""; });
-
-    if (!row.city || !row.series || !row.year) {
-      console.warn(`  Skipping row ${i + 1}: missing required field (city, series, or year)`);
-      continue;
-    }
-
-    rows.push({
-      city: row.city,
-      region: row.region ?? "",
-      country: row.country ?? "",
-      country_code: row.country_code ?? "",
-      series: row.series,
-      year: parseInt(row.year, 10),
-      lat: parseFloat(row.lat) || 0,
-      lng: parseFloat(row.lng) || 0,
-      image_url: row.image_url ?? "",
-      notes: row.notes ?? "",
-    });
-  }
-  return rows;
-}
+// parseCSV and CsvRow are imported from app/src/lib/cup-import.
 
 // ── Image download ────────────────────────────────────────────────────────────
 
@@ -119,9 +74,19 @@ async function main() {
   console.log(`PocketBase: ${POCKETBASE_URL}\n`);
 
   const pb = new PocketBase(POCKETBASE_URL);
-  await pb.collection("_superusers").authWithPassword(ADMIN_EMAIL!, ADMIN_PASSWORD!);
+  try {
+    await pb.collection("_superusers").authWithPassword(ADMIN_EMAIL!, ADMIN_PASSWORD!);
+  } catch (err: unknown) {
+    if ((err as Record<string, unknown>)?.status === 0) {
+      console.error(`PocketBase is not running at ${POCKETBASE_URL}.`);
+      console.error("Start it first: pb-serve");
+    } else {
+      console.error("Could not authenticate with PocketBase:", err);
+    }
+    process.exit(1);
+  }
 
-  const rows = parseCSV(csvPath);
+  const rows = parseCSV(fs.readFileSync(csvPath, "utf-8"));
   console.log(`Parsed ${rows.length} rows from CSV.\n`);
 
   let created = 0;
@@ -134,18 +99,22 @@ async function main() {
     try {
       // Check if a matching record already exists (upsert key: city + series + year)
       let existingId: string | null = null;
+      let existingRecord: Record<string, unknown> | null = null;
       try {
-        const existing = await pb.collection("cups").getFirstListItem(
+        existingRecord = await pb.collection("cups").getFirstListItem(
           `city="${row.city}" && series="${row.series}" && year=${row.year}`
         );
-        existingId = existing.id;
+        existingId = existingRecord.id as string;
       } catch {
         // No match — will create
       }
 
-      // Download image if a URL is provided
+      // Download image only when the URL is new or has changed.
+      // image_credit stores the URL that was used for the last download, so it
+      // acts as a cache key — skip the fetch when it matches.
       let imageFile: File | null = null;
-      if (row.image_url) {
+      const existingImageCredit = existingRecord ? String(existingRecord.image_credit ?? "") : null;
+      if (row.image_url && (!existingId || row.image_url !== existingImageCredit)) {
         const buffer = await downloadImage(row.image_url);
         if (buffer) {
           const ext = row.image_url.split(".").pop()?.split("?")[0] ?? "jpg";
@@ -164,8 +133,9 @@ async function main() {
         year: row.year,
         lat: row.lat,
         lng: row.lng,
-        // Store source URL for attribution tracking
         image_credit: row.image_url || undefined,
+        hobbydb_url: row.hobbydb_url || undefined,
+        more_info_url: row.more_info_url || undefined,
         notes: row.notes,
       };
 
@@ -174,13 +144,17 @@ async function main() {
       }
 
       if (existingId) {
-        if (isDryRun) {
+        if (existingRecord && rowMatchesExisting(row, existingRecord) && !imageFile) {
+          if (isDryRun) console.log(`  [NO CHANGE] ${label}`);
+          skipped++;
+        } else if (isDryRun) {
           console.log(`  [UPDATE] ${label}`);
+          updated++;
         } else {
           await pb.collection("cups").update(existingId, data);
           console.log(`  Updated: ${label}`);
+          updated++;
         }
-        updated++;
       } else {
         if (isDryRun) {
           console.log(`  [CREATE] ${label}`);
@@ -198,15 +172,15 @@ async function main() {
 
   console.log("\n── Summary ──");
   if (isDryRun) {
-    console.log(`  Would create: ${created}`);
-    console.log(`  Would update: ${updated}`);
-    console.log(`  Skipped:      ${skipped}`);
+    console.log(`  Would create:    ${created}`);
+    console.log(`  Would update:    ${updated}`);
+    console.log(`  No change:       ${skipped}`);
     console.log("\nDry run complete. Run without --dry-run to apply changes.");
   } else {
-    console.log(`  Created: ${created}`);
-    console.log(`  Updated: ${updated}`);
-    console.log(`  Skipped: ${skipped}`);
-    console.log(`  Errors:  ${errors}`);
+    console.log(`  Created:   ${created}`);
+    console.log(`  Updated:   ${updated}`);
+    console.log(`  No change: ${skipped}`);
+    console.log(`  Errors:    ${errors}`);
     if (errors > 0) {
       console.log("\nImport completed with errors. Check output above for details.");
       process.exit(1);
