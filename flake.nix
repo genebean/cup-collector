@@ -138,10 +138,27 @@
             "$@"
         '';
 
+        # Create a household record in PocketBase.
+        # Usage: create-household --name "Our Collection" --slug our-collection
+        # Requires POCKETBASE_URL, POCKETBASE_ADMIN_EMAIL, and POCKETBASE_ADMIN_PASSWORD in app/.env.local.
+        # To target production via SSH tunnel, override those vars in the shell before running.
+        ccCreateHousehold = pkgs.writeShellScriptBin "cc-create-household" ''
+          PROJ_ROOT="$(git rev-parse --show-toplevel)"
+          set -a
+          source "$PROJ_ROOT/app/.env.local"
+          set +a
+          NODE_PATH="$PROJ_ROOT/app/node_modules" \
+            "$PROJ_ROOT/app/node_modules/.bin/ts-node" \
+            --transpile-only \
+            --project "$PROJ_ROOT/scripts/tsconfig.json" \
+            "$PROJ_ROOT/scripts/create-household.ts" \
+            "$@"
+        '';
+
         devScripts = [
           ccPbServe ccPocketidServe ccDevNext ccDevNextBypass
           ccPlaywrightInstall ccPlayE2e ccGenAuthSecret
-          ccDocsServe ccCheck ccImportCups
+          ccDocsServe ccCheck ccImportCups ccCreateHousehold
         ];
 
       in {
@@ -204,6 +221,7 @@
             docs-serve()         { cc-docs-serve "$@"; }
             check()              { cc-check "$@"; }
             import-cups()        { cc-import-cups "$@"; }
+            create-household()   { cc-create-household "$@"; }
 
             if [[ $- == *i* ]]; then
               echo "Cup Collector dev shell"
@@ -214,6 +232,7 @@
               echo "  dev-next-bypass     start Next.js dev server with auth bypass (optional; play-e2e auto-starts one)"
               echo "  gen-auth-secret     generate a new AUTH_SECRET value"
               echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run])"
+              echo "  create-household    create a household record in PocketBase (--name <name> --slug <slug>)"
               echo "  docs-serve          serve the HTML docs on http://localhost:4000"
               echo "  check               run pre-commit hooks, unit tests, and lint"
               echo "  playwright-install  install Playwright's Chrome (one-time setup)"

@@ -41,16 +41,27 @@
     <div class="verify">Run: <code>systemctl status cup-collector</code> and <code>systemctl status podman-cup-collector-pb</code>. Both should show "active (running)".</div>
   </li>
   <li>
-    <strong>PocketBase is accessible</strong>
-    <div class="verify">Open <code>https://pb.yourdomain.com/_/</code> in a browser. You should see the PocketBase admin login page.</div>
+    <strong>PocketBase superuser created</strong>
+    <div class="verify">SSH into the server and run:
+      <pre>sudo systemctl exec cup-collector-pb -- \
+  pocketbase superuser upsert YOUR_EMAIL YOUR_PASSWORD \
+  --dir=/var/lib/cup-collector-pb/pb_data</pre>
+      See the <a href="pocketbase.html">PocketBase setup guide</a> for details.
+    </div>
   </li>
   <li>
     <strong>The three collections exist in PocketBase</strong>
-    <div class="verify">Log in to the admin UI and check Collections. <code>households</code>, <code>cups</code>, and <code>owned_cups</code> should all be present with the correct fields. If not, follow the <a href="pocketbase.html">PocketBase setup guide</a>.</div>
+    <div class="verify">Open an SSH tunnel (<code>ssh -L 8090:localhost:8090 yourserver</code>), log in to <code>http://localhost:8090/_/</code>, and check Collections. <code>households</code>, <code>cups</code>, and <code>owned_cups</code> should all be present. If not, follow the <a href="pocketbase.html">PocketBase setup guide</a>.</div>
   </li>
   <li>
-    <strong>Household record created</strong>
-    <div class="verify">In the admin UI → Collections → households → verify one record exists with a name. If not, create it: just set a <code>name</code> and save.</div>
+    <strong>Household record and PocketID groups created</strong>
+    <div class="verify">From inside <code>nix develop</code>, run the household script (SSH tunnel must be open):
+      <pre>POCKETBASE_URL=http://localhost:8090 \
+POCKETBASE_ADMIN_EMAIL=admin@example.com \
+POCKETBASE_ADMIN_PASSWORD=yourpassword \
+  create-household --name "Our Collection" --slug our-collection</pre>
+      Then in PocketID admin, create groups named <code>our-collection-owner</code> and/or <code>our-collection-viewer</code> and add users to them. See the <a href="pocketbase.html">PocketBase setup guide</a>.
+    </div>
   </li>
   <li>
     <strong>Import the cup catalog</strong>
