@@ -1,47 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { getAdminPocketBase } from "@/lib/pocketbase";
-
-interface CsvRow {
-  city: string;
-  region: string;
-  country: string;
-  country_code: string;
-  series: string;
-  year: number;
-  lat: number;
-  lng: number;
-  image_url: string;
-  notes: string;
-}
-
-function parseCSV(text: string): CsvRow[] {
-  const lines = text.split("\n").filter((l) => l.trim());
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-
-  const rows: CsvRow[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(",").map((v) => v.trim());
-    const row: Record<string, string> = {};
-    headers.forEach((h, idx) => { row[h] = values[idx] ?? ""; });
-
-    if (!row.city || !row.series || !row.year) continue;
-
-    rows.push({
-      city: row.city,
-      region: row.region ?? "",
-      country: row.country ?? "",
-      country_code: row.country_code ?? "",
-      series: row.series,
-      year: parseInt(row.year, 10),
-      lat: parseFloat(row.lat) || 0,
-      lng: parseFloat(row.lng) || 0,
-      image_url: row.image_url ?? "",
-      notes: row.notes ?? "",
-    });
-  }
-  return rows;
-}
+import { parseCSV, rowMatchesExisting } from "@/lib/cup-import";
 
 async function downloadImage(url: string): Promise<File | null> {
   if (!url?.startsWith("http")) return null;
@@ -80,32 +40,53 @@ export async function POST(req: NextRequest) {
   const rows = parseCSV(csvText);
 
   const pb = await getAdminPocketBase();
-  const results = { created: 0, updated: 0, errors: 0, preview: [] as string[] };
+  const results = { created: 0, updated: 0, skipped: 0, errors: 0, preview: [] as string[] };
 
   for (const row of rows) {
     const label = `${row.city} / ${row.series} / ${row.year}`;
     try {
       let existingId: string | null = null;
+      let existingRecord: Record<string, unknown> | null = null;
       try {
-        const existing = await pb.collection("cups").getFirstListItem(
+        const found = await pb.collection("cups").getFirstListItem(
           `city="${row.city}" && series="${row.series}" && year=${row.year}`
         );
-        existingId = existing.id;
+        existingRecord = found;
+        existingId = found.id as string;
       } catch { /* not found */ }
 
+      const existingImageCredit = existingRecord ? String(existingRecord.image_credit ?? "") : null;
+      const imageChanged = !!row.image_url && row.image_url !== existingImageCredit;
+      const noChange = !!existingRecord && rowMatchesExisting(row, existingRecord) && !imageChanged;
+
       if (dryRun) {
-        results.preview.push(`${existingId ? "UPDATE" : "CREATE"}: ${label}`);
-        if (existingId) { results.updated++; } else { results.created++; }
+        if (!existingId) {
+          results.preview.push(`CREATE: ${label}`);
+          results.created++;
+        } else if (noChange) {
+          results.preview.push(`NO CHANGE: ${label}`);
+          results.skipped++;
+        } else {
+          results.preview.push(`UPDATE: ${label}`);
+          results.updated++;
+        }
+        continue;
+      }
+
+      if (noChange) {
+        results.skipped++;
         continue;
       }
 
       let imageFile: File | null = null;
-      if (row.image_url) imageFile = await downloadImage(row.image_url);
+      if (imageChanged) imageFile = await downloadImage(row.image_url);
 
       const data: Record<string, unknown> = {
         city: row.city, region: row.region, country: row.country,
         country_code: row.country_code, series: row.series, year: row.year,
         lat: row.lat, lng: row.lng, image_credit: row.image_url || undefined,
+        hobbydb_url: row.hobbydb_url || undefined,
+        more_info_url: row.more_info_url || undefined,
         notes: row.notes,
       };
       if (imageFile) data.image = imageFile;

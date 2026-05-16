@@ -1,0 +1,63 @@
+// Shared types and pure utilities used by both the CLI import script
+// (scripts/import-cups.ts) and the web import API route.
+
+export interface CsvRow {
+  city: string;
+  region: string;
+  country: string;
+  country_code: string;
+  series: string;
+  year: number;
+  lat: number;
+  lng: number;
+  image_url: string;
+  hobbydb_url: string;
+  more_info_url: string;
+  notes: string;
+}
+
+export function parseCSV(text: string): CsvRow[] {
+  const lines = text.split("\n").filter((l) => l.trim());
+  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+
+  const rows: CsvRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(",").map((v) => v.trim());
+    const row: Record<string, string> = {};
+    headers.forEach((h, idx) => { row[h] = values[idx] ?? ""; });
+
+    if (!row.city || !row.series || !row.year) continue;
+
+    rows.push({
+      city: row.city,
+      region: row.region ?? "",
+      country: row.country ?? "",
+      country_code: row.country_code ?? "",
+      series: row.series,
+      year: parseInt(row.year, 10),
+      lat: parseFloat(row.lat) || 0,
+      lng: parseFloat(row.lng) || 0,
+      image_url: row.image_url ?? "",
+      hobbydb_url: row.hobbydb_url ?? "",
+      more_info_url: row.more_info_url ?? "",
+      notes: row.notes ?? "",
+    });
+  }
+  return rows;
+}
+
+export function rowMatchesExisting(row: CsvRow, existing: Record<string, unknown>): boolean {
+  const s = (v: unknown) => String(v ?? "");
+  const n = (v: unknown) => Number(v ?? 0);
+  return (
+    row.region        === s(existing.region) &&
+    row.country       === s(existing.country) &&
+    row.country_code  === s(existing.country_code) &&
+    row.lat           === n(existing.lat) &&
+    row.lng           === n(existing.lng) &&
+    row.image_url     === s(existing.image_credit) &&
+    row.hobbydb_url   === s(existing.hobbydb_url) &&
+    row.more_info_url === s(existing.more_info_url) &&
+    row.notes         === s(existing.notes)
+  );
+}
