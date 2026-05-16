@@ -1,4 +1,4 @@
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
 import { PB_URL, PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD } from "./playwright/test-pb.ts";
 
 // Playwright manages the full test environment lifecycle:
@@ -64,7 +64,9 @@ export default defineConfig({
       dependencies: ["setup"],
       testMatch: /browse\.spec\.ts/,
       use: {
-        ...devices["iPhone 14"],
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
         channel: "chrome",
         serviceWorkers: "block",
       },

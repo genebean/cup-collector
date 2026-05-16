@@ -36,8 +36,8 @@ test.describe("browse page — real PocketBase data", () => {
     await page.goto("/browse");
     await expect(page.getByText(/5 cups/)).toBeVisible({ timeout: 10_000 });
 
-    // Japan has one seeded cup (Tokyo)
-    await page.selectOption("select", { label: "Japan" });
+    // Japan has one seeded cup (Tokyo) — nth(1) targets the Country select (0 = Series)
+    await page.locator("select").nth(1).selectOption({ label: "Japan" });
 
     await expect(page.getByText("Tokyo", { exact: false })).toBeVisible();
     await expect(page.getByText("Seattle", { exact: false })).not.toBeVisible();
