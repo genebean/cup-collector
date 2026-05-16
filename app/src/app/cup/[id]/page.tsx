@@ -352,7 +352,7 @@ export default function CupDetailPage() {
                           onChange={(e) =>
                             setConditionDraft((d) => d ? { ...d, replacement_note: e.target.value } : d)
                           }
-                          className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:border-green-starbucks"
+                          className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-hidden focus:border-green-starbucks"
                         />
                       )}
 
@@ -366,7 +366,7 @@ export default function CupDetailPage() {
                           onChange={(e) =>
                             setConditionDraft((d) => d ? { ...d, acquired_store_name: e.target.value } : d)
                           }
-                          className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:border-green-starbucks"
+                          className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-hidden focus:border-green-starbucks"
                         />
                         <input
                           type="text"
@@ -375,7 +375,7 @@ export default function CupDetailPage() {
                           onChange={(e) =>
                             setConditionDraft((d) => d ? { ...d, acquired_store_address: e.target.value } : d)
                           }
-                          className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:border-green-starbucks"
+                          className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-hidden focus:border-green-starbucks"
                         />
                       </div>
 

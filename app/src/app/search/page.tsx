@@ -64,7 +64,7 @@ export default function SearchPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           autoFocus
-          className="w-full rounded-lg px-3 py-2 text-sm text-gray-900 bg-white/90 placeholder-gray-400 focus:outline-none"
+          className="w-full rounded-lg px-3 py-2 text-sm text-gray-900 bg-white/90 placeholder-gray-400 focus:outline-hidden"
         />
       </header>
 

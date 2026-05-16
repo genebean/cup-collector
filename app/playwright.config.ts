@@ -26,10 +26,10 @@ export default defineConfig({
       `POCKETBASE_URL=${PB_URL}`,
       `POCKETBASE_ADMIN_EMAIL=${PB_ADMIN_EMAIL}`,
       `POCKETBASE_ADMIN_PASSWORD=${PB_ADMIN_PASSWORD}`,
-      // AUTH_SECRET and NEXTAUTH_URL are required by Auth.js in CI where .env.local is absent.
+      // AUTH_SECRET and AUTH_URL are required by Auth.js in CI where .env.local is absent.
       // This value is test-only — never used in production.
       `AUTH_SECRET=playwright-test-only-do-not-use-in-production-1234`,
-      `NEXTAUTH_URL=http://127.0.0.1:3000`,
+      `AUTH_URL=http://127.0.0.1:3000`,
       `npm run dev`,
     ].join(" "),
     url: "http://127.0.0.1:3000",

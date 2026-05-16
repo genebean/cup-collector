@@ -107,7 +107,7 @@ export default function BrowsePage() {
     }`;
 
   const selectClass = (active: boolean) =>
-    `w-full appearance-none text-xs font-medium px-3 py-1 pr-7 rounded-full border bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/50 transition-colors ${
+    `w-full appearance-none text-xs font-medium px-3 py-1 pr-7 rounded-full border bg-transparent cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-white/50 transition-colors ${
       active
         ? "bg-gold text-green-dark border-gold"
         : "border-white/30 text-white/80 hover:border-white/60"
@@ -136,7 +136,7 @@ export default function BrowsePage() {
           placeholder="Search by city, country, or series…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-gray-900 bg-white/90 placeholder-gray-400 focus:outline-none"
+          className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-gray-900 bg-white/90 placeholder-gray-400 focus:outline-hidden"
         />
 
         {/* Series + Country selects — side by side, full width on mobile */}
