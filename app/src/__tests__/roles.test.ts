@@ -3,19 +3,19 @@ import { parseHouseholdGroups, roleFromMembership, canWrite } from "@/lib/roles"
 
 describe("parseHouseholdGroups", () => {
   it("parses an owner group", () => {
-    expect(parseHouseholdGroups(["my-household-owner"])).toEqual([
+    expect(parseHouseholdGroups(["cup-collector-my-household-owner"])).toEqual([
       { slug: "my-household", role: "owner" },
     ]);
   });
 
   it("parses a viewer group", () => {
-    expect(parseHouseholdGroups(["my-household-viewer"])).toEqual([
+    expect(parseHouseholdGroups(["cup-collector-my-household-viewer"])).toEqual([
       { slug: "my-household", role: "viewer" },
     ]);
   });
 
-  it("ignores unrelated groups", () => {
-    expect(parseHouseholdGroups(["admin", "superuser"])).toEqual([]);
+  it("ignores groups from other apps (no cup-collector- prefix)", () => {
+    expect(parseHouseholdGroups(["admin", "superuser", "other-app-owner"])).toEqual([]);
   });
 
   it("returns empty for empty groups", () => {
@@ -23,7 +23,11 @@ describe("parseHouseholdGroups", () => {
   });
 
   it("parses multiple household memberships", () => {
-    const result = parseHouseholdGroups(["home-owner", "work-viewer", "irrelevant"]);
+    const result = parseHouseholdGroups([
+      "cup-collector-home-owner",
+      "cup-collector-work-viewer",
+      "irrelevant-other-app-group",
+    ]);
     expect(result).toEqual([
       { slug: "home", role: "owner" },
       { slug: "work", role: "viewer" },
@@ -31,9 +35,13 @@ describe("parseHouseholdGroups", () => {
   });
 
   it("handles slugs with hyphens", () => {
-    expect(parseHouseholdGroups(["my-test-household-owner"])).toEqual([
+    expect(parseHouseholdGroups(["cup-collector-my-test-household-owner"])).toEqual([
       { slug: "my-test-household", role: "owner" },
     ]);
+  });
+
+  it("ignores prefixed groups with unknown role suffix", () => {
+    expect(parseHouseholdGroups(["cup-collector-my-household-collaborator"])).toEqual([]);
   });
 });
 

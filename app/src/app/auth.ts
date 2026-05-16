@@ -60,13 +60,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // Read role from the URL query param — query params are reliably
             // forwarded by Auth.js to authorize(), unlike parsed form bodies.
             const role = new URL(req.url).searchParams.get("role") ?? "viewer";
-            // Groups follow the same "{slug}-{role}" convention as production.
+            // Groups follow the same "cup-collector-{slug}-{role}" convention as production.
             // The test household has group_slug "test-household".
             return {
               id: `dev-${role}`,
               name: `Dev ${role}`,
               email: `dev-${role}@playwright.local`,
-              groups: [`test-household-${role}`],
+              groups: [`cup-collector-test-household-${role}`],
             };
           },
         }),
@@ -102,10 +102,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Dev bypass path: role is encoded in providerAccountId ("dev-{role}").
         // account is only set during sign-in, so this only runs once per session.
         const id = (account.providerAccountId ?? "") as string;
-        // Groups follow the same convention as production: "{slug}-{role}".
+        // Groups follow the same convention as production: "cup-collector-{slug}-{role}".
         // The role suffix is everything after "dev-" (e.g. "dev-owner" → "owner").
         const roleLabel = id.replace(/^dev-/, "");
-        token.groups = [`test-household-${roleLabel}`];
+        token.groups = [`cup-collector-test-household-${roleLabel}`];
         // Stable synthetic sub for requireWriter() and marked_by_sub in tests.
         token.pocketIdSub = id;
       }

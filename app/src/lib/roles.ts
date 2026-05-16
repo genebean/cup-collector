@@ -1,21 +1,26 @@
 import type { UserRole } from "@/types";
 
-// Groups in PocketID follow the convention "{household-slug}-owner" and
-// "{household-slug}-viewer". The slug links to the households.group_slug field
-// in PocketBase, so household membership is managed entirely in PocketID —
-// no raw OIDC subs needed when adding members.
+// Groups in PocketID follow the convention "cup-collector-{slug}-{role}".
+// The "cup-collector-" prefix namespaces groups so other apps sharing the same
+// PocketID instance don't interfere. The slug links to households.group_slug in
+// PocketBase; the role suffix is "owner" or "viewer".
+// Example: "cup-collector-smith-family-owner"
+
+export const GROUP_PREFIX = "cup-collector-";
 
 export interface HouseholdMembership {
   slug: string;
   role: "owner" | "viewer";
 }
 
-// Parse JWT groups into household memberships. Groups that don't match the
-// convention are silently ignored (they may be unrelated PocketID groups).
+// Parse JWT groups into household memberships. Groups without the app prefix
+// are silently ignored — they belong to other PocketID clients.
 export function parseHouseholdGroups(groups: string[]): HouseholdMembership[] {
   return groups.flatMap((g): HouseholdMembership[] => {
-    if (g.endsWith("-owner")) return [{ slug: g.slice(0, -6), role: "owner" }];
-    if (g.endsWith("-viewer")) return [{ slug: g.slice(0, -7), role: "viewer" }];
+    if (!g.startsWith(GROUP_PREFIX)) return [];
+    const rest = g.slice(GROUP_PREFIX.length); // e.g. "smith-family-owner"
+    if (rest.endsWith("-owner")) return [{ slug: rest.slice(0, -6), role: "owner" }];
+    if (rest.endsWith("-viewer")) return [{ slug: rest.slice(0, -7), role: "viewer" }];
     return [];
   });
 }
