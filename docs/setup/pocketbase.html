@@ -14,7 +14,9 @@
   p { color: #333; margin-bottom: 0.8rem; }
   ol, ul { padding-left: 1.25rem; } li { margin-bottom: 0.4rem; font-size: 0.92rem; }
   code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
+  pre { background: #1a2820; color: #a8d8b0; padding: 0.85rem 1rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; margin: 0.75rem 0; }
   .callout { border-left: 3px solid #CBA258; background: #f5edd8; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
+  .callout.green { border-left-color: #00704A; background: #e8f2ee; }
   .warn { border-left-color: #E8833A; background: #fdf0e6; }
   .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
   .page-nav a { color: #00704A; text-decoration: none; }
@@ -36,26 +38,42 @@
 <nav><a href="../index.html">← Docs home</a></nav>
 
 <h1>PocketBase Setup</h1>
-<p>After deploying, PocketBase runs at <code>https://pb.yourdomain.com</code>. Access the admin UI at <code>https://pb.yourdomain.com/_/</code> to verify the schema and create the household record.</p>
+<p>This page covers three tasks: creating the initial superuser, verifying that migrations ran correctly, and creating your household record. Migrations handle all schema creation automatically — you should not need to create collections by hand.</p>
 
 <div class="callout">
   <strong>Migrations run automatically</strong><br>
-  The migrations in <code>pocketbase/migrations/</code> create all collections and set access rules on first start. If they applied cleanly, you only need Step 3 (create the household record). Check the PocketBase logs to confirm.
+  The migrations in <code>pocketbase/migrations/</code> create all collections and set access rules on first start. Check the PocketBase logs to confirm they applied cleanly before proceeding.
 </div>
 
-<h2>Step 1 — Access the admin UI</h2>
-<ol>
-  <li>Open <code>https://pb.yourdomain.com/_/</code> in your browser.</li>
-  <li>On first run, PocketBase prompts you to create an admin account. Use a strong password and store it in your password manager.</li>
-  <li>Copy your email and password — you'll also need them in the <code>.env</code> file as <code>POCKETBASE_ADMIN_EMAIL</code> and <code>POCKETBASE_ADMIN_PASSWORD</code> so the app can write records server-side.</li>
-</ol>
+<h2>Step 1 — Create the initial superuser</h2>
+<p>PocketBase requires at least one superuser before it will accept API requests. The recommended approach is via the CLI — it works while the server is running and doesn't require a browser.</p>
+
+<p>SSH into your server and run:</p>
+
+<pre>sudo systemctl exec cup-collector-pb -- \
+  pocketbase superuser create YOUR_EMAIL YOUR_PASSWORD \
+  --dir=/var/lib/cup-collector-pb/pb_data</pre>
+
+<p>Alternatively, use the <code>upsert</code> subcommand (create-or-update) if you want the command to be idempotent — safe to run again if you're unsure whether the account already exists:</p>
+
+<pre>sudo systemctl exec cup-collector-pb -- \
+  pocketbase superuser upsert YOUR_EMAIL YOUR_PASSWORD \
+  --dir=/var/lib/cup-collector-pb/pb_data</pre>
+
+<div class="callout">
+  <strong>Save these credentials</strong><br>
+  Store the email and password in your password manager. You'll also need them in the app's <code>.env</code> file as <code>POCKETBASE_ADMIN_EMAIL</code> and <code>POCKETBASE_ADMIN_PASSWORD</code> so the Next.js server can write records on behalf of users.
+</div>
+
+<p>If you prefer the browser UI: open an SSH tunnel (<code>ssh -L 8090:localhost:8090 yourserver</code>), then visit <code>http://localhost:8090/_/</code> and follow the on-screen prompt to create an admin account.</p>
 
 <h2>Step 2 — Verify collections</h2>
-<p>Go to <strong>Collections</strong> in the left sidebar. You should see three collections: <code>households</code>, <code>cups</code>, and <code>owned_cups</code>. If they're missing (migration didn't run), create them manually with these fields:</p>
+<p>Open an SSH tunnel and log in to the admin UI at <code>http://localhost:8090/_/</code>. Go to <strong>Collections</strong> and confirm that <code>households</code>, <code>cups</code>, and <code>owned_cups</code> are all present. The full field lists are defined in the migrations — the key fields are:</p>
 
 <p><strong>households</strong></p>
 <table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody>
-  <tr><td>name</td><td>text</td><td>Required. Display name, e.g. "Our Collection"</td></tr>
+  <tr><td>name</td><td>text</td><td>Required. Display name shown in the app, e.g. "Our Collection"</td></tr>
+  <tr><td>group_slug</td><td>text</td><td>Required. Matched against PocketID group names — see Step 3</td></tr>
 </tbody></table>
 
 <p><strong>cups</strong></p>
@@ -67,47 +85,69 @@
   <tr><td>series</td><td>text</td><td>Required. "You Are Here", "Been There", etc.</td></tr>
   <tr><td>year</td><td>number</td><td>Required. 4-digit year</td></tr>
   <tr><td>image</td><td>file</td><td>Primary cup photo (downloaded during import)</td></tr>
-  <tr><td>image_credit</td><td>text</td><td>Source URL or "own photo"</td></tr>
-  <tr><td>lat</td><td>number</td><td>City centroid latitude</td></tr>
-  <tr><td>lng</td><td>number</td><td>City centroid longitude</td></tr>
-  <tr><td>notes</td><td>text</td><td>Optional freeform notes</td></tr>
+  <tr><td>lat / lng</td><td>number</td><td>City centroid coordinates</td></tr>
 </tbody></table>
-
-<p><strong>owned_cups</strong></p>
-<table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody>
-  <tr><td>household_id</td><td>relation → households</td><td>Required</td></tr>
-  <tr><td>cup_id</td><td>relation → cups</td><td>Required</td></tr>
-  <tr><td>acquired_date</td><td>date</td><td>Optional</td></tr>
-  <tr><td>own_photo</td><td>file</td><td>Optional owner photo</td></tr>
-</tbody></table>
-
-<h2>Step 2b — Verify access rules</h2>
-<p>The migration sets all three collections to allow unrestricted reads at the PocketBase level (empty rule string). This is intentional but does not mean the data is publicly accessible.</p>
-
-<p>Security is enforced at the network layer: PocketBase is not exposed publicly — there is no nginx vhost for it by default in the NixOS module. All browser traffic reaches PocketBase through the Next.js <code>/api/pb</code> proxy, which requires a valid signed-in session before forwarding any request. The "unrestricted read" rule in PocketBase itself is only reachable by traffic that has already passed the session check in the proxy.</p>
-
-<p>Browser clients do not hold PocketBase auth tokens (PocketBase's <code>@request.auth</code> rules can't be used because Auth.js handles identity, not PocketBase's own auth system). Enforcing access at the proxy layer achieves the same result cleanly.</p>
-
-<p>Writes are admin-only in PocketBase. All mutations (marking cups owned, running imports) go through Next.js server-side API routes that authenticate with the admin email/password — the browser never gets write access to PocketBase directly.</p>
-
-<div class="callout">
-  <strong>Accessing the PocketBase admin UI</strong><br>
-  Without a public nginx vhost for PocketBase, use an SSH tunnel to reach the admin UI:
-  <br><br>
-  <code>ssh -L 8090:localhost:8090 yourserver</code><br>
-  then open <code>http://localhost:8090/_/</code> in your browser.
-</div>
 
 <h2>Step 3 — Create the household record</h2>
+<p>The household record links your PocketID user groups to owned-cup data in PocketBase. The key field is <code>group_slug</code> — a short identifier that the app uses to match PocketID groups to a household at sign-in.</p>
+
+<p>The convention is:</p>
+<ul>
+  <li>Choose a slug, e.g. <code>smith-family</code></li>
+  <li>Create PocketID groups named <code>smith-family-owner</code> and/or <code>smith-family-viewer</code></li>
+  <li>Set <code>group_slug = "smith-family"</code> on the household record in PocketBase</li>
+</ul>
+
+<p>Users in the <code>-owner</code> group can mark cups as owned, edit condition info, and run imports. Users in the <code>-viewer</code> group can browse the collection but cannot make changes. A user can belong to groups for more than one household — the app will show a switcher in Settings.</p>
+
+<h3>Option A — Script (recommended)</h3>
+<p>The dev shell provides a <code>create-household</code> script. Open an SSH tunnel so your local PocketBase URL points at the production instance, then run from inside <code>nix develop</code>:</p>
+
+<pre># On your local machine — forward production PocketBase to localhost:8090
+ssh -L 8090:localhost:8090 yourserver
+
+# In another terminal, enter the dev shell and run the script
+# Override the URL and credentials to target production instead of dev
+POCKETBASE_URL=http://localhost:8090 \
+POCKETBASE_ADMIN_EMAIL=admin@example.com \
+POCKETBASE_ADMIN_PASSWORD=yourpassword \
+  create-household --name "Our Collection" --slug our-collection</pre>
+
+<p>The script checks for an existing record with the same slug before creating, so it is safe to run more than once. It prints the resulting record ID and a reminder about the PocketID group names to create.</p>
+
+<p>For local development, the credentials are loaded from <code>app/.env.local</code> automatically — no need to set them explicitly:</p>
+
+<pre>create-household --name "Test Household" --slug test-household</pre>
+
+<h3>Option B — Browser admin UI</h3>
 <ol>
-  <li>In the admin panel, go to <strong>Collections</strong> → <strong>households</strong> → <strong>New record</strong>.</li>
-  <li>Set <code>name</code> to something friendly, e.g. "Our Collection".</li>
-  <li>Set <code>member_sub_1</code> to the PocketID <code>sub</code> value for the first household member. Find this in the PocketID admin panel under <strong>Users</strong> — it is the "ID" shown on each user's profile.</li>
-  <li>Optionally set <code>member_sub_2</code> for the second household member, and <code>viewer_subs</code> (as a JSON array, e.g. <code>["sub-value-here"]</code>) for any view-only members.</li>
+  <li>Open an SSH tunnel: <code>ssh -L 8090:localhost:8090 yourserver</code></li>
+  <li>Open <code>http://localhost:8090/_/</code> and log in.</li>
+  <li>Go to <strong>Collections → households → New record</strong>.</li>
+  <li>Set <code>name</code> to something friendly, e.g. <code>Our Collection</code>.</li>
+  <li>Set <code>group_slug</code> to your chosen slug, e.g. <code>our-collection</code>.</li>
   <li>Save.</li>
 </ol>
 
-<p>User <strong>roles</strong> come from PocketID groups, not from these fields — a user in the <code>cup-owner</code> group is an owner regardless of whether their sub appears here. The <code>member_sub_*</code> and <code>viewer_subs</code> fields are used by the app to find which household a user belongs to, so that owned-cups data is scoped correctly.</p>
+<h2>Step 4 — Create PocketID groups</h2>
+<p>In the PocketID admin UI, create one or both groups for your household slug:</p>
+<ul>
+  <li><strong>Name</strong> (the value in the <code>groups</code> OIDC claim): <code>our-collection-owner</code></li>
+  <li><strong>Friendly Name</strong> (display only): e.g. <code>Our Collection Owner</code></li>
+</ul>
+<p>Add each user to the appropriate group. On their next sign-in (or after signing out and back in), the app will resolve their household automatically.</p>
+
+<h2>Security model</h2>
+<p>PocketBase is not exposed publicly — the NixOS module does not create an nginx vhost for it by default. All browser traffic reaches PocketBase through the Next.js <code>/api/pb</code> proxy, which requires a valid signed-in session. The "unrestricted read" rules set by migrations are only reachable by traffic that has already passed the session check in the proxy.</p>
+
+<p>Writes are admin-only in PocketBase. All mutations go through Next.js server-side API routes that authenticate with the admin credentials — the browser never gets write access to PocketBase directly.</p>
+
+<div class="callout">
+  <strong>Accessing the admin UI after setup</strong><br>
+  Use an SSH tunnel whenever you need the admin UI:<br><br>
+  <code>ssh -L 8090:localhost:8090 yourserver</code><br><br>
+  then open <code>http://localhost:8090/_/</code> in your browser.
+</div>
 
 <nav class="page-nav">
   <a class="prev" href="pocketid.html">PocketID Setup</a>
