@@ -2,6 +2,7 @@ import { auth, signOut } from "@/app/auth";
 import { redirect } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { UiThemeSelector } from "@/components/UiThemeSelector";
+import { HouseholdSwitcher } from "@/components/HouseholdSwitcher";
 import Link from "next/link";
 
 // Settings is a server component — reads session server-side,
@@ -30,7 +31,14 @@ export default async function SettingsPage() {
         {/* Household info */}
         {session.user.householdName && (
           <Section title="Household">
-            <Row label="Name" value={session.user.householdName} />
+            {(session.user.householdMemberships?.length ?? 0) > 1 ? (
+              <HouseholdSwitcher
+                memberships={session.user.householdMemberships!}
+                currentId={session.user.householdId!}
+              />
+            ) : (
+              <Row label="Name" value={session.user.householdName} />
+            )}
           </Section>
         )}
 

@@ -4,6 +4,12 @@ import type { JWT as _JWT } from "next-auth/jwt"; // import required for module 
 import { getAdminPocketBase } from "@/lib/pocketbase";
 import { parseHouseholdGroups } from "@/lib/roles";
 
+export interface HouseholdOption {
+  id: string;
+  name: string;
+  role: "owner" | "viewer";
+}
+
 declare module "next-auth" {
   interface User {
     groups?: string[];
@@ -18,6 +24,9 @@ declare module "next-auth" {
       householdId?: string | null;
       householdName?: string | null;
       householdRole?: "owner" | "viewer" | null;
+      // All households the user belongs to — populated at sign-in.
+      // Length > 1 means the household switcher should be shown.
+      householdMemberships?: HouseholdOption[];
     };
   }
   interface JWT {
@@ -26,6 +35,7 @@ declare module "next-auth" {
     householdId?: string | null;
     householdName?: string | null;
     householdRole?: "owner" | "viewer" | null;
+    householdMemberships?: HouseholdOption[];
   }
 }
 
@@ -83,7 +93,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account, profile, trigger, session }) {
       if (profile) {
         // OIDC path: groups come from the PocketID profile claim
         token.pocketIdSub = profile.sub as string;
@@ -100,25 +110,50 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.pocketIdSub = id;
       }
 
-      // Resolve household once at sign-in (householdId === undefined means not yet looked up;
-      // null means looked up but no matching household found — skip on subsequent refreshes).
+      // Handle household switch triggered from client via session.update().
+      if (trigger === "update") {
+        const selectedId = (session as { selectedHouseholdId?: string })?.selectedHouseholdId;
+        if (selectedId) {
+          const memberships = (token.householdMemberships as HouseholdOption[]) ?? [];
+          const selected = memberships.find((m) => m.id === selectedId);
+          if (selected) {
+            token.householdId = selected.id;
+            token.householdName = selected.name;
+            token.householdRole = selected.role;
+          }
+        }
+      }
+
+      // Resolve all households once at sign-in (householdId === undefined means not yet
+      // looked up; null means looked up but nothing found — skip on subsequent refreshes).
       if (token.groups && token.householdId === undefined) {
         const memberships = parseHouseholdGroups(token.groups as string[]);
         if (memberships.length > 0) {
-          // For now use the first matching household. A household switcher is future work.
-          const { slug, role } = memberships[0];
-          try {
-            const pb = await getAdminPocketBase();
-            const h = await pb.collection("households")
-              .getFirstListItem(`group_slug="${slug}"`);
-            token.householdId = h.id as string;
-            token.householdName = h.name as string;
-            token.householdRole = role;
-          } catch {
+          const pb = await getAdminPocketBase();
+          const resolved = await Promise.all(
+            memberships.map(async ({ slug, role }) => {
+              try {
+                const h = await pb.collection("households")
+                  .getFirstListItem(`group_slug="${slug}"`);
+                return { id: h.id as string, name: h.name as string, role } satisfies HouseholdOption;
+              } catch {
+                return null;
+              }
+            })
+          );
+          const valid = resolved.filter((h): h is HouseholdOption => h !== null);
+          if (valid.length > 0) {
+            token.householdMemberships = valid;
+            token.householdId = valid[0].id;
+            token.householdName = valid[0].name;
+            token.householdRole = valid[0].role;
+          } else {
+            token.householdMemberships = [];
             token.householdId = null;
             token.householdRole = null;
           }
         } else {
+          token.householdMemberships = [];
           token.householdId = null;
           token.householdRole = null;
         }
@@ -142,6 +177,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       if (t.householdRole === "owner" || t.householdRole === "viewer" || t.householdRole === null) {
         session.user.householdRole = t.householdRole as "owner" | "viewer" | null;
+      }
+      if (Array.isArray(t.householdMemberships)) {
+        session.user.householdMemberships = t.householdMemberships as HouseholdOption[];
       }
       return session;
     },
