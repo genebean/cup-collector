@@ -138,6 +138,19 @@
             "$@"
         '';
 
+        # Build a starter cup catalog CSV from the verified community-sourced data table.
+        # Usage: build-catalog --out cups.csv [--series "You Are Here"]
+        # Produces a CSV ready for import-cups. Fill in image_url / hobbydb_url manually after.
+        ccBuildCatalog = pkgs.writeShellScriptBin "cc-build-catalog" ''
+          PROJ_ROOT="$(git rev-parse --show-toplevel)"
+          NODE_PATH="$PROJ_ROOT/app/node_modules" \
+            "$PROJ_ROOT/app/node_modules/.bin/ts-node" \
+            --transpile-only \
+            --project "$PROJ_ROOT/scripts/tsconfig.json" \
+            "$PROJ_ROOT/scripts/scrape-catalog.ts" \
+            "$@"
+        '';
+
         # Create a household record in PocketBase.
         # Usage: create-household --name "Our Collection" --slug our-collection
         # Requires POCKETBASE_URL, POCKETBASE_ADMIN_EMAIL, and POCKETBASE_ADMIN_PASSWORD in app/.env.local.
@@ -158,7 +171,7 @@
         devScripts = [
           ccPbServe ccPocketidServe ccDevNext ccDevNextBypass
           ccPlaywrightInstall ccPlayE2e ccGenAuthSecret
-          ccDocsServe ccCheck ccImportCups ccCreateHousehold
+          ccDocsServe ccCheck ccImportCups ccBuildCatalog ccCreateHousehold
         ];
 
       in {
@@ -221,6 +234,7 @@
             docs-serve()         { cc-docs-serve "$@"; }
             check()              { cc-check "$@"; }
             import-cups()        { cc-import-cups "$@"; }
+            build-catalog()      { cc-build-catalog "$@"; }
             create-household()   { cc-create-household "$@"; }
 
             if [[ $- == *i* ]]; then
@@ -232,6 +246,7 @@
               echo "  dev-next-bypass     start Next.js dev server with auth bypass (optional; play-e2e auto-starts one)"
               echo "  gen-auth-secret     generate a new AUTH_SECRET value"
               echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run])"
+              echo "  build-catalog       generate starter catalog CSV (--out cups.csv [--series <name>])"
               echo "  create-household    create a household record in PocketBase (--name <name> --slug <slug>)"
               echo "  docs-serve          serve the HTML docs on http://localhost:4000"
               echo "  check               run pre-commit hooks, unit tests, and lint"
