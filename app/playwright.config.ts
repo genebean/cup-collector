@@ -1,4 +1,4 @@
-import { defineConfig } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 import { PB_URL, PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD } from "./playwright/test-pb.ts";
 
 // Playwright manages the full test environment lifecycle:
@@ -56,6 +56,18 @@ export default defineConfig({
     {
       name: "chrome",
       dependencies: ["setup"],
+    },
+    // Mobile viewport smoke test — limited to browse spec to avoid doubling suite runtime.
+    // Uses iPhone 14 viewport + touch UA; Chrome binary runs the actual rendering.
+    {
+      name: "iphone",
+      dependencies: ["setup"],
+      testMatch: /browse\.spec\.ts/,
+      use: {
+        ...devices["iPhone 14"],
+        channel: "chrome",
+        serviceWorkers: "block",
+      },
     },
   ],
 });
