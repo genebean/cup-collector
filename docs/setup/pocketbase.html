@@ -94,9 +94,11 @@
 <p>The convention is:</p>
 <ul>
   <li>Choose a slug, e.g. <code>smith-family</code></li>
-  <li>Create PocketID groups named <code>smith-family-owner</code> and/or <code>smith-family-viewer</code></li>
+  <li>Create PocketID groups named <code>cup-collector-smith-family-owner</code> and/or <code>cup-collector-smith-family-viewer</code></li>
   <li>Set <code>group_slug = "smith-family"</code> on the household record in PocketBase</li>
 </ul>
+
+<p>The <code>cup-collector-</code> prefix namespaces these groups so they don't collide with groups from other apps sharing the same PocketID instance. The app ignores any group that doesn't start with this prefix.</p>
 
 <p>Users in the <code>-owner</code> group can mark cups as owned, edit condition info, and run imports. Users in the <code>-viewer</code> group can browse the collection but cannot make changes. A user can belong to groups for more than one household — the app will show a switcher in Settings.</p>
 
@@ -130,11 +132,12 @@ POCKETBASE_ADMIN_PASSWORD=yourpassword \
 </ol>
 
 <h2>Step 4 — Create PocketID groups</h2>
-<p>In the PocketID admin UI, create one or both groups for your household slug:</p>
+<p>In the PocketID admin UI, create one or both groups for your household slug. Using slug <code>our-collection</code> as an example:</p>
 <ul>
-  <li><strong>Name</strong> (the value in the <code>groups</code> OIDC claim): <code>our-collection-owner</code></li>
-  <li><strong>Friendly Name</strong> (display only): e.g. <code>Our Collection Owner</code></li>
+  <li><strong>Name</strong> (the value in the <code>groups</code> OIDC claim): <code>cup-collector-our-collection-owner</code></li>
+  <li><strong>Friendly Name</strong> (display only): e.g. <code>Cup Collector — Our Collection — Owner</code></li>
 </ul>
+<p>Repeat for the viewer group if needed: <code>cup-collector-our-collection-viewer</code>.</p>
 <p>Add each user to the appropriate group. On their next sign-in (or after signing out and back in), the app will resolve their household automatically.</p>
 
 <h2>Security model</h2>

@@ -106,7 +106,12 @@ export default function BrowsePage() {
 
       <header className="bg-green-dark text-white px-4 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <h1 className="font-bold text-lg">Browse</h1>
+          <div>
+            <h1 className="font-bold text-lg leading-tight">Browse</h1>
+            {session?.user?.householdName && (
+              <p className="text-xs text-white/60 leading-tight">{session.user.householdName}</p>
+            )}
+          </div>
           <span className="text-xs text-white/60">
             {totalCount} cups · {ownedCount} owned
           </span>

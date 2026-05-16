@@ -52,7 +52,12 @@ export default function SearchPage() {
   return (
     <div className="flex flex-col h-screen dark:bg-gray-900">
       <header className="bg-green-dark text-white px-4 py-3 flex-shrink-0">
-        <h1 className="font-bold text-lg mb-2">Search</h1>
+        <div className="mb-2">
+          <h1 className="font-bold text-lg leading-tight">Search</h1>
+          {session?.user?.householdName && (
+            <p className="text-xs text-white/60 leading-tight">{session.user.householdName}</p>
+          )}
+        </div>
         <input
           type="search"
           placeholder="City, country, or series…"
