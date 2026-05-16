@@ -9,9 +9,8 @@ import { PB_URL, PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD } from "./playwright/test-pb.
 export default defineConfig({
   testDir: "./e2e",
   retries: process.env.CI ? 2 : 0,
-  // Single worker avoids a race condition where parallel tests competing for the
-  // same dev server cause CSS transition timing issues in the bottom-sheet navigation
-  // test. With only 11 tests the parallelism gain is negligible.
+  // Single worker: tests share a single PocketBase instance so parallel tests
+  // creating/deleting owned cup records would conflict with each other.
   workers: 1,
   reporter: [["html", { outputFolder: "playwright-report", open: "never" }]],
   outputDir: "test-results/playwright",
