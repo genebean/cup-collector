@@ -4,7 +4,7 @@
 // Leaflet directly accesses the browser DOM and will crash during server-side
 // rendering. See app/src/app/map/page.tsx for the dynamic import.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap, useMapEvents } from "react-leaflet";
 import type { CupWithOwnership, NearbyStore } from "@/types";
 import { useRouter } from "next/navigation";
@@ -120,6 +120,61 @@ function ZoomUpdater({ location, zoom }: { location: { lat: number; lng: number 
   return null;
 }
 
+// Groups all cups into pins for city-scope cups.
+// State and country cups have no pin of their own — they appear in the popup
+// of every city pin whose region/country_code matches.
+interface LocationGroup {
+  lat: number;
+  lng: number;
+  cityCups: CupWithOwnership[];
+  stateCups: CupWithOwnership[];
+  countryCups: CupWithOwnership[];
+  themedCups: CupWithOwnership[];
+}
+
+function buildLocationGroups(cups: CupWithOwnership[]): LocationGroup[] {
+  const cityCups   = cups.filter((c) => c.scope === "city" || !c.scope);
+  const stateCups  = cups.filter((c) => c.scope === "state");
+  const countryCups = cups.filter((c) => c.scope === "country");
+  // Themed cups have no pin of their own — they surface inside city pin popups
+  // for every location where a cup's series matches the themed cup's venue_series.
+  const themedCups = cups.filter((c) => c.scope === "themed");
+
+  // Cluster city cups by lat/lng (using string key for exact match)
+  const grouped = new Map<string, CupWithOwnership[]>();
+  for (const cup of cityCups) {
+    const key = `${cup.lat},${cup.lng}`;
+    const group = grouped.get(key) ?? [];
+    group.push(cup);
+    grouped.set(key, group);
+  }
+
+  const byYearDesc = (a: CupWithOwnership, b: CupWithOwnership) => b.year - a.year;
+
+  return Array.from(grouped.values()).map((cityGroup) => {
+    const { lat, lng, region, country_code } = cityGroup[0];
+    const seriesInGroup = new Set(cityGroup.map((c) => c.series));
+
+    const matchingState = stateCups.filter(
+      (s) => s.region === region && s.country_code === country_code
+    );
+    const matchingCountry = countryCups.filter(
+      (c) => c.country_code === country_code
+    );
+    const matchingThemed = themedCups.filter(
+      (t) => t.venue_series && seriesInGroup.has(t.venue_series)
+    );
+
+    return {
+      lat, lng,
+      cityCups:    [...cityGroup].sort(byYearDesc),
+      stateCups:   matchingState.sort(byYearDesc),
+      countryCups: matchingCountry.sort(byYearDesc),
+      themedCups:  matchingThemed.sort(byYearDesc),
+    };
+  });
+}
+
 export default function MapView({ cups, stores, userLocation, targetZoom, worldViewTick = 0 }: MapViewProps) {
   const router = useRouter();
   const { isDark } = useUiTheme();
@@ -133,6 +188,10 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
   })();
   const defaultCenter: [number, number] = savedPos ? [savedPos.lat, savedPos.lng] : [20, 0];
   const defaultZoom: number = savedPos ? savedPos.zoom : 2;
+
+  const locationGroups = buildLocationGroups(cups);
+  // Memoized so BoundsTracker's useEffect dependency doesn't fire on every render
+  const boundsTrackerCups = useMemo(() => cups.filter((c) => c.scope !== "themed"), [cups]);
 
   return (
     <div className="relative w-full h-full">
@@ -149,7 +208,8 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
       <LocationUpdater location={userLocation} zoom={targetZoom} />
       <ZoomUpdater location={userLocation} zoom={targetZoom} />
       <WorldViewResetter tick={worldViewTick} />
-      <BoundsTracker cups={cups} onVisibleCupsChange={handleVisibleCupsChange} />
+      {/* Exclude themed cups — their lat/lng is a placeholder, not a real location */}
+      <BoundsTracker cups={boundsTrackerCups} onVisibleCupsChange={handleVisibleCupsChange} />
 
       {/* "You are here" — white dot with blue ring */}
       {userLocation && (
@@ -167,18 +227,23 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
         </CircleMarker>
       )}
 
-      {/* Cup pins:
-            green  = owned and in good condition
-            orange = unowned OR owned but needs replacing (both are action items) */}
-      {cups.map((cup) => {
-        const needsReplacing = cup.isOwned && cup.ownedRecord?.needs_replacing;
-        // A cup that needs replacing is visually treated like an unowned cup so
-        // it stands out as something that requires action.
-        const isGreen = cup.isOwned && !needsReplacing;
+      {/* Cup pins — one per city-scope location.
+          Green  = everything at this location is owned and in good condition.
+          Orange = anything unowned OR owned but needs replacing. */}
+      {locationGroups.map((group) => {
+        const allCups = [...group.cityCups, ...group.stateCups, ...group.countryCups];
+        const needsAction = allCups.some(
+          (c) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false)
+        );
+        const isGreen = !needsAction;
+
+        // Header for the first city cup's location name
+        const locationName = group.cityCups[0].name;
+
         return (
           <CircleMarker
-            key={cup.id}
-            center={[cup.lat, cup.lng]}
+            key={`${group.lat},${group.lng}`}
+            center={[group.lat, group.lng]}
             radius={7}
             pathOptions={{
               color: isGreen ? "#00704A" : "#ea580c",
@@ -188,18 +253,91 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
             }}
           >
             <Popup>
-              <div className="text-sm">
-                <div className="font-semibold">{cup.city}</div>
-                <div className="text-gray-500">{cup.series} · {cup.year}</div>
-                <div className={isGreen ? "text-green-700 mb-1" : "text-orange-600 mb-1"}>
-                  {needsReplacing ? "⚠ Needs replacing" : cup.isOwned ? "✓ Owned" : "Needed"}
-                </div>
-                <button
-                  onClick={() => router.push(`/cup/${cup.id}`)}
-                  className="text-green-700 underline text-xs"
-                >
-                  View details →
-                </button>
+              <div className="text-sm min-w-[160px]">
+                {/* City-scope cups */}
+                <div className="font-semibold mb-1">{locationName}</div>
+                {group.cityCups.map((cup) => {
+                  const nr = cup.ownedRecord?.needs_replacing;
+                  const green = cup.isOwned && !nr;
+                  return (
+                    <div key={cup.id} className="mb-1">
+                      <div className="text-gray-500">{cup.series} · {cup.year}</div>
+                      <div className={green ? "text-green-700" : "text-orange-600"}>
+                        {nr ? "⚠ Needs replacing" : cup.isOwned ? "✓ Owned" : "Needed"}
+                      </div>
+                      <button onClick={() => router.push(`/cup/${cup.id}`)} className="text-green-700 underline text-xs cursor-pointer">
+                        View details →
+                      </button>
+                    </div>
+                  );
+                })}
+
+                {/* State-scope cups */}
+                {group.stateCups.length > 0 && (
+                  <>
+                    <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2">{group.stateCups[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span></div>
+                    {group.stateCups.map((cup) => {
+                      const nr = cup.ownedRecord?.needs_replacing;
+                      const green = cup.isOwned && !nr;
+                      return (
+                        <div key={cup.id} className="mb-1">
+                          <div className="text-gray-500">{cup.series} · {cup.year}</div>
+                          <div className={green ? "text-green-700" : "text-orange-600"}>
+                            {nr ? "⚠ Needs replacing" : cup.isOwned ? "✓ Owned" : "Needed"}
+                          </div>
+                          <button onClick={() => router.push(`/cup/${cup.id}`)} className="text-green-700 underline text-xs cursor-pointer">
+                            View details →
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Country-scope cups */}
+                {group.countryCups.length > 0 && (
+                  <>
+                    <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2">{group.countryCups[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span></div>
+                    {group.countryCups.map((cup) => {
+                      const nr = cup.ownedRecord?.needs_replacing;
+                      const green = cup.isOwned && !nr;
+                      return (
+                        <div key={cup.id} className="mb-1">
+                          <div className="text-gray-500">{cup.series} · {cup.year}</div>
+                          <div className={green ? "text-green-700" : "text-orange-600"}>
+                            {nr ? "⚠ Needs replacing" : cup.isOwned ? "✓ Owned" : "Needed"}
+                          </div>
+                          <button onClick={() => router.push(`/cup/${cup.id}`)} className="text-green-700 underline text-xs cursor-pointer">
+                            View details →
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Themed / special-edition cups sold at this venue */}
+                {group.themedCups.length > 0 && (
+                  <>
+                    <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2 text-purple-700">Special Edition</div>
+                    {group.themedCups.map((cup) => {
+                      const nr = cup.ownedRecord?.needs_replacing;
+                      const green = cup.isOwned && !nr;
+                      return (
+                        <div key={cup.id} className="mb-1">
+                          <div className="font-medium text-purple-700">{cup.name}</div>
+                          <div className="text-gray-500">{cup.series} · {cup.year}</div>
+                          <div className={green ? "text-green-700" : "text-orange-600"}>
+                            {nr ? "⚠ Needs replacing" : cup.isOwned ? "✓ Owned" : "Needed"}
+                          </div>
+                          <button onClick={() => router.push(`/cup/${cup.id}`)} className="text-green-700 underline text-xs cursor-pointer">
+                            View details →
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
               </div>
             </Popup>
           </CircleMarker>

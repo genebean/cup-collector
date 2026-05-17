@@ -16,7 +16,7 @@ export default function SearchPage() {
   const { data: cups = [] } = useQuery<Cup[]>({
     queryKey: ["cups"],
     queryFn: () =>
-      getPocketBase().collection("cups").getFullList({ sort: "city" })
+      getPocketBase().collection("cups").getFullList({ sort: "name" })
         .then((r) => r as unknown as Cup[]),
   });
 
@@ -37,7 +37,7 @@ export default function SearchPage() {
     return cups
       .filter(
         (c) =>
-          c.city.toLowerCase().includes(q) ||
+          c.name.toLowerCase().includes(q) ||
           c.country.toLowerCase().includes(q) ||
           c.series.toLowerCase().includes(q) ||
           c.region?.toLowerCase().includes(q)

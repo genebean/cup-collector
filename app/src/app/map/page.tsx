@@ -40,7 +40,7 @@ export default function MapPage() {
     queryFn: () =>
       getPocketBase()
         .collection("cups")
-        .getFullList({ sort: "city" })
+        .getFullList({ sort: "name" })
         .then((records) => records as unknown as Cup[]),
   });
 
@@ -80,7 +80,8 @@ export default function MapPage() {
   // Merge cups with ownership status for map rendering
   const ownedCupIds = new Set(ownedCups.map((o) => o.cup_id));
   const cupsWithOwnership: CupWithOwnership[] = cups
-    .filter((c) => c.lat && c.lng) // Only cups with coordinates get a pin
+    // City cups need real coords for a pin; state/country/themed appear in city popups
+    .filter((c) => c.scope === "state" || c.scope === "country" || c.scope === "themed" || (!!c.lat && !!c.lng))
     .map((cup) => ({
       ...cup,
       isOwned: ownedCupIds.has(cup.id),

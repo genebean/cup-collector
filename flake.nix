@@ -214,7 +214,8 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             nodejs_24
-            python3   # used by cc-docs-serve (stdlib http.server, no extra deps)
+            python3    # used by cc-docs-serve (stdlib http.server, no extra deps)
+            sqlite     # used to inspect PocketBase's SQLite database directly
             # PocketBase runs via podman (matches production; stays current automatically).
             # typescript and ts-node are installed as npm devDependencies in app/
             # and invoked via `npx` — this avoids node-version mismatches in nixpkgs.

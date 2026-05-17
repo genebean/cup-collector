@@ -2,7 +2,9 @@
 // (scripts/import-cups.ts) and the web import API route.
 
 export interface CsvRow {
-  city: string;
+  name: string;         // was "city" — now holds city, state, country, or themed location name
+  scope: string;        // "city" | "state" | "country" | "themed"; defaults to "city" if column absent
+  venue_series: string; // themed cups only: series name of the venue cups they're sold alongside
   region: string;
   country: string;
   country_code: string;
@@ -26,10 +28,14 @@ export function parseCSV(text: string): CsvRow[] {
     const row: Record<string, string> = {};
     headers.forEach((h, idx) => { row[h] = values[idx] ?? ""; });
 
-    if (!row.city || !row.series || !row.year) continue;
+    // Support both old CSVs (city column) and new CSVs (name column)
+    const name = row.name || row.city;
+    if (!name || !row.series || !row.year) continue;
 
     rows.push({
-      city: row.city,
+      name,
+      scope: row.scope || "city",
+      venue_series: row.venue_series ?? "",
       region: row.region ?? "",
       country: row.country ?? "",
       country_code: row.country_code ?? "",
@@ -49,15 +55,38 @@ export function parseCSV(text: string): CsvRow[] {
 export function rowMatchesExisting(row: CsvRow, existing: Record<string, unknown>): boolean {
   const s = (v: unknown) => String(v ?? "");
   const n = (v: unknown) => Number(v ?? 0);
+  const hobbydbMatch = !row.hobbydb_url || row.hobbydb_url === s(existing.hobbydb_url);
   return (
+    row.scope         === (s(existing.scope) || "city") &&
+    row.venue_series  === s(existing.venue_series) &&
     row.region        === s(existing.region) &&
     row.country       === s(existing.country) &&
     row.country_code  === s(existing.country_code) &&
     row.lat           === n(existing.lat) &&
     row.lng           === n(existing.lng) &&
     row.image_url     === s(existing.image_credit) &&
-    row.hobbydb_url   === s(existing.hobbydb_url) &&
+    hobbydbMatch &&
     row.more_info_url === s(existing.more_info_url) &&
     row.notes         === s(existing.notes)
   );
+}
+
+// Returns a list of field names that differ between the CSV row and the DB record.
+// Used for debugging persistent "always updated" records.
+export function diffRow(row: CsvRow, existing: Record<string, unknown>): string[] {
+  const s = (v: unknown) => String(v ?? "");
+  const n = (v: unknown) => Number(v ?? 0);
+  const diffs: string[] = [];
+  if (row.scope         !== (s(existing.scope) || "city"))  diffs.push(`scope: csv="${row.scope}" db="${s(existing.scope) || "city"}"`);
+  if (row.venue_series  !== s(existing.venue_series))        diffs.push(`venue_series: csv="${row.venue_series}" db="${s(existing.venue_series)}"`);
+  if (row.region        !== s(existing.region))              diffs.push(`region: csv="${row.region}" db="${s(existing.region)}"`);
+  if (row.country       !== s(existing.country))             diffs.push(`country: csv="${row.country}" db="${s(existing.country)}"`);
+  if (row.country_code  !== s(existing.country_code))        diffs.push(`country_code: csv="${row.country_code}" db="${s(existing.country_code)}"`);
+  if (row.lat           !== n(existing.lat))                 diffs.push(`lat: csv=${row.lat} db=${n(existing.lat)}`);
+  if (row.lng           !== n(existing.lng))                 diffs.push(`lng: csv=${row.lng} db=${n(existing.lng)}`);
+  if (row.image_url     !== s(existing.image_credit))        diffs.push(`image_url: csv="${row.image_url}" db="${s(existing.image_credit)}"`);
+  if (row.hobbydb_url   !== s(existing.hobbydb_url))         diffs.push(`hobbydb_url: csv="${row.hobbydb_url}" db="${s(existing.hobbydb_url)}"`);
+  if (row.more_info_url !== s(existing.more_info_url))       diffs.push(`more_info_url: csv="${row.more_info_url}" db="${s(existing.more_info_url)}"`);
+  if (row.notes         !== s(existing.notes))               diffs.push(`notes: csv="${row.notes}" db="${s(existing.notes)}"`);
+  return diffs;
 }

@@ -12,10 +12,13 @@ export interface Household {
   created: string;
 }
 
+export type CupScope = "city" | "state" | "country" | "themed";
+
 export interface Cup {
   id: string;
   collectionId: string; // PocketBase collection identifier — needed for file URL construction
-  city: string;
+  name: string;         // Display name: city ("Atlanta"), state ("Georgia"), or country ("Canada")
+  scope: CupScope;      // Determines pin rendering and detail-page labeling
   region: string;
   country: string;
   country_code: string; // ISO 3166-1 alpha-2, e.g. "US"
@@ -23,11 +26,12 @@ export interface Cup {
   year: number;
   image: string; // PocketBase filename — pass to getFileUrl() to get a usable URL
   image_credit: string; // Source URL or "own photo"
-  lat: number; // City centroid latitude
-  lng: number; // City centroid longitude
+  lat: number; // Centroid latitude (city, state, or country centroid) — used for Near Me sorting
+  lng: number; // Centroid longitude
   notes: string;
   hobbydb_url: string;   // Direct URL to this cup's hobbyDB record, if known
   more_info_url: string; // Fallback external reference (e.g. starbucks-mugs.com)
+  venue_series: string;  // Themed cups only: series name of the venue cups they're sold at
 }
 
 export interface OwnedCup {

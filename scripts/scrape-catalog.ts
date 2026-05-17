@@ -2,8 +2,9 @@
 // Cup catalog builder — produces a CSV ready for import-cups.ts.
 //
 // Fetches the full starbucks-mugs.com sitemap at runtime to resolve
-// more_info_url for each cup automatically. Discovery Series entries are
-// derived entirely from the sitemap so they reflect what actually exists.
+// more_info_url for each cup automatically. Discovery Series, You Are Here,
+// and Been There entries are all derived from the sitemap so they reflect
+// what actually exists.
 // hobbydb_url is left blank — fill manually after export.
 //
 // Usage (inside nix develop):
@@ -219,6 +220,7 @@ const COORDS: Record<string, [number, number]> = {
   "Park City,United States":      [40.6461, -111.4980],
   "Gatlinburg,United States":     [35.7143,  -83.5121],
   "Traverse City,United States":  [44.7631,  -85.6206],
+  "University Of Georgia,United States": [33.9480,  -83.3776],
   // ── United States — states ──────────────────────────────────────────────────
   "Alabama,United States":        [32.3617,  -86.2792],
   "Alaska,United States":         [64.2008, -153.4937],
@@ -349,6 +351,7 @@ const COORDS: Record<string, [number, number]> = {
   "Madrid,Spain":              [40.4168,  -3.7038],
   "Amsterdam,Netherlands":     [52.3676,   4.9041],
   "Brussels,Belgium":          [50.8503,   4.3517],
+  "Ghent,Belgium":             [51.0543,   3.7174],
   "Vienna,Austria":            [48.2082,  16.3738],
   "Prague,Czech Republic":     [50.0755,  14.4378],
   "Budapest,Hungary":          [47.4979,  19.0402],
@@ -400,7 +403,6 @@ const COORDS: Record<string, [number, number]> = {
   "Guyana,Guyana":               [ 4.8604,  -58.9302],
   "Hong Kong Disneyland,China":  [22.3130,  114.0413],
   "Korea,South Korea":           [37.5665,  126.9780],
-  "Singapore,Singapore":         [ 1.3521,  103.8198],
   // ── Africa ──────────────────────────────────────────────────────────────────
   "Cairo,Egypt":            [30.0444,  31.2357],
   "Cape Town,South Africa": [-33.9249, 18.4241],
@@ -409,20 +411,45 @@ const COORDS: Record<string, [number, number]> = {
 };
 
 const COUNTRY_CODES: Record<string, string> = {
-  "United States": "US", "Canada": "CA", "United Kingdom": "GB",
-  "France": "FR", "Germany": "DE", "Italy": "IT", "Spain": "ES",
-  "Netherlands": "NL", "Belgium": "BE", "Austria": "AT",
-  "Czech Republic": "CZ", "Hungary": "HU", "Poland": "PL",
-  "Sweden": "SE", "Norway": "NO", "Denmark": "DK", "Finland": "FI",
-  "Portugal": "PT", "Greece": "GR", "Switzerland": "CH", "Ireland": "IE",
-  "Japan": "JP", "China": "CN", "South Korea": "KR", "Singapore": "SG",
-  "Thailand": "TH", "Taiwan": "TW", "Malaysia": "MY", "Indonesia": "ID",
-  "Philippines": "PH", "India": "IN", "United Arab Emirates": "AE",
-  "Israel": "IL", "Australia": "AU", "New Zealand": "NZ",
-  "Mexico": "MX", "Brazil": "BR", "Argentina": "AR", "Colombia": "CO",
-  "Peru": "PE", "Chile": "CL", "Egypt": "EG", "Guatemala": "GT",
-  "El Salvador": "SV", "Guyana": "GY",
-  "South Africa": "ZA", "Kenya": "KE", "Morocco": "MA", "Tanzania": "TZ",
+  // North America
+  "United States": "US", "Canada": "CA", "Mexico": "MX",
+  "Guatemala": "GT", "El Salvador": "SV", "Honduras": "HN",
+  "Nicaragua": "NI", "Costa Rica": "CR", "Panama": "PA",
+  "Cuba": "CU", "Jamaica": "JM", "Dominican Republic": "DO",
+  "Puerto Rico": "PR", "Trinidad And Tobago": "TT", "Bahamas": "BS",
+  "Guyana": "GY", "Suriname": "SR",
+  // South America
+  "Brazil": "BR", "Argentina": "AR", "Colombia": "CO",
+  "Peru": "PE", "Chile": "CL", "Ecuador": "EC", "Bolivia": "BO",
+  "Uruguay": "UY", "Paraguay": "PY", "Venezuela": "VE",
+  // Europe
+  "United Kingdom": "GB", "Ireland": "IE", "France": "FR",
+  "Germany": "DE", "Italy": "IT", "Spain": "ES", "Portugal": "PT",
+  "Netherlands": "NL", "Belgium": "BE", "Luxembourg": "LU",
+  "Switzerland": "CH", "Austria": "AT", "Denmark": "DK",
+  "Sweden": "SE", "Norway": "NO", "Finland": "FI", "Iceland": "IS",
+  "Czech Republic": "CZ", "Slovakia": "SK", "Hungary": "HU",
+  "Poland": "PL", "Romania": "RO", "Bulgaria": "BG",
+  "Greece": "GR", "Croatia": "HR", "Slovenia": "SI",
+  "Serbia": "RS", "Estonia": "EE", "Latvia": "LV", "Lithuania": "LT",
+  "Ukraine": "UA", "Russia": "RU", "Turkey": "TR",
+  // Middle East
+  "United Arab Emirates": "AE", "Saudi Arabia": "SA", "Israel": "IL",
+  "Jordan": "JO", "Lebanon": "LB", "Kuwait": "KW", "Qatar": "QA",
+  "Bahrain": "BH", "Oman": "OM",
+  // Asia
+  "Japan": "JP", "China": "CN", "South Korea": "KR", "Taiwan": "TW",
+  "Singapore": "SG", "Thailand": "TH", "Malaysia": "MY",
+  "Indonesia": "ID", "Philippines": "PH", "Vietnam": "VN",
+  "Cambodia": "KH", "Myanmar": "MM", "India": "IN",
+  "Pakistan": "PK", "Sri Lanka": "LK", "Bangladesh": "BD",
+  "Kazakhstan": "KZ",
+  // Oceania
+  "Australia": "AU", "New Zealand": "NZ",
+  // Africa
+  "Egypt": "EG", "Morocco": "MA", "South Africa": "ZA",
+  "Kenya": "KE", "Tanzania": "TZ", "Nigeria": "NG",
+  "Ethiopia": "ET", "Ghana": "GH",
 };
 
 // ── Catalog ───────────────────────────────────────────────────────────────────
@@ -434,243 +461,262 @@ interface CupEntry {
   series: string;
   year: number;
   notes: string;
-  moreInfoUrl?: string; // explicit override — skip slug lookup when set
+  moreInfoUrl?: string;   // explicit override — skip slug lookup when set
+  scope?: string;         // defaults to "city"; set to "themed" for fictional/special-edition cups
+  venue_series?: string;  // themed cups only: series of the venue cups they're sold alongside
 }
 
-// Discovery Series is NOT listed here — entries are derived from the
-// starbucks-mugs.com sitemap at runtime so they reflect what actually exists.
+// YAH and BT entries are derived from the starbucks-mugs.com sitemap at
+// runtime. Only Disney Parks and special-edition cups remain here.
 const CATALOG: CupEntry[] = [
-  // ── You Are Here ──────────────────────────────────────────────────────────
-  // United States
-  { city: "Seattle",        region: "Washington",          country: "United States", series: "You Are Here", year: 2013, notes: "Inaugural release" },
-  { city: "New York",       region: "New York",            country: "United States", series: "You Are Here", year: 2013, notes: "" },
-  { city: "San Francisco",  region: "California",          country: "United States", series: "You Are Here", year: 2013, notes: "" },
-  { city: "Chicago",        region: "Illinois",            country: "United States", series: "You Are Here", year: 2013, notes: "" },
-  { city: "Los Angeles",    region: "California",          country: "United States", series: "You Are Here", year: 2013, notes: "" },
-  { city: "Boston",         region: "Massachusetts",       country: "United States", series: "You Are Here", year: 2014, notes: "" },
-  { city: "Washington DC",  region: "District of Columbia",country: "United States", series: "You Are Here", year: 2014, notes: "" },
-  { city: "Miami",          region: "Florida",             country: "United States", series: "You Are Here", year: 2014, notes: "" },
-  { city: "Las Vegas",      region: "Nevada",              country: "United States", series: "You Are Here", year: 2014, notes: "" },
-  { city: "New Orleans",    region: "Louisiana",           country: "United States", series: "You Are Here", year: 2014, notes: "" },
-  { city: "Portland",       region: "Oregon",              country: "United States", series: "You Are Here", year: 2014, notes: "" },
-  { city: "Austin",         region: "Texas",               country: "United States", series: "You Are Here", year: 2015, notes: "" },
-  { city: "Denver",         region: "Colorado",            country: "United States", series: "You Are Here", year: 2015, notes: "" },
-  { city: "Nashville",      region: "Tennessee",           country: "United States", series: "You Are Here", year: 2015, notes: "" },
-  { city: "Atlanta",        region: "Georgia",             country: "United States", series: "You Are Here", year: 2015, notes: "" },
-  { city: "Phoenix",        region: "Arizona",             country: "United States", series: "You Are Here", year: 2015, notes: "" },
-  { city: "San Diego",      region: "California",          country: "United States", series: "You Are Here", year: 2015, notes: "" },
-  { city: "Philadelphia",   region: "Pennsylvania",        country: "United States", series: "You Are Here", year: 2015, notes: "" },
-  { city: "Minneapolis",    region: "Minnesota",           country: "United States", series: "You Are Here", year: 2016, notes: "" },
-  { city: "Detroit",        region: "Michigan",            country: "United States", series: "You Are Here", year: 2016, notes: "" },
-  { city: "Pittsburgh",     region: "Pennsylvania",        country: "United States", series: "You Are Here", year: 2016, notes: "" },
-  { city: "Baltimore",      region: "Maryland",            country: "United States", series: "You Are Here", year: 2016, notes: "" },
-  { city: "Salt Lake City", region: "Utah",                country: "United States", series: "You Are Here", year: 2016, notes: "" },
-  { city: "Honolulu",       region: "Hawaii",              country: "United States", series: "You Are Here", year: 2016, notes: "" },
-  { city: "Anchorage",      region: "Alaska",              country: "United States", series: "You Are Here", year: 2017, notes: "" },
-  { city: "Kansas City",    region: "Missouri",            country: "United States", series: "You Are Here", year: 2017, notes: "" },
-  { city: "St. Louis",      region: "Missouri",            country: "United States", series: "You Are Here", year: 2017, notes: "" },
-  { city: "Columbus",       region: "Ohio",                country: "United States", series: "You Are Here", year: 2017, notes: "" },
-  { city: "Charlotte",      region: "North Carolina",      country: "United States", series: "You Are Here", year: 2017, notes: "" },
-  { city: "Indianapolis",   region: "Indiana",             country: "United States", series: "You Are Here", year: 2017, notes: "" },
-  { city: "Sacramento",     region: "California",          country: "United States", series: "You Are Here", year: 2018, notes: "" },
-  { city: "Tampa",          region: "Florida",             country: "United States", series: "You Are Here", year: 2018, notes: "" },
-  { city: "Savannah",       region: "Georgia",             country: "United States", series: "You Are Here", year: 2018, notes: "" },
-  { city: "Memphis",        region: "Tennessee",           country: "United States", series: "You Are Here", year: 2018, notes: "" },
-  { city: "Louisville",     region: "Kentucky",            country: "United States", series: "You Are Here", year: 2018, notes: "" },
-  { city: "Oklahoma City",  region: "Oklahoma",            country: "United States", series: "You Are Here", year: 2019, notes: "" },
-  { city: "Raleigh",        region: "North Carolina",      country: "United States", series: "You Are Here", year: 2019, notes: "" },
-  { city: "Richmond",       region: "Virginia",            country: "United States", series: "You Are Here", year: 2019, notes: "" },
-  { city: "Boise",          region: "Idaho",               country: "United States", series: "You Are Here", year: 2019, notes: "" },
-  { city: "Albuquerque",    region: "New Mexico",          country: "United States", series: "You Are Here", year: 2019, notes: "" },
-  { city: "Spokane",        region: "Washington",          country: "United States", series: "You Are Here", year: 2020, notes: "" },
-  { city: "Cleveland",      region: "Ohio",                country: "United States", series: "You Are Here", year: 2020, notes: "" },
-  { city: "Cincinnati",     region: "Ohio",                country: "United States", series: "You Are Here", year: 2020, notes: "" },
-  { city: "Milwaukee",      region: "Wisconsin",           country: "United States", series: "You Are Here", year: 2020, notes: "" },
-  { city: "Madison",        region: "Wisconsin",           country: "United States", series: "You Are Here", year: 2020, notes: "" },
-  { city: "Charleston",     region: "South Carolina",      country: "United States", series: "You Are Here", year: 2021, notes: "" },
-  { city: "Tucson",         region: "Arizona",             country: "United States", series: "You Are Here", year: 2021, notes: "" },
-  { city: "Hartford",       region: "Connecticut",         country: "United States", series: "You Are Here", year: 2021, notes: "" },
-  { city: "Providence",     region: "Rhode Island",        country: "United States", series: "You Are Here", year: 2021, notes: "" },
-  { city: "Des Moines",     region: "Iowa",                country: "United States", series: "You Are Here", year: 2022, notes: "" },
-  { city: "Omaha",          region: "Nebraska",            country: "United States", series: "You Are Here", year: 2022, notes: "" },
-  { city: "Wichita",        region: "Kansas",              country: "United States", series: "You Are Here", year: 2022, notes: "" },
-  { city: "Baton Rouge",    region: "Louisiana",           country: "United States", series: "You Are Here", year: 2022, notes: "" },
-  { city: "Little Rock",    region: "Arkansas",            country: "United States", series: "You Are Here", year: 2022, notes: "" },
-  // Canada
-  { city: "Vancouver",   region: "British Columbia", country: "Canada", series: "You Are Here", year: 2013, notes: "" },
-  { city: "Toronto",     region: "Ontario",          country: "Canada", series: "You Are Here", year: 2013, notes: "" },
-  { city: "Montreal",    region: "Quebec",           country: "Canada", series: "You Are Here", year: 2014, notes: "" },
-  { city: "Calgary",     region: "Alberta",          country: "Canada", series: "You Are Here", year: 2015, notes: "" },
-  { city: "Ottawa",      region: "Ontario",          country: "Canada", series: "You Are Here", year: 2015, notes: "" },
-  { city: "Edmonton",    region: "Alberta",          country: "Canada", series: "You Are Here", year: 2016, notes: "" },
-  { city: "Quebec City", region: "Quebec",           country: "Canada", series: "You Are Here", year: 2016, notes: "" },
-  { city: "Halifax",     region: "Nova Scotia",      country: "Canada", series: "You Are Here", year: 2017, notes: "" },
-  // United Kingdom
-  { city: "London",     region: "England",  country: "United Kingdom", series: "You Are Here", year: 2013, notes: "" },
-  { city: "Edinburgh",  region: "Scotland", country: "United Kingdom", series: "You Are Here", year: 2014, notes: "" },
-  { city: "Manchester", region: "England",  country: "United Kingdom", series: "You Are Here", year: 2015, notes: "" },
-  // Europe
-  { city: "Paris",      region: "", country: "France",         series: "You Are Here", year: 2013, notes: "" },
-  { city: "Berlin",     region: "", country: "Germany",        series: "You Are Here", year: 2013, notes: "" },
-  { city: "Rome",       region: "", country: "Italy",          series: "You Are Here", year: 2013, notes: "" },
-  { city: "Barcelona",  region: "", country: "Spain",          series: "You Are Here", year: 2014, notes: "" },
-  { city: "Amsterdam",  region: "", country: "Netherlands",    series: "You Are Here", year: 2014, notes: "" },
-  { city: "Vienna",     region: "", country: "Austria",        series: "You Are Here", year: 2015, notes: "" },
-  { city: "Prague",     region: "", country: "Czech Republic", series: "You Are Here", year: 2015, notes: "" },
-  { city: "Stockholm",  region: "", country: "Sweden",         series: "You Are Here", year: 2015, notes: "" },
-  { city: "Copenhagen", region: "", country: "Denmark",        series: "You Are Here", year: 2016, notes: "" },
-  { city: "Brussels",   region: "", country: "Belgium",        series: "You Are Here", year: 2016, notes: "" },
-  { city: "Lisbon",     region: "", country: "Portugal",       series: "You Are Here", year: 2016, notes: "" },
-  { city: "Budapest",   region: "", country: "Hungary",        series: "You Are Here", year: 2016, notes: "" },
-  { city: "Oslo",       region: "", country: "Norway",         series: "You Are Here", year: 2017, notes: "" },
-  { city: "Helsinki",   region: "", country: "Finland",        series: "You Are Here", year: 2017, notes: "" },
-  { city: "Athens",     region: "", country: "Greece",         series: "You Are Here", year: 2017, notes: "" },
-  { city: "Zurich",     region: "", country: "Switzerland",    series: "You Are Here", year: 2017, notes: "" },
-  { city: "Warsaw",     region: "", country: "Poland",         series: "You Are Here", year: 2018, notes: "" },
-  { city: "Madrid",     region: "", country: "Spain",          series: "You Are Here", year: 2018, notes: "" },
-  { city: "Dublin",     region: "", country: "Ireland",        series: "You Are Here", year: 2018, notes: "" },
-  // Asia
-  { city: "Tokyo",        region: "", country: "Japan",               series: "You Are Here", year: 2013, notes: "" },
-  { city: "Kyoto",        region: "", country: "Japan",               series: "You Are Here", year: 2014, notes: "" },
-  { city: "Osaka",        region: "", country: "Japan",               series: "You Are Here", year: 2015, notes: "" },
-  { city: "Beijing",      region: "", country: "China",               series: "You Are Here", year: 2013, notes: "" },
-  { city: "Shanghai",     region: "", country: "China",               series: "You Are Here", year: 2013, notes: "" },
-  { city: "Hong Kong",    region: "", country: "China",               series: "You Are Here", year: 2014, notes: "" },
-  { city: "Seoul",        region: "", country: "South Korea",         series: "You Are Here", year: 2013, notes: "" },
-  { city: "Singapore",    region: "", country: "Singapore",           series: "You Are Here", year: 2013, notes: "" },
-  { city: "Bangkok",      region: "", country: "Thailand",            series: "You Are Here", year: 2014, notes: "" },
-  { city: "Taipei",       region: "", country: "Taiwan",              series: "You Are Here", year: 2014, notes: "" },
-  { city: "Kuala Lumpur", region: "", country: "Malaysia",            series: "You Are Here", year: 2015, notes: "" },
-  { city: "Dubai",        region: "", country: "United Arab Emirates",series: "You Are Here", year: 2015, notes: "" },
-  { city: "Mumbai",       region: "", country: "India",               series: "You Are Here", year: 2016, notes: "" },
-  { city: "Jakarta",      region: "", country: "Indonesia",           series: "You Are Here", year: 2016, notes: "" },
-  { city: "Manila",       region: "", country: "Philippines",         series: "You Are Here", year: 2017, notes: "" },
-  { city: "Tel Aviv",     region: "", country: "Israel",              series: "You Are Here", year: 2017, notes: "" },
-  // Oceania
-  { city: "Sydney",    region: "New South Wales", country: "Australia",   series: "You Are Here", year: 2013, notes: "" },
-  { city: "Melbourne", region: "Victoria",        country: "Australia",   series: "You Are Here", year: 2014, notes: "" },
-  { city: "Brisbane",  region: "Queensland",      country: "Australia",   series: "You Are Here", year: 2015, notes: "" },
-  { city: "Auckland",  region: "",                country: "New Zealand", series: "You Are Here", year: 2015, notes: "" },
-  // Latin America
-  { city: "Mexico City",    region: "", country: "Mexico",    series: "You Are Here", year: 2013, notes: "" },
-  { city: "São Paulo",      region: "", country: "Brazil",    series: "You Are Here", year: 2014, notes: "" },
-  { city: "Buenos Aires",   region: "", country: "Argentina", series: "You Are Here", year: 2015, notes: "" },
-  { city: "Bogotá",         region: "", country: "Colombia",  series: "You Are Here", year: 2016, notes: "" },
-  { city: "Santiago",       region: "", country: "Chile",     series: "You Are Here", year: 2016, notes: "" },
-  { city: "Lima",           region: "", country: "Peru",      series: "You Are Here", year: 2017, notes: "" },
-  { city: "Rio de Janeiro", region: "", country: "Brazil",    series: "You Are Here", year: 2017, notes: "" },
-  // Africa
-  { city: "Cape Town", region: "", country: "South Africa", series: "You Are Here", year: 2016, notes: "" },
-  { city: "Nairobi",   region: "", country: "Kenya",        series: "You Are Here", year: 2017, notes: "" },
-  { city: "Marrakech", region: "", country: "Morocco",      series: "You Are Here", year: 2018, notes: "" },
-  { city: "Cairo",     region: "", country: "Egypt",        series: "You Are Here", year: 2018, notes: "" },
-
-  // ── Been There Across the Globe ───────────────────────────────────────────
-  { city: "Seattle",       region: "Washington",          country: "United States", series: "Been There", year: 2018, notes: "Across the Globe launch" },
-  { city: "New York",      region: "New York",            country: "United States", series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "Chicago",       region: "Illinois",            country: "United States", series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "San Francisco", region: "California",          country: "United States", series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "Los Angeles",   region: "California",          country: "United States", series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "London",        region: "England",             country: "United Kingdom",series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "Paris",         region: "",                    country: "France",        series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "Tokyo",         region: "",                    country: "Japan",         series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "Toronto",       region: "Ontario",             country: "Canada",        series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "Vancouver",     region: "British Columbia",    country: "Canada",        series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "Sydney",        region: "New South Wales",     country: "Australia",     series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "Mexico City",   region: "",                    country: "Mexico",        series: "Been There", year: 2018, notes: "Across the Globe" },
-  { city: "Miami",         region: "Florida",             country: "United States", series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Boston",        region: "Massachusetts",       country: "United States", series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Las Vegas",     region: "Nevada",              country: "United States", series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Washington DC", region: "District of Columbia",country: "United States", series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "New Orleans",   region: "Louisiana",           country: "United States", series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Austin",        region: "Texas",               country: "United States", series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Berlin",        region: "",                    country: "Germany",       series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Barcelona",     region: "",                    country: "Spain",         series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Amsterdam",     region: "",                    country: "Netherlands",   series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Seoul",         region: "",                    country: "South Korea",   series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Singapore",     region: "",                    country: "Singapore",     series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Bangkok",       region: "",                    country: "Thailand",      series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Dubai",         region: "",                    country: "United Arab Emirates", series: "Been There", year: 2019, notes: "Across the Globe" },
-  { city: "Rome",          region: "",                    country: "Italy",         series: "Been There", year: 2020, notes: "Across the Globe" },
-  { city: "Vienna",        region: "",                    country: "Austria",       series: "Been There", year: 2020, notes: "Across the Globe" },
-  { city: "Lisbon",        region: "",                    country: "Portugal",      series: "Been There", year: 2020, notes: "Across the Globe" },
-  { city: "Prague",        region: "",                    country: "Czech Republic",series: "Been There", year: 2020, notes: "Across the Globe" },
-  { city: "Stockholm",     region: "",                    country: "Sweden",        series: "Been There", year: 2020, notes: "Across the Globe" },
-  { city: "Taipei",        region: "",                    country: "Taiwan",        series: "Been There", year: 2020, notes: "Across the Globe" },
-  { city: "Hong Kong",     region: "",                    country: "China",         series: "Been There", year: 2020, notes: "Across the Globe" },
-  { city: "Shanghai",      region: "",                    country: "China",         series: "Been There", year: 2020, notes: "Across the Globe" },
-  { city: "Melbourne",     region: "Victoria",            country: "Australia",     series: "Been There", year: 2020, notes: "Across the Globe" },
-  { city: "Denver",        region: "Colorado",            country: "United States", series: "Been There", year: 2021, notes: "Across the Globe" },
-  { city: "Nashville",     region: "Tennessee",           country: "United States", series: "Been There", year: 2021, notes: "Across the Globe" },
-  { city: "Atlanta",       region: "Georgia",             country: "United States", series: "Been There", year: 2021, notes: "Across the Globe" },
-  { city: "Portland",      region: "Oregon",              country: "United States", series: "Been There", year: 2021, notes: "Across the Globe" },
-  { city: "Edinburgh",     region: "Scotland",            country: "United Kingdom",series: "Been There", year: 2021, notes: "Across the Globe" },
-  { city: "Budapest",      region: "",                    country: "Hungary",       series: "Been There", year: 2021, notes: "Across the Globe" },
-  { city: "Osaka",         region: "",                    country: "Japan",         series: "Been There", year: 2021, notes: "Across the Globe" },
-  { city: "Mumbai",        region: "",                    country: "India",         series: "Been There", year: 2021, notes: "Across the Globe" },
-  { city: "São Paulo",     region: "",                    country: "Brazil",        series: "Been There", year: 2021, notes: "Across the Globe" },
-  { city: "Buenos Aires",  region: "",                    country: "Argentina",     series: "Been There", year: 2021, notes: "Across the Globe" },
-  { city: "Cape Town",     region: "",                    country: "South Africa",  series: "Been There", year: 2022, notes: "Across the Globe" },
-  { city: "Honolulu",      region: "Hawaii",              country: "United States", series: "Been There", year: 2022, notes: "Across the Globe" },
-  { city: "San Diego",     region: "California",          country: "United States", series: "Been There", year: 2022, notes: "Across the Globe" },
-  { city: "Philadelphia",  region: "Pennsylvania",        country: "United States", series: "Been There", year: 2022, notes: "Across the Globe" },
-  { city: "Dublin",        region: "",                    country: "Ireland",       series: "Been There", year: 2022, notes: "Across the Globe" },
-  { city: "Madrid",        region: "",                    country: "Spain",         series: "Been There", year: 2022, notes: "Across the Globe" },
-  { city: "Kuala Lumpur",  region: "",                    country: "Malaysia",      series: "Been There", year: 2022, notes: "Across the Globe" },
-  { city: "Cairo",         region: "",                    country: "Egypt",         series: "Been There", year: 2023, notes: "Across the Globe" },
-  { city: "Marrakech",     region: "",                    country: "Morocco",       series: "Been There", year: 2023, notes: "Across the Globe" },
-
-  // ── Been There Disney Parks (US only — verified on starbucks-mugs.com) ─────
+  // Been There Disney Parks
   { city: "Disney California Adventure", region: "California", country: "United States", series: "Been There Disney Parks", year: 2019, notes: "Disneyland Resort, Anaheim", moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-disney-california-adventure/" },
   { city: "Disneyland",                  region: "California", country: "United States", series: "Been There Disney Parks", year: 2019, notes: "Disneyland Resort, Anaheim", moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-disney-disneyland/" },
   { city: "Magic Kingdom",               region: "Florida",    country: "United States", series: "Been There Disney Parks", year: 2019, notes: "Walt Disney World, Orlando",  moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-disney-magic-kingdom/" },
   { city: "EPCOT",                       region: "Florida",    country: "United States", series: "Been There Disney Parks", year: 2019, notes: "Walt Disney World, Orlando",  moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-disney-epcot/" },
   { city: "Animal Kingdom",              region: "Florida",    country: "United States", series: "Been There Disney Parks", year: 2019, notes: "Walt Disney World, Orlando",  moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-disney-animal-kingdom/" },
   { city: "Hollywood Studios",           region: "Florida",    country: "United States", series: "Been There Disney Parks", year: 2019, notes: "Walt Disney World, Orlando",  moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-disney-hollywood-studios/" },
-
-  // ── Been There Marvel ─────────────────────────────────────────────────────
-  { city: "Wakanda", region: "", country: "", series: "Been There Marvel", year: 2021, notes: "Black Panther / Wakanda — sold at Disney parks worldwide", moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-marvel-wakanda/" },
+  // Been There Marvel
+  { city: "Wakanda", region: "", country: "", series: "Been There Marvel", year: 2021, scope: "themed", venue_series: "Been There Disney Parks", notes: "Black Panther / Wakanda — sold at Disney parks worldwide", moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-marvel-wakanda/" },
 ];
 
-// ── Discovery Series — derived from starbucks-mugs.com sitemap ───────────────
-// Fictional / themed location slug prefixes and exact slugs to skip.
-// (checked against the locationSlug after removing the "discovery-series-" prefix)
-const DISCOVERY_EXCLUDE_PREFIXES = ["star-wars-", "wicked-"];
-const DISCOVERY_EXCLUDE_EXACT = new Set(["crait", "endor", "naboo", "hoth", "geonosis", "ahch-to"]);
+// ── City → country lookup (non-US locations) ──────────────────────────────────
+// Used by sitemap-driven builders to assign the correct country to a city slug.
 
-// Locations that belong to a country other than the United States.
-const DISCOVERY_COUNTRY: Record<string, string> = {
-  // Canada — cities and provinces
-  "Atlantic Canada":   "Canada",
-  "Banff":             "Canada",
-  "British Columbia":  "Canada",
-  "Calgary":           "Canada",
-  "Canada":            "Canada",
-  "Edmonton":          "Canada",
-  "Manitoba":          "Canada",
-  "Montreal":          "Canada",
-  "Ontario":           "Canada",
-  "Ottawa":            "Canada",
-  "Quebec":            "Canada",
-  "Saskatchewan":      "Canada",
-  "Toronto":           "Canada",
-  "Vancouver":         "Canada",
-  "Vancouver Island":  "Canada",
-  "Whistler":          "Canada",
-  "Winnipeg":          "Canada",
-  // Asia / Pacific
-  "Bangkok":              "Thailand",
-  "Hong Kong Disneyland": "China",
-  "Korea":                "South Korea",
-  "Singapore":            "Singapore",
+const CITY_TO_COUNTRY: Record<string, string> = {
+  // Canada
+  "Alberta": "Canada", "Atlantic Canada": "Canada", "Banff": "Canada",
+  "British Columbia": "Canada", "Calgary": "Canada", "Canada": "Canada",
+  "Edmonton": "Canada", "Halifax": "Canada", "Manitoba": "Canada",
+  "Montreal": "Canada", "Ontario": "Canada", "Ottawa": "Canada",
+  "Quebec": "Canada", "Quebec City": "Canada", "Saskatchewan": "Canada",
+  "Toronto": "Canada", "Vancouver": "Canada", "Vancouver Island": "Canada",
+  "Whistler": "Canada", "Winnipeg": "Canada",
+  // United Kingdom
+  "Birmingham": "United Kingdom", "Edinburgh": "United Kingdom",
+  "London": "United Kingdom", "Manchester": "United Kingdom",
+  // Europe
+  "Amsterdam": "Netherlands", "Athens": "Greece", "Barcelona": "Spain",
+  "Berlin": "Germany", "Brussels": "Belgium", "Budapest": "Hungary",
+  "Copenhagen": "Denmark", "Dublin": "Ireland", "Ghent": "Belgium",
+  "Helsinki": "Finland", "Lisbon": "Portugal", "Madrid": "Spain",
+  "Oslo": "Norway", "Paris": "France", "Prague": "Czech Republic",
+  "Rome": "Italy", "Stockholm": "Sweden", "Vienna": "Austria",
+  "Warsaw": "Poland", "Zurich": "Switzerland",
+  // Asia
+  "Bangkok": "Thailand", "Beijing": "China", "Dubai": "United Arab Emirates",
+  "Hong Kong": "China", "Hong Kong Disneyland": "China",
+  "Jakarta": "Indonesia", "Korea": "South Korea", "Kuala Lumpur": "Malaysia",
+  "Kyoto": "Japan", "Manila": "Philippines", "Mumbai": "India",
+  "New Delhi": "India", "Osaka": "Japan", "Seoul": "South Korea",
+  "Shanghai": "China", "Singapore": "Singapore", "Taipei": "Taiwan",
+  "Tel Aviv": "Israel", "Tokyo": "Japan",
+  // Oceania
+  "Auckland": "New Zealand", "Brisbane": "Australia",
+  "Melbourne": "Australia", "Sydney": "Australia",
   // Latin America
-  "Antigua Guatemala": "Guatemala",
-  "El Salvador":       "El Salvador",
-  "Guyana":            "Guyana",
-  "Mazatlan":          "Mexico",
-  "Mexico":            "Mexico",
-  "San Miguel":        "Mexico",
+  "Antigua Guatemala": "Guatemala", "Bogotá": "Colombia",
+  "Buenos Aires": "Argentina", "El Salvador": "El Salvador",
+  "Guyana": "Guyana", "Lima": "Peru", "Mazatlan": "Mexico",
+  "Mexico": "Mexico", "Mexico City": "Mexico", "Rio de Janeiro": "Brazil",
+  "San Miguel": "Mexico", "Santiago": "Chile", "São Paulo": "Brazil",
+  // Africa
+  "Cairo": "Egypt", "Cape Town": "South Africa",
+  "Marrakech": "Morocco", "Nairobi": "Kenya",
 };
+
+// ── Whole-country slug detection ──────────────────────────────────────────────
+// Locations where the slug title-cases to a whole-country name (scope: "country").
+
+const WHOLE_COUNTRY_SLUGS = new Set([
+  "Canada", "El Salvador", "Guyana", "Korea", "Mexico", "Singapore",
+]);
+
+// ── City → state/province region lookup ──────────────────────────────────────
+// Used by sitemap-driven builders to assign the correct region to a city.
+// Covers both static YAH/BT cities and Discovery-only locations.
+
+const CITY_TO_REGION: Record<string, string> = {
+  // US cities → state
+  "Albuquerque": "New Mexico", "Anchorage": "Alaska", "Ann Arbor": "Michigan",
+  "Aspen": "Colorado", "Athens": "Georgia", "Atlanta": "Georgia",
+  "Atlantic City": "New Jersey", "Auburn University": "Alabama",
+  "Austin": "Texas", "Baltimore": "Maryland", "Baton Rouge": "Louisiana",
+  "Berkeley": "California", "Big Island": "Hawaii", "Boise": "Idaho",
+  "Boston": "Massachusetts", "Boston University": "Massachusetts",
+  "Brooklyn": "New York", "Burlington": "Vermont",
+  "Cambridge": "Massachusetts", "Cape Cod": "Massachusetts",
+  "Chapel Hill": "North Carolina", "Charleston": "South Carolina",
+  "Charlotte": "North Carolina", "Chicago": "Illinois",
+  "Cincinnati": "Ohio", "Cleveland": "Ohio", "Columbus": "Ohio",
+  "Corvallis": "Oregon", "Dallas": "Texas", "Denver": "Colorado",
+  "Des Moines": "Iowa", "Detroit": "Michigan", "Durham": "North Carolina",
+  "Eugene": "Oregon", "Gainesville": "Florida", "Gatlinburg": "Tennessee",
+  "Hartford": "Connecticut", "Hollywood": "California", "Honolulu": "Hawaii",
+  "Houston": "Texas", "Howard University": "District of Columbia",
+  "Indianapolis": "Indiana", "Iowa State University": "Iowa",
+  "Jackson Hole": "Wyoming", "Jacksonville": "Florida",
+  "Kansas City": "Missouri", "Key West": "Florida",
+  "Knoxville": "Tennessee", "Lake Tahoe": "California",
+  "Las Vegas": "Nevada", "Little Rock": "Arkansas",
+  "Los Angeles": "California", "Louisville": "Kentucky",
+  "Madison": "Wisconsin", "Manhattan": "New York", "Maui": "Hawaii",
+  "Memphis": "Tennessee", "Miami": "Florida", "Miami University": "Ohio",
+  "Milwaukee": "Wisconsin", "Minneapolis": "Minnesota",
+  "Monterey": "California", "Myrtle Beach": "South Carolina",
+  "Napa": "California", "Nashville": "Tennessee",
+  "New Haven": "Connecticut", "New Orleans": "Louisiana",
+  "New York": "New York", "New York City": "New York",
+  "Niagara Falls": "New York", "Oahu": "Hawaii",
+  "Oakland": "California", "Oklahoma City": "Oklahoma",
+  "Omaha": "Nebraska", "Orange County": "California",
+  "Orlando": "Florida", "Palm Springs": "California",
+  "Palo Alto": "California", "Park City": "Utah",
+  "Philadelphia": "Pennsylvania", "Phoenix": "Arizona",
+  "Pike Place": "Washington", "Pittsburgh": "Pennsylvania",
+  "Portland": "Oregon", "Princeton": "New Jersey",
+  "Providence": "Rhode Island", "Queens": "New York",
+  "Raleigh": "North Carolina", "Richmond": "Virginia",
+  "Sacramento": "California", "Salt Lake City": "Utah",
+  "San Antonio": "Texas", "San Diego": "California",
+  "San Francisco": "California", "San Jose": "California",
+  "Santa Fe": "New Mexico", "Savannah": "Georgia",
+  "Seattle": "Washington", "Sedona": "Arizona",
+  "Spokane": "Washington", "St. Louis": "Missouri",
+  "Staten Island": "New York", "Tallahassee": "Florida",
+  "Tampa": "Florida", "Temple University": "Pennsylvania",
+  "Texas Am University": "Texas", "Texas Tech University": "Texas",
+  "The Bronx": "New York", "The Florida Keys": "Florida",
+  "The Hamptons": "New York", "Traverse City": "Michigan",
+  "Tucson": "Arizona", "Tuscaloosa": "Alabama",
+  "Twin Cities": "Minnesota", "University Of Georgia": "Georgia",
+  "University Of Hawaii": "Hawaii", "University Of Memphis": "Tennessee",
+  "Universal Epic Universe": "Florida", "Universal Orlando Resort": "Florida",
+  "Universal Studios Hollywood": "California", "Vail": "Colorado",
+  "Waikiki": "Hawaii", "Warner Bros Studios": "California",
+  "Washington DC": "District of Columbia", "Wichita": "Kansas",
+  "Yosemite": "California",
+  // Canada cities → province
+  "Banff": "Alberta", "Vancouver Island": "British Columbia",
+  "Whistler": "British Columbia",
+  // Atlantic Canada regional grouping
+  "Atlantic Canada": "Atlantic Canada",
+};
+
+// ── Discovery Series — derived from starbucks-mugs.com sitemap ───────────────
+// Slug prefixes to exclude entirely (checked against locationSlug after stripping "discovery-series-").
+const DISCOVERY_EXCLUDE_PREFIXES = ["wicked-"];
+
+// Star Wars bare planet slugs (no "star-wars-" prefix on starbucks-mugs.com).
+const STAR_WARS_BARE_SLUGS = new Set([
+  "ahch-to", "crait", "endor", "geonosis", "hoth", "naboo", "tatooine",
+]);
+
+// Name overrides for Star Wars slugs that don't title-case correctly.
+const STAR_WARS_NAME_FIXES: Record<string, string> = {
+  "ahch-to":      "Ahch-To",
+  "galaxys-edge": "Galaxy's Edge",
+};
+
+// ── Sub-national region tables (scope: "state") ───────────────────────────────
+// Used by any series builder to detect state/province/territory slugs.
+// "region" is set to the matched name so map popup matching works.
+
+const US_STATES = new Set([
+  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+  "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+  "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
+  "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
+  "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
+  "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina",
+  "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania",
+  "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas",
+  "Utah", "Vermont", "Virginia", "Washington", "West Virginia",
+  "Wisconsin", "Wyoming",
+]);
+
+const CA_PROVINCES = new Set([
+  // Provinces
+  "Alberta", "British Columbia", "Manitoba", "New Brunswick",
+  "Newfoundland And Labrador", "Nova Scotia", "Ontario",
+  "Prince Edward Island", "Quebec", "Saskatchewan",
+  // Territories
+  "Northwest Territories", "Nunavut", "Yukon",
+  // Regional grouping used on starbucks-mugs.com
+  "Atlantic Canada",
+]);
+
+const AU_STATES = new Set([
+  "New South Wales", "Victoria", "Queensland", "South Australia",
+  "Western Australia", "Tasmania", "Northern Territory",
+  "Australian Capital Territory",
+]);
+
+// ── General sitemap-driven series builder ─────────────────────────────────────
+// Builds CupEntry[] for any series whose cups follow a <prefix>-<location> slug
+// pattern on starbucks-mugs.com (You Are Here, Been There, Discovery Series).
+
+function buildSeriesFromSitemap(
+  mugsIndex: Map<string, string>,
+  slugPrefix: string,
+  seriesName: string,
+  excludeLocationPrefixes: string[],
+  defaultYear: number,
+): CupEntry[] {
+  const entries: CupEntry[] = [];
+
+  for (const [slug, url] of mugsIndex) {
+    if (!slug.startsWith(`${slugPrefix}-`)) continue;
+
+    const locationSlug = slug.replace(`${slugPrefix}-`, "");
+
+    if (locationSlug.includes("ornament")) continue;
+    if (excludeLocationPrefixes.some((p) => locationSlug.startsWith(p))) continue;
+
+    let cityName = locationSlug
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+
+    cityName = cityName.replace(/\bD C\b/, "DC");
+    if (cityName === "St Louis") cityName = "St. Louis";
+
+    let country = CITY_TO_COUNTRY[cityName] ?? "United States";
+
+    let scope = "city";
+    let region = "";
+
+    if (US_STATES.has(cityName)) {
+      scope = "state"; region = cityName;
+    } else if (CA_PROVINCES.has(cityName)) {
+      scope = "state"; region = cityName;
+    } else if (AU_STATES.has(cityName)) {
+      scope = "state"; region = cityName;
+    } else if (WHOLE_COUNTRY_SLUGS.has(cityName)) {
+      scope = "country";
+    } else if (COUNTRY_CODES[cityName]) {
+      scope = "country";
+      country = cityName;
+    }
+
+    if (scope === "city" && !region) {
+      region = CITY_TO_REGION[cityName] ?? "";
+    }
+
+    entries.push({
+      city: cityName,
+      region,
+      country,
+      series: seriesName,
+      year: defaultYear,
+      scope,
+      notes: "",
+      moreInfoUrl: url,
+    });
+  }
+
+  return entries;
+}
 
 function buildDiscoverySeriesFromSitemap(mugsIndex: Map<string, string>): CupEntry[] {
   const entries: CupEntry[] = [];
@@ -680,11 +726,36 @@ function buildDiscoverySeriesFromSitemap(mugsIndex: Map<string, string>): CupEnt
 
     const locationSlug = slug.replace("discovery-series-", "");
 
-    // Skip ornaments, Disney sub-series, Star Wars, Wicked, and other fictional locations
+    // Skip ornaments, Disney sub-series, and Wicked
     if (locationSlug.includes("ornament")) continue;
     if (locationSlug.startsWith("disney-")) continue;
     if (DISCOVERY_EXCLUDE_PREFIXES.some(p => locationSlug.startsWith(p))) continue;
-    if (DISCOVERY_EXCLUDE_EXACT.has(locationSlug)) continue;
+
+    // Detect Star Wars slugs (prefixed or bare planet names)
+    const isStarWars = locationSlug.startsWith("star-wars-") || STAR_WARS_BARE_SLUGS.has(locationSlug);
+
+    if (isStarWars) {
+      const rawSlug = locationSlug.startsWith("star-wars-")
+        ? locationSlug.replace("star-wars-", "")
+        : locationSlug;
+      const displayName = STAR_WARS_NAME_FIXES[rawSlug] ?? rawSlug
+        .split("-")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+
+      entries.push({
+        city: displayName,
+        region: "",
+        country: "",   // fictional — no real coords; country="" skips the no-coords warning
+        series: "Discovery Series",
+        year: 2025,
+        scope: "themed",
+        venue_series: "Been There Disney Parks",
+        notes: "Star Wars — available at Disney parks (Galaxy's Edge)",
+        moreInfoUrl: url,
+      });
+      continue;
+    }
 
     // Derive human-readable name: hyphens → spaces, title-case each word
     let cityName = locationSlug
@@ -696,14 +767,39 @@ function buildDiscoverySeriesFromSitemap(mugsIndex: Map<string, string>): CupEnt
     cityName = cityName.replace(/\bD C\b/, "DC");  // washington-d-c → Washington DC
     if (cityName === "St Louis") cityName = "St. Louis";
 
-    const country = DISCOVERY_COUNTRY[cityName] ?? "United States";
+    let country = CITY_TO_COUNTRY[cityName] ?? "United States";
+
+    let scope = "city";
+    let region = "";
+    if (US_STATES.has(cityName)) {
+      scope = "state";
+      region = cityName;
+    } else if (CA_PROVINCES.has(cityName)) {
+      scope = "state";
+      region = cityName;
+    } else if (AU_STATES.has(cityName)) {
+      scope = "state";
+      region = cityName;
+    } else if (WHOLE_COUNTRY_SLUGS.has(cityName)) {
+      scope = "country";
+    } else if (COUNTRY_CODES[cityName]) {
+      // Auto-detect: slug title-cases to a known country name not in WHOLE_COUNTRY_SLUGS
+      scope = "country";
+      country = cityName;
+    }
+
+    // For city-scope cups with no region, infer from combined lookup map
+    if (scope === "city" && !region) {
+      region = CITY_TO_REGION[cityName] ?? "";
+    }
 
     entries.push({
       city: cityName,
-      region: "",
+      region,
       country,
       series: "Discovery Series",
       year: 2020,  // approximate — Discovery Series launched 2019-2020
+      scope,
       notes: "",
       moreInfoUrl: url,
     });
@@ -712,31 +808,46 @@ function buildDiscoverySeriesFromSitemap(mugsIndex: Map<string, string>): CupEnt
   return entries;
 }
 
-// ── Image URL scraper ─────────────────────────────────────────────────────────
-// Fetches each cup's starbucks-mugs.com page and extracts the full-size image.
+// ── Page data scraper ─────────────────────────────────────────────────────────
+// Fetches each cup's starbucks-mugs.com page and extracts the full-size image
+// URL and the release year from the page title.
 // Runs with bounded concurrency to avoid hammering the server.
 
-async function fetchImageUrl(pageUrl: string): Promise<string> {
+async function fetchPageData(pageUrl: string): Promise<{ image_url: string; year: number | null }> {
   try {
     const html = await fetchText(pageUrl);
 
-    // og:image is reliable and usually points at the full-size upload
+    // Extract year from og:title or <title> — e.g. "Been There Ghent 2016 – Starbucks Mugs"
+    let year: number | null = null;
+    const titleSources = [
+      html.match(/<meta[^>]*og:title[^>]*>/)?.[0]?.match(/content="([^"]+)"/)?.[1],
+      html.match(/<title[^>]*>([^<]+)<\/title>/)?.[1],
+    ];
+    for (const src of titleSources) {
+      if (!src) continue;
+      const m = src.match(/\b(201[3-9]|202[0-9])\b/);
+      if (m) { year = parseInt(m[1], 10); break; }
+    }
+
+    // Extract image URL from og:image
+    let image_url = "";
     const ogLine = html.match(/<meta[^>]*og:image[^>]*>/);
     if (ogLine) {
       const m = ogLine[0].match(/content="([^"]+)"/);
-      if (m) return m[1];
+      if (m) image_url = m[1];
+    }
+    if (!image_url) {
+      const srcsetMatch = html.match(/class="[^"]*wp-post-image[^"]*"[^>]*srcset="([^"]+)"/);
+      if (srcsetMatch) {
+        const urls = srcsetMatch[1].split(",").map((s) => s.trim().split(/\s+/)[0]);
+        image_url = urls.find((u) => !/-\d+x\d+\./.test(u)) ?? urls[urls.length - 1];
+      }
     }
 
-    // Fall back to wp-post-image srcset — prefer the URL without -WxH dimension suffix
-    const srcsetMatch = html.match(/class="[^"]*wp-post-image[^"]*"[^>]*srcset="([^"]+)"/);
-    if (srcsetMatch) {
-      const urls = srcsetMatch[1].split(",").map(s => s.trim().split(/\s+/)[0]);
-      return urls.find(u => !/-\d+x\d+\./.test(u)) ?? urls[urls.length - 1];
-    }
+    return { image_url, year };
   } catch {
-    // silently skip — image_url stays blank
+    return { image_url: "", year: null };
   }
-  return "";
 }
 
 async function withConcurrency<T>(
@@ -756,7 +867,9 @@ async function withConcurrency<T>(
 // ── Build output rows ─────────────────────────────────────────────────────────
 
 interface OutputRow {
-  city: string;
+  name: string;
+  scope: string;
+  venue_series: string;
   region: string;
   country: string;
   country_code: string;
@@ -770,16 +883,38 @@ interface OutputRow {
 }
 
 function buildRows(filterSeries: string | null, mugsIndex: Map<string, string>): OutputRow[] {
-  // Static catalog entries (never includes Discovery Series)
-  const catalogEntries = CATALOG
-    .filter(e => !filterSeries || e.series === filterSeries);
+  // Static catalog entries (Disney Parks + special editions only)
+  const catalogEntries = CATALOG.filter((e) => !filterSeries || e.series === filterSeries);
 
-  // Discovery Series entries derived live from the sitemap
+  // You Are Here — derived live from sitemap
+  const yahEntries = (!filterSeries || filterSeries === "You Are Here")
+    ? buildSeriesFromSitemap(mugsIndex, "you-are-here", "You Are Here", ["ornament"], 2015)
+    : [];
+
+  // Been There — derived live from sitemap (exclude disney-*, marvel-*, pin-drop-*, ornament*)
+  const btEntries = (!filterSeries || filterSeries === "Been There")
+    ? buildSeriesFromSitemap(mugsIndex, "been-there", "Been There", ["disney-", "marvel-", "pin-drop-", "ornament"], 2019)
+    : [];
+
+  // Discovery Series — derived live from sitemap
   const discoveryEntries = (!filterSeries || filterSeries === "Discovery Series")
     ? buildDiscoverySeriesFromSitemap(mugsIndex)
     : [];
 
-  const allEntries = [...catalogEntries, ...discoveryEntries];
+  // Deduplicate by (city, series) — CATALOG entries first so they win
+  // over any auto-detected duplicates (e.g. Singapore appears as both city and country).
+  // Year is excluded from the key because YAH/BT years are scraped later and
+  // the same city could otherwise appear twice at different default years.
+  const seen = new Map<string, true>();
+  const deduped: CupEntry[] = [];
+  for (const e of [...catalogEntries, ...yahEntries, ...btEntries, ...discoveryEntries]) {
+    const key = `${e.city}|${e.series}`;
+    if (!seen.has(key)) {
+      seen.set(key, true);
+      deduped.push(e);
+    }
+  }
+  const allEntries = deduped;
 
   const rows: OutputRow[] = [];
   const noCoords: string[] = [];
@@ -788,8 +923,10 @@ function buildRows(filterSeries: string | null, mugsIndex: Map<string, string>):
     const coordKey = `${e.city},${e.country}`;
     const [lat, lng] = COORDS[coordKey] ?? [0, 0];
 
-    // Skip real-world locations with no coordinates rather than emitting 0,0
-    if (lat === 0 && lng === 0 && e.country !== "") {
+    // State/country/themed cups appear in city-pin popups — no standalone pin needed,
+    // so 0,0 coords are fine. Only skip city-scope entries that are missing coords.
+    const isNonPin = e.scope === "state" || e.scope === "country" || e.scope === "themed";
+    if (!isNonPin && lat === 0 && lng === 0 && e.country !== "") {
       noCoords.push(`${e.city} (${e.series})`);
       continue;
     }
@@ -799,7 +936,9 @@ function buildRows(filterSeries: string | null, mugsIndex: Map<string, string>):
       : lookupMugsUrl(mugsIndex, e.series, e.city);
 
     rows.push({
-      city: e.city,
+      name: e.city,
+      scope: e.scope ?? "city",
+      venue_series: e.venue_series ?? "",
       region: e.region,
       country: e.country,
       country_code: COUNTRY_CODES[e.country] ?? "",
@@ -828,10 +967,26 @@ function csvField(val: string | number): string {
     ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-function writeCSV(rows: OutputRow[], filePath: string): void {
-  const header = "city,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes";
+interface CsvRow {
+  name: string;
+  scope: string;
+  venue_series: string;
+  region: string;
+  country: string;
+  country_code: string;
+  series: string;
+  year: number;
+  lat: number;
+  lng: number;
+  image_url: string;
+  more_info_url: string;
+  notes: string;
+}
+
+function writeCSV(rows: CsvRow[], filePath: string): void {
+  const header = "name,scope,venue_series,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes";
   const lines = [header, ...rows.map((r) =>
-    [r.city, r.region, r.country, r.country_code, r.series, r.year, r.lat, r.lng, r.image_url, "", r.more_info_url, r.notes]
+    [r.name, r.scope, r.venue_series, r.region, r.country, r.country_code, r.series, r.year, r.lat, r.lng, r.image_url, "", r.more_info_url, r.notes]
       .map(csvField).join(",")
   )];
   fs.writeFileSync(filePath, lines.join("\n") + "\n", "utf-8");
@@ -860,17 +1015,19 @@ async function main() {
   const withoutUrl = rows.length - withUrl;
   console.log(`\nmore_info_url resolved: ${withUrl} / ${rows.length} (${withoutUrl} blank)`);
 
-  // Fetch image URLs for every entry that has a starbucks-mugs.com page
-  const rowsWithUrl = rows.filter(r => r.more_info_url);
+  // Fetch image URLs and scrape years for every entry that has a starbucks-mugs.com page
+  const rowsWithUrl = rows.filter((r) => r.more_info_url);
   if (rowsWithUrl.length > 0) {
-    console.log(`\nFetching image URLs for ${rowsWithUrl.length} entries (concurrency=5)…`);
+    console.log(`\nFetching page data for ${rowsWithUrl.length} entries (concurrency=5)…`);
     let done = 0;
     await withConcurrency(rowsWithUrl, 5, async (row) => {
-      row.image_url = await fetchImageUrl(row.more_info_url);
+      const { image_url, year } = await fetchPageData(row.more_info_url);
+      row.image_url = image_url;
+      if (year !== null) row.year = year;
       done++;
       process.stdout.write(`\r  ${done}/${rowsWithUrl.length}`);
     });
-    const withImage = rows.filter(r => r.image_url).length;
+    const withImage = rows.filter((r) => r.image_url).length;
     console.log(`\n  image_url resolved: ${withImage} / ${rowsWithUrl.length}`);
   }
 
