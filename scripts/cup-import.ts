@@ -3,7 +3,9 @@
 // boundary prevents the scripts (CJS) from importing directly from there.
 
 export interface CsvRow {
-  city: string;
+  name: string;         // was "city" — now holds city, state, country, or themed location name
+  scope: string;        // "city" | "state" | "country" | "themed"; defaults to "city" if column absent
+  venue_series: string; // themed cups only: series name of the venue cups they're sold alongside
   region: string;
   country: string;
   country_code: string;
@@ -27,10 +29,14 @@ export function parseCSV(text: string): CsvRow[] {
     const row: Record<string, string> = {};
     headers.forEach((h, idx) => { row[h] = values[idx] ?? ""; });
 
-    if (!row.city || !row.series || !row.year) continue;
+    // Support both old CSVs (city column) and new CSVs (name column)
+    const name = row.name || row.city;
+    if (!name || !row.series || !row.year) continue;
 
     rows.push({
-      city: row.city,
+      name,
+      scope: row.scope || "city",
+      venue_series: row.venue_series ?? "",
       region: row.region ?? "",
       country: row.country ?? "",
       country_code: row.country_code ?? "",
@@ -51,6 +57,8 @@ export function rowMatchesExisting(row: CsvRow, existing: Record<string, unknown
   const s = (v: unknown) => String(v ?? "");
   const n = (v: unknown) => Number(v ?? 0);
   return (
+    row.scope         === (s(existing.scope) || "city") &&
+    row.venue_series  === s(existing.venue_series) &&
     row.region        === s(existing.region) &&
     row.country       === s(existing.country) &&
     row.country_code  === s(existing.country_code) &&

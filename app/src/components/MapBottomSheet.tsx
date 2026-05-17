@@ -45,7 +45,7 @@ export function MapBottomSheet({ cups }: Props) {
               <button
                 key={cup.id}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600"
-                aria-label={`View ${cup.city} cup`}
+                aria-label={`View ${cup.name} cup`}
                 onClick={() => router.push(`/cup/${cup.id}`)}
               >
                 <span
@@ -53,7 +53,14 @@ export function MapBottomSheet({ cups }: Props) {
                   style={{ backgroundColor: isGreen ? "#00704A" : "#f97316" }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium dark:text-gray-100 truncate">{cup.city}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium dark:text-gray-100 truncate">{cup.name}</span>
+                    {(cup.scope === "state" || cup.scope === "country" || cup.scope === "themed") && (
+                      <span className="text-[10px] font-medium px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 flex-shrink-0 capitalize">
+                        {cup.scope}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {cup.series} · {cup.year}
                   </div>

@@ -12,7 +12,7 @@ export interface Household {
   created: string;
 }
 
-export type CupScope = "city" | "state" | "country";
+export type CupScope = "city" | "state" | "country" | "themed";
 
 export interface Cup {
   id: string;
@@ -31,6 +31,7 @@ export interface Cup {
   notes: string;
   hobbydb_url: string;   // Direct URL to this cup's hobbyDB record, if known
   more_info_url: string; // Fallback external reference (e.g. starbucks-mugs.com)
+  venue_series: string;  // Themed cups only: series name of the venue cups they're sold at
 }
 
 export interface OwnedCup {

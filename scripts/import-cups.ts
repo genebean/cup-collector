@@ -7,9 +7,10 @@
 //   npx ts-node scripts/import-cups.ts --file cups.csv --dry-run
 //
 // Expected CSV columns:
-//   city, region, country, country_code, series, year, lat, lng, image_url, hobbydb_url, more_info_url, notes
+//   name (or city), scope, region, country, country_code, series, year, lat, lng, image_url, hobbydb_url, more_info_url, notes
+//   Old CSVs with "city" column and no "scope" column are still accepted — scope defaults to "city".
 //
-// Upsert logic: match on (city + series + year) — update if exists, create if not.
+// Upsert logic: match on (name + series + year) — update if exists, create if not.
 // Safe to re-run at any time — will not duplicate records.
 
 import * as fs from "fs";
@@ -95,14 +96,14 @@ async function main() {
   let errors = 0;
 
   for (const row of rows) {
-    const label = `${row.city} / ${row.series} / ${row.year}`;
+    const label = `${row.name} / ${row.series} / ${row.year}`;
     try {
-      // Check if a matching record already exists (upsert key: city + series + year)
+      // Check if a matching record already exists (upsert key: name + series + year)
       let existingId: string | null = null;
       let existingRecord: Record<string, unknown> | null = null;
       try {
         existingRecord = await pb.collection("cups").getFirstListItem(
-          `city="${row.city}" && series="${row.series}" && year=${row.year}`
+          `name="${row.name}" && series="${row.series}" && year=${row.year}`
         );
         existingId = existingRecord.id as string;
       } catch {
@@ -118,14 +119,16 @@ async function main() {
         const buffer = await downloadImage(row.image_url);
         if (buffer) {
           const ext = row.image_url.split(".").pop()?.split("?")[0] ?? "jpg";
-          imageFile = new File([buffer], `${row.city}-${row.series}-${row.year}.${ext}`, {
+          imageFile = new File([buffer], `${row.name}-${row.series}-${row.year}.${ext}`, {
             type: ext === "png" ? "image/png" : "image/jpeg",
           });
         }
       }
 
       const data: Record<string, unknown> = {
-        city: row.city,
+        name: row.name,
+        scope: row.scope || "city",
+        venue_series: row.venue_series || undefined,
         region: row.region,
         country: row.country,
         country_code: row.country_code,

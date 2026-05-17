@@ -43,13 +43,13 @@ export async function POST(req: NextRequest) {
   const results = { created: 0, updated: 0, skipped: 0, errors: 0, preview: [] as string[] };
 
   for (const row of rows) {
-    const label = `${row.city} / ${row.series} / ${row.year}`;
+    const label = `${row.name} / ${row.series} / ${row.year}`;
     try {
       let existingId: string | null = null;
       let existingRecord: Record<string, unknown> | null = null;
       try {
         const found = await pb.collection("cups").getFirstListItem(
-          `city="${row.city}" && series="${row.series}" && year=${row.year}`
+          `name="${row.name}" && series="${row.series}" && year=${row.year}`
         );
         existingRecord = found;
         existingId = found.id as string;
@@ -82,7 +82,9 @@ export async function POST(req: NextRequest) {
       if (imageChanged) imageFile = await downloadImage(row.image_url);
 
       const data: Record<string, unknown> = {
-        city: row.city, region: row.region, country: row.country,
+        name: row.name, scope: row.scope || "city",
+        venue_series: row.venue_series || undefined,
+        region: row.region, country: row.country,
         country_code: row.country_code, series: row.series, year: row.year,
         lat: row.lat, lng: row.lng, image_credit: row.image_url || undefined,
         hobbydb_url: row.hobbydb_url || undefined,

@@ -434,7 +434,9 @@ interface CupEntry {
   series: string;
   year: number;
   notes: string;
-  moreInfoUrl?: string; // explicit override — skip slug lookup when set
+  moreInfoUrl?: string;   // explicit override — skip slug lookup when set
+  scope?: string;         // defaults to "city"; set to "themed" for fictional/special-edition cups
+  venue_series?: string;  // themed cups only: series of the venue cups they're sold alongside
 }
 
 // Discovery Series is NOT listed here — entries are derived from the
@@ -629,14 +631,23 @@ const CATALOG: CupEntry[] = [
   { city: "Hollywood Studios",           region: "Florida",    country: "United States", series: "Been There Disney Parks", year: 2019, notes: "Walt Disney World, Orlando",  moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-disney-hollywood-studios/" },
 
   // ── Been There Marvel ─────────────────────────────────────────────────────
-  { city: "Wakanda", region: "", country: "", series: "Been There Marvel", year: 2021, notes: "Black Panther / Wakanda — sold at Disney parks worldwide", moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-marvel-wakanda/" },
+  { city: "Wakanda", region: "", country: "", series: "Been There Marvel", year: 2021, scope: "themed", venue_series: "Been There Disney Parks", notes: "Black Panther / Wakanda — sold at Disney parks worldwide", moreInfoUrl: "https://starbucks-mugs.com/mug/been-there-marvel-wakanda/" },
 ];
 
 // ── Discovery Series — derived from starbucks-mugs.com sitemap ───────────────
-// Fictional / themed location slug prefixes and exact slugs to skip.
-// (checked against the locationSlug after removing the "discovery-series-" prefix)
-const DISCOVERY_EXCLUDE_PREFIXES = ["star-wars-", "wicked-"];
-const DISCOVERY_EXCLUDE_EXACT = new Set(["crait", "endor", "naboo", "hoth", "geonosis", "ahch-to"]);
+// Slug prefixes to exclude entirely (checked against locationSlug after stripping "discovery-series-").
+const DISCOVERY_EXCLUDE_PREFIXES = ["wicked-"];
+
+// Star Wars bare planet slugs (no "star-wars-" prefix on starbucks-mugs.com).
+const STAR_WARS_BARE_SLUGS = new Set([
+  "ahch-to", "crait", "endor", "geonosis", "hoth", "naboo", "tatooine",
+]);
+
+// Name overrides for Star Wars slugs that don't title-case correctly.
+const STAR_WARS_NAME_FIXES: Record<string, string> = {
+  "ahch-to":      "Ahch-To",
+  "galaxys-edge": "Galaxy's Edge",
+};
 
 // Locations that belong to a country other than the United States.
 const DISCOVERY_COUNTRY: Record<string, string> = {
@@ -680,11 +691,36 @@ function buildDiscoverySeriesFromSitemap(mugsIndex: Map<string, string>): CupEnt
 
     const locationSlug = slug.replace("discovery-series-", "");
 
-    // Skip ornaments, Disney sub-series, Star Wars, Wicked, and other fictional locations
+    // Skip ornaments, Disney sub-series, and Wicked
     if (locationSlug.includes("ornament")) continue;
     if (locationSlug.startsWith("disney-")) continue;
     if (DISCOVERY_EXCLUDE_PREFIXES.some(p => locationSlug.startsWith(p))) continue;
-    if (DISCOVERY_EXCLUDE_EXACT.has(locationSlug)) continue;
+
+    // Detect Star Wars slugs (prefixed or bare planet names)
+    const isStarWars = locationSlug.startsWith("star-wars-") || STAR_WARS_BARE_SLUGS.has(locationSlug);
+
+    if (isStarWars) {
+      const rawSlug = locationSlug.startsWith("star-wars-")
+        ? locationSlug.replace("star-wars-", "")
+        : locationSlug;
+      const displayName = STAR_WARS_NAME_FIXES[rawSlug] ?? rawSlug
+        .split("-")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+
+      entries.push({
+        city: displayName,
+        region: "",
+        country: "",   // fictional — no real coords; country="" skips the no-coords warning
+        series: "Discovery Series",
+        year: 2025,
+        scope: "themed",
+        venue_series: "Been There Disney Parks",
+        notes: "Star Wars — available at Disney parks (Galaxy's Edge)",
+        moreInfoUrl: url,
+      });
+      continue;
+    }
 
     // Derive human-readable name: hyphens → spaces, title-case each word
     let cityName = locationSlug
@@ -756,7 +792,9 @@ async function withConcurrency<T>(
 // ── Build output rows ─────────────────────────────────────────────────────────
 
 interface OutputRow {
-  city: string;
+  name: string;
+  scope: string;
+  venue_series: string;
   region: string;
   country: string;
   country_code: string;
@@ -799,7 +837,9 @@ function buildRows(filterSeries: string | null, mugsIndex: Map<string, string>):
       : lookupMugsUrl(mugsIndex, e.series, e.city);
 
     rows.push({
-      city: e.city,
+      name: e.city,
+      scope: e.scope ?? "city",
+      venue_series: e.venue_series ?? "",
       region: e.region,
       country: e.country,
       country_code: COUNTRY_CODES[e.country] ?? "",
@@ -829,9 +869,9 @@ function csvField(val: string | number): string {
 }
 
 function writeCSV(rows: OutputRow[], filePath: string): void {
-  const header = "city,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes";
+  const header = "name,scope,venue_series,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes";
   const lines = [header, ...rows.map((r) =>
-    [r.city, r.region, r.country, r.country_code, r.series, r.year, r.lat, r.lng, r.image_url, "", r.more_info_url, r.notes]
+    [r.name, r.scope, r.venue_series, r.region, r.country, r.country_code, r.series, r.year, r.lat, r.lng, r.image_url, "", r.more_info_url, r.notes]
       .map(csvField).join(",")
   )];
   fs.writeFileSync(filePath, lines.join("\n") + "\n", "utf-8");

@@ -8,9 +8,10 @@ import { haversineMi } from "@/lib/geo";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { CupCard } from "@/components/CupCard";
-import type { Cup, OwnedCup, CupWithOwnership } from "@/types";
+import type { Cup, OwnedCup, CupWithOwnership, CupScope } from "@/types";
 
 type StatusFilter = "all" | "needed" | "owned";
+type ScopeFilter = "" | CupScope;
 
 export default function BrowsePage() {
   const queryClient = useQueryClient();
@@ -20,6 +21,7 @@ export default function BrowsePage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [seriesFilter, setSeriesFilter] = useState("");   // "" = no filter
   const [countryFilter, setCountryFilter] = useState(""); // "" = no filter
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>(""); // "" = no filter
   const [nearMe, setNearMe] = useState(false);
   const [search, setSearch] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -34,7 +36,7 @@ export default function BrowsePage() {
   const { data: cups = [] } = useQuery<Cup[]>({
     queryKey: ["cups"],
     queryFn: () =>
-      getPocketBase().collection("cups").getFullList({ sort: "country,city" })
+      getPocketBase().collection("cups").getFullList({ sort: "country,name" })
         .then((r) => r as unknown as Cup[]),
   });
 
@@ -74,7 +76,7 @@ export default function BrowsePage() {
       const q = search.toLowerCase();
       result = result.filter(
         (c) =>
-          c.city.toLowerCase().includes(q) ||
+          c.name.toLowerCase().includes(q) ||
           c.country.toLowerCase().includes(q) ||
           c.series.toLowerCase().includes(q)
       );
@@ -84,6 +86,7 @@ export default function BrowsePage() {
     if (statusFilter === "owned")  result = result.filter((c) => c.isOwned);
     if (seriesFilter)              result = result.filter((c) => c.series === seriesFilter);
     if (countryFilter)             result = result.filter((c) => c.country === countryFilter);
+    if (scopeFilter)               result = result.filter((c) => (c.scope || "city") === scopeFilter);
 
     // Near Me — explicit opt-in sort toggle
     if (nearMe && userLocation) {
@@ -94,10 +97,11 @@ export default function BrowsePage() {
     }
 
     return result;
-  }, [cups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, nearMe, search, userLocation]);
+  }, [cups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, scopeFilter, nearMe, search, userLocation]);
 
   const ownedCount = ownedCupIds.size;
   const totalCount = cups.length;
+  const hasScopedCups = cups.some((c) => c.scope === "state" || c.scope === "country" || c.scope === "themed");
 
   const chipClass = (active: boolean) =>
     `flex-shrink-0 text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
@@ -175,6 +179,17 @@ export default function BrowsePage() {
             <button className={chipClass(nearMe)} onClick={() => setNearMe((v) => !v)}>Near Me</button>
           )}
         </div>
+
+        {/* Scope chips — only shown when catalog has non-city cups */}
+        {hasScopedCups && (
+          <div className="flex gap-2 mt-1 overflow-x-auto pb-1 scrollbar-hide">
+            <button className={chipClass(scopeFilter === "")} onClick={() => setScopeFilter("")}>All Scopes</button>
+            <button className={chipClass(scopeFilter === "city")} onClick={() => setScopeFilter("city")}>Cities</button>
+            <button className={chipClass(scopeFilter === "state")} onClick={() => setScopeFilter("state")}>States</button>
+            <button className={chipClass(scopeFilter === "country")} onClick={() => setScopeFilter("country")}>Countries</button>
+            <button className={chipClass(scopeFilter === "themed")} onClick={() => setScopeFilter("themed")}>Themed</button>
+          </div>
+        )}
       </header>
 
       <main className="flex-1 overflow-y-auto pb-20">

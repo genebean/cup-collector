@@ -40,7 +40,7 @@ export default function MapPage() {
     queryFn: () =>
       getPocketBase()
         .collection("cups")
-        .getFullList({ sort: "city" })
+        .getFullList({ sort: "name" })
         .then((records) => records as unknown as Cup[]),
   });
 

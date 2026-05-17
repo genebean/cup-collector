@@ -39,13 +39,18 @@ export function CupCard({ cup }: CupCardProps) {
             : {}
         }
       >
-        {!cup.image && cup.city.charAt(0).toUpperCase()}
+        {!cup.image && cup.name.charAt(0).toUpperCase()}
       </div>
 
       {/* Cup metadata */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-900 dark:text-gray-100 truncate">{cup.city}</span>
+          <span className="font-semibold text-gray-900 dark:text-gray-100 truncate">{cup.name}</span>
+          {(cup.scope === "state" || cup.scope === "country" || cup.scope === "themed") && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 flex-shrink-0 capitalize">
+              {cup.scope}
+            </span>
+          )}
           {/* Flag emoji from ISO country code */}
           <span className="text-sm" title={cup.country}>
             {countryCodeToFlag(cup.country_code)}

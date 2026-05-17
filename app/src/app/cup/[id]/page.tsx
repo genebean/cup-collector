@@ -33,6 +33,9 @@ export default function CupDetailPage() {
     onConfirm: () => void;
   } | null>(null);
 
+  // Per-household cup notes — editable by owners, read-only for viewers
+  const [noteDraft, setNoteDraft] = useState<string | null>(null);
+
   const canWrite = session?.user?.householdRole === "owner";
   const { radiusMeters } = useNearbyRadius();
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -202,6 +205,29 @@ export default function CupDetailPage() {
     },
   });
 
+  // Fetch the household's note for this cup
+  const { data: noteData } = useQuery<{ note: string | null; id: string | null }>({
+    queryKey: ["cup_note", id, householdId],
+    queryFn: () => fetch(`/api/cup-note?cup_id=${id}`).then((r) => r.json()),
+    enabled: !!householdId,
+  });
+  const savedNote = noteData?.note ?? "";
+  const currentNoteDraft = noteDraft ?? savedNote;
+  const noteChanged = currentNoteDraft !== savedNote;
+
+  const saveNote = useMutation({
+    mutationFn: () =>
+      fetch("/api/cup-note", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cup_id: id, note: currentNoteDraft }),
+      }).then((r) => { if (!r.ok) throw new Error("Failed to save note"); return r.json(); }),
+    onSuccess: () => {
+      setNoteDraft(null);
+      queryClient.invalidateQueries({ queryKey: ["cup_note", id, householdId] });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen text-gray-400">
@@ -230,8 +256,11 @@ export default function CupDetailPage() {
       <header className="bg-green-dark text-white px-4 py-3 flex items-center gap-3 flex-shrink-0">
         <button onClick={() => router.back()} className="text-xl cursor-pointer">←</button>
         <div>
-          <h1 className="font-bold text-lg leading-tight">{cup.city}</h1>
-          <p className="text-xs text-white/60">{cup.series} · {cup.year}</p>
+          <h1 className="font-bold text-lg leading-tight">{cup.name}</h1>
+          <p className="text-xs text-white/60">
+            {cup.scope === "state" ? "State Cup · " : cup.scope === "country" ? "Country Cup · " : cup.scope === "themed" ? "Special Edition · " : null}
+            {cup.series} · {cup.year}
+          </p>
         </div>
       </header>
 
@@ -243,10 +272,10 @@ export default function CupDetailPage() {
           onClick={() => { if (imageUrl) setLightboxOpen(true); }}
         >
           {imageUrl ? (
-            <Image src={imageUrl} alt={`${cup.city} cup`} fill className="object-contain" unoptimized />
+            <Image src={imageUrl} alt={`${cup.name} cup`} fill className="object-contain" unoptimized />
           ) : (
             <span className="text-white text-6xl font-bold opacity-30">
-              {cup.city.charAt(0)}
+              {cup.name.charAt(0)}
             </span>
           )}
           {/* Camera button — owners only, visible once the real owned record is confirmed */}
@@ -283,7 +312,7 @@ export default function CupDetailPage() {
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
           {/* Metadata */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 space-y-2 text-sm">
-            <Row label="City" value={cup.city} />
+            <Row label={cup.scope === "state" ? "State" : cup.scope === "country" ? "Country" : cup.scope === "themed" ? "Location" : "City"} value={cup.name} />
             {cup.region && <Row label="Region" value={cup.region} />}
             <Row label="Country" value={cup.country} />
             <Row label="Series" value={cup.series} />
@@ -318,6 +347,45 @@ export default function CupDetailPage() {
               </div>
             )}
           </div>
+
+          {/* My Notes — visible to all household members; editable by owners only */}
+          {!!householdId && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 space-y-2">
+              <h2 className="font-semibold text-sm text-gray-700 dark:text-gray-200">My Notes</h2>
+              {canWrite ? (
+                <>
+                  <textarea
+                    rows={3}
+                    placeholder="Add personal notes about this cup…"
+                    value={currentNoteDraft}
+                    onChange={(e) => setNoteDraft(e.target.value)}
+                    className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-hidden focus:border-green-starbucks resize-none"
+                  />
+                  {noteChanged && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setNoteDraft(null)}
+                        className="flex-1 py-2 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        Discard
+                      </button>
+                      <button
+                        onClick={() => saveNote.mutate()}
+                        disabled={saveNote.isPending}
+                        className="flex-1 py-2 bg-green-dark text-white rounded-lg text-sm font-medium cursor-pointer hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {saveNote.isPending ? "Saving…" : "Save"}
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  {savedNote || <span className="text-gray-400 italic">No notes yet.</span>}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Mark as Owned — standalone; only shown when not owned */}
           {canWrite && !isOwned && (
@@ -589,7 +657,7 @@ export default function CupDetailPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
-            alt={`${cup.city} cup — full size`}
+            alt={`${cup.name} cup — full size`}
             style={{ maxWidth: "100vw", maxHeight: "100dvh", width: "auto", height: "auto", objectFit: "contain" }}
           />
         </div>
