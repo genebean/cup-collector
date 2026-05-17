@@ -17,8 +17,10 @@ test.describe("browse page — real PocketBase data", () => {
     await page.goto("/browse");
     await expect(page.getByText(/7 cups/)).toBeVisible({ timeout: 10_000 });
 
+    // Scope to main to avoid matching hidden <option> elements in the header selects
+    const main = page.locator("main");
     for (const name of ["Seattle", "Atlanta", "London", "Tokyo", "Sydney", "Georgia", "Australia"]) {
-      await expect(page.getByText(name, { exact: false }).first()).toBeVisible();
+      await expect(main.getByText(name, { exact: false }).first()).toBeVisible();
     }
   });
 
@@ -78,7 +80,7 @@ test.describe("browse page — real PocketBase data", () => {
     await page.getByRole("button", { name: "Already Have" }).click();
     await expect(page.getByText("No cups match your search.")).toBeVisible();
 
-    await page.getByRole("button", { name: "All" }).click();
+    await page.getByRole("button", { name: "All", exact: true }).click();
     await expect(page.getByText("Seattle", { exact: false })).toBeVisible();
   });
 
@@ -86,12 +88,14 @@ test.describe("browse page — real PocketBase data", () => {
     await page.goto("/browse");
     await expect(page.getByText(/7 cups/)).toBeVisible({ timeout: 10_000 });
 
+    const main = page.locator("main");
+
     // Georgia is a state cup — should show a "state" badge
-    const georgiaRow = page.getByText("Georgia", { exact: false }).first().locator("..");
+    const georgiaRow = main.getByText("Georgia", { exact: false }).first().locator("..");
     await expect(georgiaRow.getByText("state", { exact: false })).toBeVisible();
 
     // Australia (country cup) should show a "country" badge
-    const australiaRow = page.getByText("Australia", { exact: false }).first().locator("..");
+    const australiaRow = main.getByText("Australia", { exact: false }).first().locator("..");
     await expect(australiaRow.getByText("country", { exact: false })).toBeVisible();
   });
 
@@ -99,16 +103,18 @@ test.describe("browse page — real PocketBase data", () => {
     await page.goto("/browse");
     await expect(page.getByText(/7 cups/)).toBeVisible({ timeout: 10_000 });
 
+    const main = page.locator("main");
+
     // Scope chips appear because catalog has non-city cups
     await page.getByRole("button", { name: "States" }).click();
-    await expect(page.getByText("Georgia", { exact: false })).toBeVisible();
-    await expect(page.getByText("Seattle", { exact: false })).not.toBeVisible();
+    await expect(main.getByText("Georgia", { exact: false })).toBeVisible();
+    await expect(main.getByText("Seattle", { exact: false })).not.toBeVisible();
 
     await page.getByRole("button", { name: "Countries" }).click();
-    await expect(page.getByText("Australia", { exact: false })).toBeVisible();
-    await expect(page.getByText("Georgia", { exact: false })).not.toBeVisible();
+    await expect(main.getByText("Australia", { exact: false }).first()).toBeVisible();
+    await expect(main.getByText("Georgia", { exact: false })).not.toBeVisible();
 
     await page.getByRole("button", { name: "All Scopes" }).click();
-    await expect(page.getByText("Seattle", { exact: false })).toBeVisible();
+    await expect(main.getByText("Seattle", { exact: false })).toBeVisible();
   });
 });
