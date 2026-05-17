@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
       const data: Record<string, unknown> = {
         name: row.name, scope: row.scope || "city",
         venue_series: row.venue_series || undefined,
+        item_type: row.item_type || "mug",
         region: row.region, country: row.country,
         country_code: row.country_code, series: row.series, year: row.year,
         lat: row.lat, lng: row.lng, image_credit: row.image_url || undefined,

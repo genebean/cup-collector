@@ -23,6 +23,7 @@ export interface Cup {
   country: string;
   country_code: string; // ISO 3166-1 alpha-2, e.g. "US"
   series: string; // "You Are Here" | "Been There" | "Ornament" | other
+  item_type: string; // "mug" | "ornament" | ""; blank treated as "mug"
   year: number;
   image: string; // PocketBase filename — pass to getFileUrl() to get a usable URL
   image_credit: string; // Source URL or "own photo"

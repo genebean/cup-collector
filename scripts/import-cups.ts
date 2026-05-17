@@ -129,6 +129,7 @@ async function main() {
         name: row.name,
         scope: row.scope || "city",
         venue_series: row.venue_series || undefined,
+        item_type: row.item_type || "mug",
         region: row.region,
         country: row.country,
         country_code: row.country_code,
