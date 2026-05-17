@@ -56,6 +56,9 @@ export function parseCSV(text: string): CsvRow[] {
 export function rowMatchesExisting(row: CsvRow, existing: Record<string, unknown>): boolean {
   const s = (v: unknown) => String(v ?? "");
   const n = (v: unknown) => Number(v ?? 0);
+  // hobbydb_url is filled manually after export — only compare when the CSV has a value,
+  // so a hand-curated DB entry is never overwritten by an empty CSV column.
+  const hobbydbMatch = !row.hobbydb_url || row.hobbydb_url === s(existing.hobbydb_url);
   return (
     row.scope         === (s(existing.scope) || "city") &&
     row.venue_series  === s(existing.venue_series) &&
@@ -65,8 +68,26 @@ export function rowMatchesExisting(row: CsvRow, existing: Record<string, unknown
     row.lat           === n(existing.lat) &&
     row.lng           === n(existing.lng) &&
     row.image_url     === s(existing.image_credit) &&
-    row.hobbydb_url   === s(existing.hobbydb_url) &&
+    hobbydbMatch &&
     row.more_info_url === s(existing.more_info_url) &&
     row.notes         === s(existing.notes)
   );
+}
+
+export function diffRow(row: CsvRow, existing: Record<string, unknown>): string[] {
+  const s = (v: unknown) => String(v ?? "");
+  const n = (v: unknown) => Number(v ?? 0);
+  const diffs: string[] = [];
+  if (row.scope         !== (s(existing.scope) || "city"))  diffs.push(`scope: csv="${row.scope}" db="${s(existing.scope) || "city"}"`);
+  if (row.venue_series  !== s(existing.venue_series))        diffs.push(`venue_series: csv="${row.venue_series}" db="${s(existing.venue_series)}"`);
+  if (row.region        !== s(existing.region))              diffs.push(`region: csv="${row.region}" db="${s(existing.region)}"`);
+  if (row.country       !== s(existing.country))             diffs.push(`country: csv="${row.country}" db="${s(existing.country)}"`);
+  if (row.country_code  !== s(existing.country_code))        diffs.push(`country_code: csv="${row.country_code}" db="${s(existing.country_code)}"`);
+  if (row.lat           !== n(existing.lat))                 diffs.push(`lat: csv=${row.lat} db=${n(existing.lat)}`);
+  if (row.lng           !== n(existing.lng))                 diffs.push(`lng: csv=${row.lng} db=${n(existing.lng)}`);
+  if (row.image_url     !== s(existing.image_credit))        diffs.push(`image_url: csv="${row.image_url}" db="${s(existing.image_credit)}"`);
+  if (row.hobbydb_url && row.hobbydb_url !== s(existing.hobbydb_url)) diffs.push(`hobbydb_url: csv="${row.hobbydb_url}" db="${s(existing.hobbydb_url)}"`);
+  if (row.more_info_url !== s(existing.more_info_url))       diffs.push(`more_info_url: csv="${row.more_info_url}" db="${s(existing.more_info_url)}"`);
+  if (row.notes         !== s(existing.notes))               diffs.push(`notes: csv="${row.notes}" db="${s(existing.notes)}"`);
+  return diffs;
 }

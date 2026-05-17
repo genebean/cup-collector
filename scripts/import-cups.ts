@@ -16,7 +16,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import PocketBase from "pocketbase";
-import { parseCSV, rowMatchesExisting, type CsvRow } from "./cup-import";
+import { parseCSV, rowMatchesExisting, diffRow, type CsvRow } from "./cup-import";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
@@ -137,7 +137,7 @@ async function main() {
         lat: row.lat,
         lng: row.lng,
         image_credit: row.image_url || undefined,
-        hobbydb_url: row.hobbydb_url || undefined,
+        hobbydb_url: row.hobbydb_url || existingRecord?.hobbydb_url || undefined,
         more_info_url: row.more_info_url || undefined,
         notes: row.notes,
       };
@@ -152,8 +152,14 @@ async function main() {
           skipped++;
         } else if (isDryRun) {
           console.log(`  [UPDATE] ${label}`);
+          if (existingRecord) diffRow(row, existingRecord).forEach(d => console.log(`    ~ ${d}`));
           updated++;
         } else {
+          if (existingRecord) {
+            const diffs = diffRow(row, existingRecord);
+            if (diffs.length > 0) diffs.forEach(d => console.log(`    ~ ${d}`));
+            else console.log(`    ~ image changed`);
+          }
           await pb.collection("cups").update(existingId, data);
           console.log(`  Updated: ${label}`);
           updated++;
