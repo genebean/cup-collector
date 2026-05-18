@@ -626,7 +626,7 @@ export default function CupDetailPage() {
 
       {/* Overwrite-store confirmation modal */}
       {storeConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4 pb-8 sm:pb-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-sm shadow-xl">
             <p className="text-sm text-gray-700 dark:text-gray-200 mb-4">{storeConfirm.text}</p>
             <div className="flex gap-3">

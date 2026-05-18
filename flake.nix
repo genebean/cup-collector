@@ -89,6 +89,77 @@
           exec env PLAYWRIGHT_BYPASS_AUTH=1 AUTH_URL="http://''${ADDR}:3000" npm run dev -- --hostname "''${ADDR}"
         '';
 
+        # Start Next.js with a local HTTPS proxy for mobile testing over Tailscale.
+        # Required for features that need a secure context (e.g. geolocation on mobile).
+        # Uses a podman nginx:alpine container with a self-signed IP SAN cert on :8443.
+        # No internet access needed — works entirely over the local Tailscale network.
+        # Usage: dev-next-https <address>   e.g. dev-next-https 100.127.228.31
+        # First visit: accept the self-signed cert security exception in your browser.
+        ccDevNextHttps = pkgs.writeShellScriptBin "cc-dev-next-https" ''
+          ADDR="''${1:?Usage: dev-next-https <address>  e.g. dev-next-https 100.127.228.31}"
+          PROJ_ROOT="$(git rev-parse --show-toplevel)"
+          WORKDIR="$(mktemp -d)"
+          CONTAINER_NAME="cup-collector-https-proxy"
+
+          cleanup() {
+            podman stop "''${CONTAINER_NAME}" 2>/dev/null || true
+            podman rm   "''${CONTAINER_NAME}" 2>/dev/null || true
+            rm -rf "''${WORKDIR}"
+          }
+          trap cleanup EXIT INT TERM
+
+          # Remove any leftover container from a previous run
+          podman rm -f "''${CONTAINER_NAME}" 2>/dev/null || true
+
+          # Self-signed cert with IP SAN — browsers require this for bare-IP certs
+          openssl req -x509 -newkey rsa:2048 \
+            -keyout "''${WORKDIR}/key.pem" \
+            -out    "''${WORKDIR}/cert.pem" \
+            -days 1 -nodes \
+            -subj "/CN=local-dev" \
+            -addext "subjectAltName=IP:''${ADDR}"
+
+          cat > "''${WORKDIR}/default.conf" <<'NGINXEOF'
+server {
+    listen 443 ssl;
+    server_name _;
+
+    ssl_certificate     /etc/nginx/certs/cert.pem;
+    ssl_certificate_key /etc/nginx/certs/key.pem;
+
+    location / {
+        proxy_pass         http://NEXT_ADDR:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection "upgrade";
+        proxy_set_header   Host $http_host;
+        proxy_set_header   X-Forwarded-Host $http_host;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+}
+NGINXEOF
+          sed -i "s/NEXT_ADDR/''${ADDR}/g" "''${WORKDIR}/default.conf"
+
+          podman run -d \
+            --name "''${CONTAINER_NAME}" \
+            -p 8443:443 \
+            -v "''${WORKDIR}/cert.pem:/etc/nginx/certs/cert.pem:ro,Z" \
+            -v "''${WORKDIR}/key.pem:/etc/nginx/certs/key.pem:ro,Z" \
+            -v "''${WORKDIR}/default.conf:/etc/nginx/conf.d/default.conf:ro,Z" \
+            docker.io/library/nginx:alpine
+
+          echo ""
+          echo "HTTPS proxy: https://''${ADDR}:8443"
+          echo "First visit: accept the self-signed cert security exception in your browser."
+          echo ""
+          cd "$PROJ_ROOT/app"
+          PLAYWRIGHT_BYPASS_AUTH=1 \
+            AUTH_URL="https://''${ADDR}:8443" \
+            NEXT_DEV_ORIGIN="''${ADDR}" \
+            npm run dev -- --hostname "''${ADDR}"
+        '';
+
         # Install Playwright's Chrome browser to ~/.cache/ms-playwright.
         # Run once after `npm install` or when @playwright/test is updated.
         ccPlaywrightInstall = pkgs.writeShellScriptBin "cc-playwright-install" ''
@@ -181,7 +252,7 @@
         '';
 
         devScripts = [
-          ccPbServe ccPocketidServe ccDevNext ccDevNextBypass ccDevNextNetwork
+          ccPbServe ccPocketidServe ccDevNext ccDevNextBypass ccDevNextNetwork ccDevNextHttps
           ccPlaywrightInstall ccPlayE2e ccGenAuthSecret
           ccDocsServe ccCheck ccImportCups ccBuildCatalog ccCreateHousehold
         ];
@@ -242,6 +313,7 @@
             dev-next()           { cc-dev-next "$@"; }
             dev-next-bypass()    { cc-dev-next-bypass "$@"; }
             dev-next-network()   { cc-dev-next-network "$@"; }
+            dev-next-https()     { cc-dev-next-https "$@"; }
             playwright-install() { cc-playwright-install "$@"; }
             play-e2e()           { cc-play-e2e "$@"; }
             gen-auth-secret()    { cc-gen-auth-secret "$@"; }
@@ -259,6 +331,7 @@
               echo "  dev-next            start Next.js dev server on :3000"
               echo "  dev-next-bypass     start Next.js dev server with auth bypass (optional; play-e2e auto-starts one)"
               echo "  dev-next-network    start Next.js on <address>:3000 with auth bypass (phone/Tailscale testing)"
+              echo "  dev-next-https      start Next.js with local HTTPS proxy on :8443 (mobile/geolocation testing over Tailscale)"
               echo "  gen-auth-secret     generate a new AUTH_SECRET value"
               echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run])"
               echo "  build-catalog       generate starter catalog CSV (--out cups.csv [--series <name>])"
