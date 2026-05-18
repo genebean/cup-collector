@@ -224,6 +224,22 @@ export default function CupDetailPage() {
     },
   });
 
+  // Remove personal photo, reverting to the catalog image
+  const removePhoto = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/owned-cups?id=${ownedRecord!.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ own_photo: null }),
+      });
+      if (!r.ok) throw new Error("Failed to remove photo");
+      return r.json();
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["owned_cup", id, householdId] });
+    },
+  });
+
   // Fetch the household's note for this cup
   const { data: noteData } = useQuery<{ note: string | null; id: string | null }>({
     queryKey: ["cup_note", id, householdId],
@@ -284,6 +300,23 @@ export default function CupDetailPage() {
       </header>
 
       <main className="flex-1 overflow-y-auto pb-24">
+        {/* Hidden file input outside the hero div so programmatic .click() doesn't
+            bubble up through the lightbox handler. No capture attribute so iOS shows
+            the standard sheet with both camera and photo library options. */}
+        {canWrite && isOwned && ownedRecord && ownedRecord.id !== "optimistic" && (
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) uploadPhoto.mutate(file);
+              e.target.value = "";
+            }}
+          />
+        )}
+
         {/* Hero image — shows own_photo when present, falls back to catalog image.
             Tapping the image when one exists opens a full-size lightbox. */}
         <div
@@ -300,22 +333,6 @@ export default function CupDetailPage() {
           {/* Camera button — owners only, visible once the real owned record is confirmed */}
           {canWrite && isOwned && ownedRecord && ownedRecord.id !== "optimistic" && (
             <>
-              {/* Input lives inside the hero div but stops its own click from bubbling to the
-                  lightbox handler — without this, photoInputRef.current?.click() fires a synthetic
-                  click that propagates up and opens the lightbox instead of the file picker. */}
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/heic"
-                capture="environment"
-                className="hidden"
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) uploadPhoto.mutate(file);
-                  e.target.value = "";
-                }}
-              />
               <button
                 onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click(); }}
                 disabled={uploadPhoto.isPending}
@@ -328,6 +345,20 @@ export default function CupDetailPage() {
                   <span className="text-xl">📷</span>
                 )}
               </button>
+              {ownPhotoUrl && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); removePhoto.mutate(); }}
+                  disabled={removePhoto.isPending}
+                  aria-label="Remove personal photo"
+                  className="absolute bottom-3 left-3 bg-black/70 text-white rounded-full w-11 h-11 flex items-center justify-center shadow-lg ring-2 ring-white/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:bg-black/90"
+                >
+                  {removePhoto.isPending ? (
+                    <span className="text-sm">…</span>
+                  ) : (
+                    <span className="text-xl">🗑️</span>
+                  )}
+                </button>
+              )}
             </>
           )}
         </div>
