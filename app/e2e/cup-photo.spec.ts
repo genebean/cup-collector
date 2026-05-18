@@ -25,6 +25,8 @@ async function removeOwned(page: Page) {
   const isOwned = await removeBtn.waitFor({ state: "visible", timeout: 5_000 }).then(() => true).catch(() => false);
   if (isOwned) {
     await removeBtn.click();
+    // Confirm the removal dialog
+    await page.getByRole("button", { name: "Remove", exact: true }).click();
     await expect(page.getByRole("button", { name: /Mark as Owned/ })).toBeVisible({ timeout: 5_000 });
   }
 }

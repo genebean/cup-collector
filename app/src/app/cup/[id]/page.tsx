@@ -29,9 +29,14 @@ export default function CupDetailPage() {
 
   // Confirmation prompt for overwriting an already-recorded acquisition store
   const [storeConfirm, setStoreConfirm] = useState<{
-    text: string;
+    oldName: string;
+    oldAddress: string;
+    newName: string;
+    newAddress: string;
     onConfirm: () => void;
   } | null>(null);
+
+  const [removeConfirm, setRemoveConfirm] = useState(false);
 
   // Per-household cup notes — editable by owners, read-only for viewers
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
@@ -40,6 +45,7 @@ export default function CupDetailPage() {
   const { radiusMeters } = useNearbyRadius();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -70,14 +76,27 @@ export default function CupDetailPage() {
 
   const isOwned = !!ownedRecord;
 
-  // Fetch nearby Starbucks using the cup's city coordinates
+  // For themed/fictional cups (lat=0, lng=0) use the device location so nearby
+  // stores still populate — the user needs to record where they bought the cup.
+  useEffect(() => {
+    if (!cup || (cup.lat && cup.lng)) return;
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+    );
+  }, [cup]);
+
+  // Fetch nearby Starbucks. City cups use the cup's coordinates; themed/fictional
+  // cups (lat=0, lng=0) fall back to the device location so the user can still
+  // record where they bought the cup.
+  const storesLat = (cup?.lat && cup?.lng) ? cup.lat : userLocation?.lat;
+  const storesLng = (cup?.lat && cup?.lng) ? cup.lng : userLocation?.lng;
   const { data: storesData } = useQuery<{ stores: NearbyStore[] }>({
-    queryKey: ["nearby-stores-cup", cup?.lat, cup?.lng, radiusMeters],
+    queryKey: ["nearby-stores-cup", storesLat, storesLng, radiusMeters],
     queryFn: () =>
-      fetch(`/api/nearby-starbucks?lat=${cup!.lat}&lng=${cup!.lng}&radius=${radiusMeters}`).then((r) =>
+      fetch(`/api/nearby-starbucks?lat=${storesLat}&lng=${storesLng}&radius=${radiusMeters}`).then((r) =>
         r.json()
       ),
-    enabled: !!cup?.lat && !!cup?.lng,
+    enabled: !!(storesLat && storesLng),
   });
 
   // Mark as owned — optimistic UI: button reflects new state immediately
@@ -281,12 +300,16 @@ export default function CupDetailPage() {
           {/* Camera button — owners only, visible once the real owned record is confirmed */}
           {canWrite && isOwned && ownedRecord && ownedRecord.id !== "optimistic" && (
             <>
+              {/* Input lives inside the hero div but stops its own click from bubbling to the
+                  lightbox handler — without this, photoInputRef.current?.click() fires a synthetic
+                  click that propagates up and opens the lightbox instead of the file picker. */}
               <input
                 ref={photoInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/heic"
                 capture="environment"
                 className="hidden"
+                onClick={(e) => e.stopPropagation()}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) uploadPhoto.mutate(file);
@@ -297,12 +320,12 @@ export default function CupDetailPage() {
                 onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click(); }}
                 disabled={uploadPhoto.isPending}
                 aria-label="Upload personal photo"
-                className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute bottom-3 right-3 bg-black/70 text-white rounded-full w-11 h-11 flex items-center justify-center shadow-lg ring-2 ring-white/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:bg-black/90"
               >
                 {uploadPhoto.isPending ? (
-                  <span className="text-xs">…</span>
+                  <span className="text-sm">…</span>
                 ) : (
-                  <span className="text-base">📷</span>
+                  <span className="text-xl">📷</span>
                 )}
               </button>
             </>
@@ -489,7 +512,10 @@ export default function CupDetailPage() {
                             const addrChanged = conditionDraft.acquired_store_address !== (ownedRecord.acquired_store_address ?? "");
                             if (hadStore && (nameChanged || addrChanged)) {
                               setStoreConfirm({
-                                text: `Replace "${ownedRecord.acquired_store_name}" with "${conditionDraft.acquired_store_name || "(none)"}"?`,
+                                oldName: ownedRecord.acquired_store_name,
+                                oldAddress: ownedRecord.acquired_store_address ?? "",
+                                newName: conditionDraft.acquired_store_name || "(none)",
+                                newAddress: conditionDraft.acquired_store_address || "",
                                 onConfirm: () => { updateCondition.mutate(conditionDraft); setStoreConfirm(null); },
                               });
                             } else {
@@ -545,7 +571,7 @@ export default function CupDetailPage() {
 
               {canWrite && (
                 <button
-                  onClick={() => removeOwned.mutate()}
+                  onClick={() => setRemoveConfirm(true)}
                   disabled={removeOwned.isPending}
                   className="w-full py-2.5 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -587,7 +613,10 @@ export default function CupDetailPage() {
                                 const hasOther = !!ownedRecord!.acquired_store_name && !isAcquiredHere;
                                 if (hasOther) {
                                   setStoreConfirm({
-                                    text: `Replace "${ownedRecord!.acquired_store_name}" with "${store.name}"?`,
+                                    oldName: ownedRecord!.acquired_store_name,
+                                    oldAddress: ownedRecord!.acquired_store_address ?? "",
+                                    newName: store.name,
+                                    newAddress: store.address,
                                     onConfirm: () => { recordStore.mutate(store); setStoreConfirm(null); },
                                   });
                                 } else {
@@ -628,7 +657,31 @@ export default function CupDetailPage() {
       {storeConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-sm shadow-xl">
-            <p className="text-sm text-gray-700 dark:text-gray-200 mb-4">{storeConfirm.text}</p>
+            <div className="mb-4">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Replace acquisition store?</h2>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">This cup will be linked to a different location.</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-5">
+              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/50">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">Current</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{storeConfirm.oldName}</p>
+                {storeConfirm.oldAddress && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{storeConfirm.oldAddress}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700">
+                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                <span className="text-xs text-gray-400 dark:text-gray-500 select-none">↓ replace with</span>
+                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-green-starbucks dark:text-green-400 mb-1">New</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{storeConfirm.newName}</p>
+                {storeConfirm.newAddress && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{storeConfirm.newAddress}</p>
+                )}
+              </div>
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setStoreConfirm(null)}
@@ -640,7 +693,31 @@ export default function CupDetailPage() {
                 onClick={storeConfirm.onConfirm}
                 className="flex-1 py-2.5 bg-green-dark text-white rounded-xl text-sm font-semibold cursor-pointer hover:brightness-110"
               >
-                Overwrite
+                Update Store
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove-from-collection confirmation */}
+      {removeConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-sm shadow-xl">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">Remove from collection?</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">This will delete the owned record including any condition notes and acquisition store.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRemoveConfirm(false)}
+                className="flex-1 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setRemoveConfirm(false); removeOwned.mutate(); }}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold cursor-pointer hover:brightness-110"
+              >
+                Remove
               </button>
             </div>
           </div>
