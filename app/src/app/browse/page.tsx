@@ -62,8 +62,12 @@ export default function BrowsePage() {
   }, [householdId, queryClient]);
 
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
-  const seriesList = [...new Set(cups.map((c) => c.series))].sort();
-  const countryList = [...new Set(cups.map((c) => c.country))].sort();
+  const seriesList = useMemo(() => [...new Set(cups.map((c) => c.series))].sort(), [cups]);
+  const countryList = useMemo(() => {
+    const all = [...new Set(cups.map((c) => c.country).filter(Boolean))];
+    const pinned = ["United States", "Canada", "Mexico"].filter((c) => all.includes(c));
+    return [...pinned, ...all.filter((c) => !pinned.includes(c)).sort()];
+  }, [cups]);
 
   const displayedCups: CupWithOwnership[] = useMemo(() => {
     let result: CupWithOwnership[] = cups.map((cup) => ({
