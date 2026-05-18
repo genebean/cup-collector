@@ -870,6 +870,7 @@ interface OutputRow {
   name: string;
   scope: string;
   venue_series: string;
+  item_type: string;
   region: string;
   country: string;
   country_code: string;
@@ -939,6 +940,7 @@ function buildRows(filterSeries: string | null, mugsIndex: Map<string, string>):
       name: e.city,
       scope: e.scope ?? "city",
       venue_series: e.venue_series ?? "",
+      item_type: "mug",
       region: e.region,
       country: e.country,
       country_code: COUNTRY_CODES[e.country] ?? "",
@@ -971,6 +973,7 @@ interface CsvRow {
   name: string;
   scope: string;
   venue_series: string;
+  item_type: string;
   region: string;
   country: string;
   country_code: string;
@@ -984,9 +987,9 @@ interface CsvRow {
 }
 
 function writeCSV(rows: CsvRow[], filePath: string): void {
-  const header = "name,scope,venue_series,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes";
+  const header = "name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes";
   const lines = [header, ...rows.map((r) =>
-    [r.name, r.scope, r.venue_series, r.region, r.country, r.country_code, r.series, r.year, r.lat, r.lng, r.image_url, "", r.more_info_url, r.notes]
+    [r.name, r.scope, r.venue_series, r.item_type, r.region, r.country, r.country_code, r.series, r.year, r.lat, r.lng, r.image_url, "", r.more_info_url, r.notes]
       .map(csvField).join(",")
   )];
   fs.writeFileSync(filePath, lines.join("\n") + "\n", "utf-8");

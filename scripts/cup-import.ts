@@ -6,6 +6,7 @@ export interface CsvRow {
   name: string;         // was "city" — now holds city, state, country, or themed location name
   scope: string;        // "city" | "state" | "country" | "themed"; defaults to "city" if column absent
   venue_series: string; // themed cups only: series name of the venue cups they're sold alongside
+  item_type: string;    // "mug" | "ornament"; defaults to "mug" if column absent
   region: string;
   country: string;
   country_code: string;
@@ -37,6 +38,7 @@ export function parseCSV(text: string): CsvRow[] {
       name,
       scope: row.scope || "city",
       venue_series: row.venue_series ?? "",
+      item_type: row.item_type || "mug",
       region: row.region ?? "",
       country: row.country ?? "",
       country_code: row.country_code ?? "",
@@ -60,6 +62,7 @@ export function rowMatchesExisting(row: CsvRow, existing: Record<string, unknown
   // so a hand-curated DB entry is never overwritten by an empty CSV column.
   const hobbydbMatch = !row.hobbydb_url || row.hobbydb_url === s(existing.hobbydb_url);
   return (
+    row.item_type     === s(existing.item_type) &&
     row.scope         === (s(existing.scope) || "city") &&
     row.venue_series  === s(existing.venue_series) &&
     row.region        === s(existing.region) &&
@@ -78,6 +81,7 @@ export function diffRow(row: CsvRow, existing: Record<string, unknown>): string[
   const s = (v: unknown) => String(v ?? "");
   const n = (v: unknown) => Number(v ?? 0);
   const diffs: string[] = [];
+  if (row.item_type     !== s(existing.item_type))           diffs.push(`item_type: csv="${row.item_type}" db="${s(existing.item_type)}"`);
   if (row.scope         !== (s(existing.scope) || "city"))  diffs.push(`scope: csv="${row.scope}" db="${s(existing.scope) || "city"}"`);
   if (row.venue_series  !== s(existing.venue_series))        diffs.push(`venue_series: csv="${row.venue_series}" db="${s(existing.venue_series)}"`);
   if (row.region        !== s(existing.region))              diffs.push(`region: csv="${row.region}" db="${s(existing.region)}"`);
