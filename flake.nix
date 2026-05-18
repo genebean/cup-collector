@@ -127,6 +127,8 @@ server {
     ssl_certificate     /etc/nginx/certs/cert.pem;
     ssl_certificate_key /etc/nginx/certs/key.pem;
 
+    client_max_body_size 20m;
+
     location / {
         proxy_pass         http://NEXT_ADDR:3000;
         proxy_http_version 1.1;
