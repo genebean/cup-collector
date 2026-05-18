@@ -99,22 +99,25 @@ test.describe("browse page — real PocketBase data", () => {
     await expect(australiaRow.getByText("country", { exact: false })).toBeVisible();
   });
 
-  test("scope filter chips filter to city/state/country cups", async ({ page }) => {
+  test("scope filter dropdown filters to city/state/country cups", async ({ page }) => {
     await page.goto("/browse");
     await expect(page.getByText(/7 cups/)).toBeVisible({ timeout: 10_000 });
 
     const main = page.locator("main");
 
-    // Scope chips appear because catalog has non-city cups
-    await page.getByRole("button", { name: "States" }).click();
+    // Scope is the third select (index 2): Series=0, Country=1, Scope=2
+    const scopeSelect = page.locator("select").nth(2);
+
+    await scopeSelect.selectOption("state");
     await expect(main.getByText("Georgia", { exact: false })).toBeVisible();
     await expect(main.getByText("Seattle", { exact: false })).not.toBeVisible();
 
-    await page.getByRole("button", { name: "Countries" }).click();
+    await scopeSelect.selectOption("country");
     await expect(main.getByText("Australia", { exact: false }).first()).toBeVisible();
     await expect(main.getByText("Georgia", { exact: false })).not.toBeVisible();
 
-    await page.getByRole("button", { name: "All Scopes" }).click();
+    // Reset to show all
+    await scopeSelect.selectOption("");
     await expect(main.getByText("Seattle", { exact: false })).toBeVisible();
   });
 });

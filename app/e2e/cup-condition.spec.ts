@@ -20,6 +20,8 @@ async function cleanupOwnership(page: Page) {
   const isOwned = await removeBtn.waitFor({ state: "visible", timeout: 5_000 }).then(() => true).catch(() => false);
   if (isOwned) {
     await removeBtn.click();
+    // Confirm the removal dialog
+    await page.getByRole("button", { name: "Remove", exact: true }).click();
     await expect(page.getByRole("button", { name: /Mark as Owned/ })).toBeVisible({ timeout: 5_000 });
   }
 }
@@ -66,7 +68,10 @@ test.describe("cup condition — cup-owner", () => {
     await page.getByRole("button", { name: "Edit" }).click();
     await page.getByRole("checkbox", { name: "Needs replacing" }).check();
     await page.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText(/Needs replacing/)).toBeVisible({ timeout: 5_000 });
+    // Wait for Edit button to reappear — it only shows after onSettled, meaning the
+    // PATCH is committed and the UI reflects the saved state.
+    await expect(page.getByRole("button", { name: "Edit" })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Needs replacing/)).toBeVisible();
 
     // Now clear it
     await page.getByRole("button", { name: "Edit" }).click();

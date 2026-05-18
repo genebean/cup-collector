@@ -13,10 +13,11 @@ test("unauthenticated visit redirects to /sign-in", async ({ page }) => {
   await expect(page).toHaveURL(/\/sign-in/);
 });
 
-test("sign-in page shows app name and sign-in button", async ({ page }) => {
+test("sign-in page shows app name and sign-in UI", async ({ page }) => {
   await page.goto("/sign-in");
   await expect(page.getByRole("heading", { name: "Cup Collector" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sign in with PocketID" })).toBeVisible();
+  // e2e tests always run with PLAYWRIGHT_BYPASS_AUTH=1, so bypass buttons render instead of OAuth
+  await expect(page.getByText("Dev bypass", { exact: false })).toBeVisible();
 });
 
 test.describe("cup-owner", () => {

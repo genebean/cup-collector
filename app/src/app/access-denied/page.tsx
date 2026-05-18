@@ -14,9 +14,9 @@ export default function AccessDeniedPage() {
           Your account is authenticated but hasn&apos;t been added to an access group yet.
         </p>
         <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mb-8">
-          Ask the app owner to add you to the <strong>cup-owner</strong>,{" "}
-          <strong>cup-collaborator</strong>, or <strong>cup-viewer</strong> group
-          in PocketID.
+          Ask the app owner to add you to a{" "}
+          <strong>cup-collector-&lt;household&gt;-owner</strong> or{" "}
+          <strong>cup-collector-&lt;household&gt;-viewer</strong> group in PocketID.
         </p>
 
         <form

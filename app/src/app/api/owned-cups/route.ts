@@ -66,8 +66,15 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(record);
   }
 
-  // JSON path — condition/acquisition fields
+  // JSON path — condition/acquisition fields, or own_photo: null to remove the personal photo
   const body = await req.json();
+
+  if ("own_photo" in body && body.own_photo === null) {
+    const pbForm = new FormData();
+    pbForm.append("own_photo", "");
+    const record = await pb.collection("owned_cups").update(id, pbForm);
+    return NextResponse.json(record);
+  }
 
   // Only allow the condition/acquisition fields — never let callers overwrite
   // household_id, cup_id, or marked_by_sub through this endpoint.
