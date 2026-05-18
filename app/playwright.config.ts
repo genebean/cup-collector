@@ -32,7 +32,11 @@ export default defineConfig({
       `AUTH_URL=http://127.0.0.1:3000`,
       `npm run dev`,
     ].join(" "),
-    url: "http://127.0.0.1:3000",
+    // Wait for /api/auth/session rather than / — the root returns a 302 redirect
+    // before the auth module is compiled, causing a "Manifest file is empty" 500
+    // on the first sign-in attempt. This forces the auth routes to be compiled
+    // before Playwright marks the server as ready.
+    url: "http://127.0.0.1:3000/api/auth/session",
     reuseExistingServer: false,
     timeout: 120 * 1000,
   },
@@ -49,9 +53,12 @@ export default defineConfig({
   },
   projects: [
     // "setup" runs auth.setup.ts first to save storageState files for each role.
+    // One retry here absorbs the rare cold-start race where Next.js reports ready
+    // before all auth routes are compiled (even with the /api/auth/session warmup).
     {
       name: "setup",
       testMatch: /.*\.setup\.ts/,
+      retries: 1,
     },
     {
       name: "chrome",
