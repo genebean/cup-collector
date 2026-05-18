@@ -97,6 +97,14 @@
         # First visit: accept the self-signed cert security exception in your browser.
         ccDevNextHttps = pkgs.writeShellScriptBin "cc-dev-next-https" ''
           ADDR="''${1:?Usage: dev-next-https <address>  e.g. dev-next-https 100.127.228.31}"
+
+          # Require PocketBase to be running before starting the proxy + Next.js.
+          if ! curl -sf http://127.0.0.1:8090/api/health >/dev/null 2>&1; then
+            echo "ERROR: PocketBase is not running on :8090."
+            echo "PocketBase must be started first: run pb-serve"
+            exit 1
+          fi
+
           PROJ_ROOT="$(git rev-parse --show-toplevel)"
           WORKDIR="$(mktemp -d)"
           CONTAINER_NAME="cup-collector-https-proxy"

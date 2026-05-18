@@ -17,7 +17,7 @@ test.describe("collection prefs — cup-owner", () => {
     await resetPrefs(page);
   });
 
-  test("settings page has What I Collect link for owner", async ({ page }) => {
+  test("settings page has What I Collect link", async ({ page }) => {
     await page.goto("/settings");
     await expect(page.getByRole("link", { name: /What I Collect/ })).toBeVisible();
   });
@@ -84,8 +84,10 @@ test.describe("collection prefs — cup-owner", () => {
 test.describe("collection prefs — cup-viewer", () => {
   test.use({ storageState: join(authDir, "viewer.json") });
 
-  test("viewer sees disabled toggles and owner-only message", async ({ page }) => {
-    await page.goto("/settings/collection");
+  test("viewer sees What I Collect link in Settings and read-only toggles on the page", async ({ page }) => {
+    await page.goto("/settings");
+    await expect(page.getByRole("link", { name: /What I Collect/ })).toBeVisible();
+    await page.getByRole("link", { name: /What I Collect/ }).click();
 
     await expect(page.getByRole("heading", { name: "Item Types" })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/Only the household owner/)).toBeVisible();

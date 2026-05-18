@@ -55,9 +55,8 @@ export default async function SettingsPage() {
           <Row label="Version" value={process.env.npm_package_version ?? "0.1.0"} />
         </Section>
 
-        {/* Collection preferences — owners only */}
-        {role === "owner" && (
-          <Section title="Collection">
+        {/* Collection preferences — visible to all roles; editing is owner-only (enforced by the page) */}
+        <Section title="Collection">
             <Link
               href="/settings/collection"
               className="flex justify-between px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-colors"
@@ -65,8 +64,7 @@ export default async function SettingsPage() {
               <span className="font-medium text-gray-800 dark:text-gray-100">What I Collect</span>
               <span className="text-gray-400">→</span>
             </Link>
-          </Section>
-        )}
+        </Section>
 
         {/* Admin tools — owners only */}
         {role === "owner" && (

@@ -8,10 +8,11 @@ import { haversineMi } from "@/lib/geo";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { CupCard } from "@/components/CupCard";
-import type { Cup, OwnedCup, CupWithOwnership, CupScope } from "@/types";
+import type { Cup, OwnedCup, CupWithOwnership, CupScope, CollectionPrefs } from "@/types";
 
 type StatusFilter = "all" | "needed" | "owned";
 type ScopeFilter = "" | CupScope;
+const EMPTY_PREFS: CollectionPrefs = {};
 
 export default function BrowsePage() {
   const queryClient = useQueryClient();
@@ -49,6 +50,12 @@ export default function BrowsePage() {
     enabled: !!householdId,
   });
 
+  const { data: prefs = EMPTY_PREFS } = useQuery<CollectionPrefs>({
+    queryKey: ["household-prefs"],
+    queryFn: () => fetch("/api/household-prefs").then((r) => r.json()),
+    enabled: !!householdId,
+  });
+
   // Realtime subscription — keep owned status in sync across devices
   useEffect(() => {
     if (!householdId) return;
@@ -62,15 +69,24 @@ export default function BrowsePage() {
   }, [householdId, queryClient]);
 
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
-  const seriesList = useMemo(() => [...new Set(cups.map((c) => c.series))].sort(), [cups]);
+
+  // Owned cups always show; only unowned cups from excluded series/types are hidden.
+  const displayableCups = useMemo(() => cups.filter((c) => {
+    if (ownedCupIds.has(c.id)) return true;
+    if (prefs.excluded_series?.includes(c.series)) return false;
+    if (prefs.excluded_types?.includes(c.item_type || "mug")) return false;
+    return true;
+  }), [cups, ownedCupIds, prefs]);
+
+  const seriesList = useMemo(() => [...new Set(displayableCups.map((c) => c.series))].sort(), [displayableCups]);
   const { pinnedCountries, otherCountries } = useMemo(() => {
-    const all = [...new Set(cups.map((c) => c.country).filter(Boolean))];
+    const all = [...new Set(displayableCups.map((c) => c.country).filter(Boolean))];
     const pinned = ["United States", "Canada", "Mexico"].filter((c) => all.includes(c));
     return { pinnedCountries: pinned, otherCountries: all.filter((c) => !pinned.includes(c)).sort() };
-  }, [cups]);
+  }, [displayableCups]);
 
   const displayedCups: CupWithOwnership[] = useMemo(() => {
-    let result: CupWithOwnership[] = cups.map((cup) => ({
+    let result: CupWithOwnership[] = displayableCups.map((cup) => ({
       ...cup,
       isOwned: ownedCupIds.has(cup.id),
       ownedRecord: ownedCups.find((o) => o.cup_id === cup.id),
@@ -101,11 +117,11 @@ export default function BrowsePage() {
     }
 
     return result;
-  }, [cups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, scopeFilter, nearMe, search, userLocation]);
+  }, [displayableCups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, scopeFilter, nearMe, search, userLocation]);
 
-  const ownedCount = ownedCupIds.size;
-  const totalCount = cups.length;
-  const hasScopedCups = cups.some((c) => c.scope === "state" || c.scope === "country" || c.scope === "themed");
+  const ownedCount = useMemo(() => displayableCups.filter((c) => ownedCupIds.has(c.id)).length, [displayableCups, ownedCupIds]);
+  const totalCount = displayableCups.length;
+  const hasScopedCups = displayableCups.some((c) => c.scope === "state" || c.scope === "country" || c.scope === "themed");
 
   const chipClass = (active: boolean) =>
     `flex-shrink-0 text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
