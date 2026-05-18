@@ -63,10 +63,10 @@ export default function BrowsePage() {
 
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
   const seriesList = useMemo(() => [...new Set(cups.map((c) => c.series))].sort(), [cups]);
-  const countryList = useMemo(() => {
+  const { pinnedCountries, otherCountries } = useMemo(() => {
     const all = [...new Set(cups.map((c) => c.country).filter(Boolean))];
     const pinned = ["United States", "Canada", "Mexico"].filter((c) => all.includes(c));
-    return [...pinned, ...all.filter((c) => !pinned.includes(c)).sort()];
+    return { pinnedCountries: pinned, otherCountries: all.filter((c) => !pinned.includes(c)).sort() };
   }, [cups]);
 
   const displayedCups: CupWithOwnership[] = useMemo(() => {
@@ -115,10 +115,10 @@ export default function BrowsePage() {
     }`;
 
   const selectClass = (active: boolean) =>
-    `w-full appearance-none text-xs font-medium px-3 py-1 pr-7 rounded-full border bg-transparent cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-white/50 transition-colors ${
+    `w-full appearance-none text-xs font-medium px-3 py-1 pr-7 rounded-full border cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-white/50 transition-colors ${
       active
         ? "bg-gold text-green-dark border-gold"
-        : "border-white/30 text-white/80 hover:border-white/60"
+        : "bg-transparent border-white/30 text-white/80 hover:border-white/60"
     }`;
 
   return (
@@ -147,7 +147,7 @@ export default function BrowsePage() {
           className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-gray-900 bg-white/90 placeholder-gray-400 focus:outline-hidden"
         />
 
-        {/* Series + Country selects — side by side, full width on mobile */}
+        {/* Series + Country + Scope selects — all three on one row */}
         <div className="flex gap-2 mt-2">
           <div className="relative flex-1">
             <select
@@ -168,13 +168,39 @@ export default function BrowsePage() {
               className={selectClass(!!countryFilter)}
             >
               <option value="">Country…</option>
-              {countryList.map((c) => <option key={c} value={c}>{c}</option>)}
+              {pinnedCountries.length > 0 && (
+                <optgroup label="─────────────">
+                  {pinnedCountries.map((c) => <option key={c} value={c}>{c}</option>)}
+                </optgroup>
+              )}
+              {otherCountries.length > 0 && (
+                <optgroup label="─────────────">
+                  {otherCountries.map((c) => <option key={c} value={c}>{c}</option>)}
+                </optgroup>
+              )}
             </select>
             <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] leading-none text-white/60">▾</span>
           </div>
+
+          {hasScopedCups && (
+            <div className="relative flex-1">
+              <select
+                value={scopeFilter}
+                onChange={(e) => setScopeFilter(e.target.value as ScopeFilter)}
+                className={selectClass(!!scopeFilter)}
+              >
+                <option value="">Scope…</option>
+                <option value="city">Cities</option>
+                <option value="state">States</option>
+                <option value="country">Countries</option>
+                <option value="themed">Themed</option>
+              </select>
+              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] leading-none text-white/60">▾</span>
+            </div>
+          )}
         </div>
 
-        {/* Status chips + Near Me — always fit on one row */}
+        {/* Status chips + Near Me */}
         <div className="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide">
           <button className={chipClass(statusFilter === "all")} onClick={() => setStatusFilter("all")}>All</button>
           <button className={chipClass(statusFilter === "needed")} onClick={() => setStatusFilter("needed")}>Still Need</button>
@@ -183,17 +209,6 @@ export default function BrowsePage() {
             <button className={chipClass(nearMe)} onClick={() => setNearMe((v) => !v)}>Near Me</button>
           )}
         </div>
-
-        {/* Scope chips — only shown when catalog has non-city cups */}
-        {hasScopedCups && (
-          <div className="flex gap-2 mt-1 overflow-x-auto pb-1 scrollbar-hide">
-            <button className={chipClass(scopeFilter === "")} onClick={() => setScopeFilter("")}>All Scopes</button>
-            <button className={chipClass(scopeFilter === "city")} onClick={() => setScopeFilter("city")}>Cities</button>
-            <button className={chipClass(scopeFilter === "state")} onClick={() => setScopeFilter("state")}>States</button>
-            <button className={chipClass(scopeFilter === "country")} onClick={() => setScopeFilter("country")}>Countries</button>
-            <button className={chipClass(scopeFilter === "themed")} onClick={() => setScopeFilter("themed")}>Themed</button>
-          </div>
-        )}
       </header>
 
       <main className="flex-1 overflow-y-auto pb-20">
