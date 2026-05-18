@@ -408,6 +408,472 @@ const COORDS: Record<string, [number, number]> = {
   "Cape Town,South Africa": [-33.9249, 18.4241],
   "Nairobi,Kenya":          [-1.2921,  36.8219],
   "Marrakech,Morocco":      [31.6295,  -7.9811],
+  "Casablanca,Morocco":     [33.5731,  -7.5898],
+  "Durban,South Africa":    [-29.8587,  31.0218],
+  "Johannesburg,South Africa": [-26.2041, 28.0473],
+  "Pretoria,South Africa":  [-25.7479,  28.2293],
+  "Rabat,Morocco":          [34.0209,  -6.8416],
+  "Sharn El Sheikh,Egypt":  [27.9158,  34.3300],
+  // ── Europe — additional cities ───────────────────────────────────────────────
+  "Aberdeen,United Kingdom":       [57.1497,  -2.0943],
+  "Aix En Provence,France":        [43.5297,   5.4474],
+  "Albi,France":                   [43.9277,   2.1484],
+  "Algarve,Portugal":              [37.0179,  -7.9307],
+  "Alicante,Spain":                [38.3452,  -0.4815],
+  "Andorra,Andorra":               [42.5063,   1.5218],
+  "Angers,France":                 [47.4784,  -0.5632],
+  "Annecy,France":                 [45.8992,   6.1294],
+  "Antwerp,Belgium":               [51.2194,   4.4025],
+  "Augsburg,Germany":              [48.3705,  10.8978],
+  "Avignon,France":                [43.9493,   4.8055],
+  "Balearic Islands,Spain":        [39.5296,   2.6544],
+  "Basel,Switzerland":             [47.5596,   7.5886],
+  "Bayonne,France":                [43.4933,  -1.4748],
+  "Belfast,United Kingdom":        [54.5973,  -5.9301],
+  "Belfort,France":                [47.6380,   6.8635],
+  "Belgrade,Serbia":               [44.8176,  20.4570],
+  "Bergen,Norway":                 [60.3913,   5.3221],
+  "Bergamo,Italy":                 [45.6983,   9.6773],
+  "Bern,Switzerland":              [46.9480,   7.4474],
+  "Bielefeld,Germany":             [51.9805,   8.5320],
+  "Bilbao,Spain":                  [43.2630,  -2.9350],
+  "Bordeaux,France":               [44.8378,  -0.5792],
+  "Brasov,Romania":                [45.6427,  25.5887],
+  "Bratislava,Slovakia":           [48.1486,  17.1077],
+  "Braunschweig,Germany":          [52.2689,  10.5268],
+  "Bremen,Germany":                [53.0793,   8.8017],
+  "Brno,Czech Republic":           [49.1951,  16.6068],
+  "Brugge,Belgium":                [51.2093,   3.2247],
+  "Bucharest,Romania":             [44.4268,  26.1025],
+  "Bydgoszcz,Poland":              [53.1235,  18.0084],
+  "Caerdydd,United Kingdom":       [51.4816,  -3.1791],
+  "Canary Islands,Spain":          [28.2916, -15.4341],
+  "Cannes,France":                 [43.5528,   7.0174],
+  "Caserta,Italy":                 [41.0726,  14.3322],
+  "Ceske Budejovice,Czech Republic": [48.9745, 14.4742],
+  "Cluj Napoca,Romania":           [46.7712,  23.6236],
+  "Clermont Ferrand,France":       [45.7797,   3.0863],
+  "Colmar,France":                 [48.0793,   7.3580],
+  "Constanta,Romania":             [44.1598,  28.6348],
+  "Corfu,Greece":                  [39.6243,  19.9217],
+  "Crete,Greece":                  [35.2401,  24.8093],
+  "Dijon,France":                  [47.3220,   5.0415],
+  "Dresden,Germany":               [51.0504,  13.7373],
+  "Dusseldorf,Germany":            [51.2217,   6.7762],
+  "Eindhoven,Netherlands":         [51.4416,   5.4697],
+  "England,United Kingdom":        [52.3555,  -1.1743],
+  "Euskadi,Spain":                 [43.0095,  -2.6189],
+  "Firenze,Italy":                 [43.7696,  11.2558],
+  "Florence,Italy":                [43.7696,  11.2558],
+  "Frankfurt,Germany":             [50.1109,   8.6821],
+  "Gdansk,Poland":                 [54.3520,  18.6466],
+  "Gdynia,Poland":                 [54.5189,  18.5305],
+  "Geneva,Switzerland":            [46.2044,   6.1432],
+  "Genova,Italy":                  [44.4056,   8.9463],
+  "Glasgow,United Kingdom":        [55.8642,  -4.2518],
+  "Gothenburg,Sweden":             [57.7089,  11.9746],
+  "Grenoble,France":               [45.1885,   5.7245],
+  "Groningen,Netherlands":         [53.2194,   6.5665],
+  "Haguenau,France":               [48.8153,   7.7894],
+  "Hamburg,Germany":               [53.5753,   9.9950],
+  "Heidelberg,Germany":            [49.3988,   8.6724],
+  "Innsbruck,Austria":             [47.2692,  11.4041],
+  "Italia,Italy":                  [41.8719,  12.5674],
+  "Karlovy Vary,Czech Republic":   [50.2320,  12.8713],
+  "Katowice,Poland":               [50.2599,  19.0216],
+  "Kiel,Germany":                  [54.3233,  10.1228],
+  "Koln,Germany":                  [50.9333,   6.9500],
+  "Kosice,Slovakia":               [48.7163,  21.2611],
+  "Krakow,Poland":                 [50.0647,  19.9450],
+  "Kristiansand,Norway":           [58.1599,   7.9957],
+  "Le Havre,France":               [49.4944,   0.1079],
+  "Le Mans,France":                [48.0061,   0.1996],
+  "Leipzig,Germany":               [51.3397,  12.3731],
+  "Lille,France":                  [50.6292,   3.0573],
+  "Lillehammer,Norway":            [61.1152,  10.4661],
+  "Limassol,Cyprus":               [34.6786,  33.0413],
+  "Lisboa,Portugal":               [38.7223,  -9.1393],
+  "Liverpool,United Kingdom":      [53.4084,  -2.9916],
+  "Lodz,Poland":                   [51.7592,  19.4560],
+  "Lucerne,Switzerland":           [47.0502,   8.3093],
+  "Lyon,France":                   [45.7640,   4.8357],
+  "Malaga,Spain":                  [36.7213,  -4.4213],
+  "Malmo,Sweden":                  [55.6050,  13.0038],
+  "Marbella,Spain":                [36.5101,  -4.8825],
+  "Marseille,France":              [43.2965,   5.3698],
+  "Metz,France":                   [49.1193,   6.1757],
+  "Metzingen,Germany":             [48.5333,   9.2833],
+  "Milan,Italy":                   [45.4642,   9.1900],
+  "Milano,Italy":                  [45.4642,   9.1900],
+  "Monaco,Monaco":                 [43.7384,   7.4246],
+  "Montpellier,France":            [43.6108,   3.8767],
+  "Mulhouse,France":               [47.7508,   7.3359],
+  "Munchen,Germany":               [48.1351,  11.5820],
+  "Mykonos,Greece":                [37.4467,  25.3289],
+  "Nancy,France":                  [48.6921,   6.1844],
+  "Nantes,France":                 [47.2184,  -1.5536],
+  "Napoli,Italy":                  [40.8518,  14.2681],
+  "Newcastle Upon Tyne,United Kingdom": [54.9783, -1.6178],
+  "Nice,France":                   [43.7102,   7.2620],
+  "Northern Ireland,United Kingdom": [54.7877, -6.4923],
+  "Nurnberg,Germany":              [49.4521,  11.0767],
+  "Orleans,France":                [47.9029,   1.9039],
+  "Ostrava,Czech Republic":        [49.8209,  18.2625],
+  "Oxford,United Kingdom":         [51.7520,  -1.2577],
+  "Pau,France":                    [43.2951,  -0.3708],
+  "Perpignan,France":              [42.6887,   2.8948],
+  "Plzen,Czech Republic":          [49.7384,  13.3736],
+  "Porto,Portugal":                [41.1579,  -8.6291],
+  "Poznan,Poland":                 [52.4064,  16.9252],
+  "Ramstein,Germany":              [49.4369,   7.5570],
+  "Reims,France":                  [49.2583,   4.0317],
+  "Rennes,France":                 [48.1173,  -1.6778],
+  "Rhodes,Greece":                 [36.4341,  28.2176],
+  "Roermond,Netherlands":          [51.1934,   5.9876],
+  "Roma,Italy":                    [41.9028,  12.4964],
+  "Rouen,France":                  [49.4432,   1.0993],
+  "Ruhrgebiet,Germany":            [51.5000,   7.0000],
+  "Rzeszow,Poland":                [50.0413,  21.9990],
+  "St Andrews,United Kingdom":     [56.3398,  -2.7967],
+  "Salzburg,Austria":              [47.8095,  13.0550],
+  "Scotland,United Kingdom":       [56.4907,  -4.2026],
+  "Sevilla,Spain":                 [37.3891,  -5.9845],
+  "Seville,Spain":                 [37.3891,  -5.9845],
+  "Sharjah,United Arab Emirates":  [25.3463,  55.4209],
+  "Stavanger,Norway":              [58.9700,   5.7331],
+  "Strasbourg,France":             [48.5734,   7.7521],
+  "Stuttgart,Germany":             [48.7758,   9.1829],
+  "Szczecin,Poland":               [53.4285,  14.5528],
+  "Thessaloniki,Greece":           [40.6401,  22.9444],
+  "Torino,Italy":                  [45.0703,   7.6869],
+  "Toulouse,France":               [43.6047,   1.4442],
+  "Tours,France":                  [47.3941,   0.6848],
+  "Trondheim,Norway":              [63.4305,  10.3951],
+  "Turin,Italy":                   [45.0703,   7.6869],
+  "Utrecht,Netherlands":           [52.0907,   5.1214],
+  "Valencia,Spain":                [39.4699,  -0.3763],
+  "Venezia,Italy":                 [45.4408,  12.3155],
+  "Verona,Italy":                  [45.4384,  10.9916],
+  "Wales,United Kingdom":          [52.1307,  -3.7837],
+  "Wolfsburg,Germany":             [52.4227,  10.7865],
+  "Wroclaw,Poland":                [51.1079,  17.0385],
+  "Yorkshire,United Kingdom":      [54.0000,  -1.5000],
+  // ── Turkey ──────────────────────────────────────────────────────────────────
+  "Adana,Turkey":     [37.0000,  35.3213],
+  "Ankara,Turkey":    [39.9334,  32.8597],
+  "Antalya,Turkey":   [36.8969,  30.7133],
+  "Bodrum,Turkey":    [37.0344,  27.4305],
+  "Bursa,Turkey":     [40.1885,  29.0610],
+  "Izmir,Turkey":     [38.4192,  27.1287],
+  "Kapadokya,Turkey": [38.6431,  34.8289],
+  "Kusadasi,Turkey":  [37.8560,  27.2594],
+  // ── Middle East ─────────────────────────────────────────────────────────────
+  "Abu Dhabi,United Arab Emirates": [24.4539,  54.3773],
+  "Al Madinah,Saudi Arabia":        [24.5247,  39.5692],
+  "Jeddah,Saudi Arabia":            [21.5433,  39.1728],
+  "Mecca,Saudi Arabia":             [21.3891,  39.8579],
+  "Ras Al Khaimah,United Arab Emirates": [25.7895, 55.9432],
+  "Riyadh,Saudi Arabia":            [24.6877,  46.7219],
+  // ── Russia & Central Asia ────────────────────────────────────────────────────
+  "Almaty,Kazakhstan":    [43.2220,  76.8512],
+  "Astana,Kazakhstan":    [51.1801,  71.4460],
+  "Baku,Azerbaijan":      [40.4093,  49.8671],
+  "Moscow,Russia":        [55.7558,  37.6173],
+  "Saint Petersburg,Russia": [59.9311, 30.3609],
+  "St Petersburg,Russia": [59.9311,  30.3609],
+  // ── Japan — additional cities ────────────────────────────────────────────────
+  "Fukuoka,Japan":   [33.5902, 130.4017],
+  "Gifu,Japan":      [35.4232, 136.7608],
+  "Hiroshima,Japan": [34.3853, 132.4553],
+  "Hokkaido,Japan":  [43.0642, 141.3469],
+  "Kanazawa,Japan":  [36.5613, 136.6562],
+  "Kobe,Japan":      [34.6901, 135.1956],
+  "Kumamoto,Japan":  [32.8032, 130.7079],
+  "Nagano,Japan":    [36.6486, 138.1949],
+  "Nagasaki,Japan":  [32.7503, 129.8779],
+  "Nagoya,Japan":    [35.1815, 136.9066],
+  "Nara,Japan":      [34.6851, 135.8048],
+  "Oita,Japan":      [33.2382, 131.6126],
+  "Okinawa,Japan":   [26.2124, 127.6809],
+  "Sendai,Japan":    [38.2682, 140.8694],
+  "Tochigi,Japan":   [36.3797, 139.7339],
+  "Yokohama,Japan":  [35.4437, 139.6380],
+  // ── South Korea — additional ─────────────────────────────────────────────────
+  "Busan,South Korea":    [35.1796, 129.0756],
+  "Gyeongju,South Korea": [35.8562, 129.2247],
+  "Jeju,South Korea":     [33.4996, 126.5312],
+  // ── China — additional cities ────────────────────────────────────────────────
+  "Baotou,China":       [40.6572, 109.8403],
+  "Bengbu,China":       [32.9170, 117.3900],
+  "Changchun,China":    [43.8171, 125.3235],
+  "Changde,China":      [29.0319, 111.6985],
+  "Changsa,China":      [28.2279, 112.9388],
+  "Changsha,China":     [28.2279, 112.9388],
+  "Changzhou,China":    [31.7781, 119.9740],
+  "Chongqing,China":    [29.5630, 106.5516],
+  "Dali,China":         [25.6065, 100.2679],
+  "Dalian,China":       [38.9140, 121.6147],
+  "Datong,China":       [40.0900, 113.2910],
+  "Deyang,China":       [31.1270, 104.3978],
+  "Dongguan,China":     [23.0489, 113.7447],
+  "Foshan,China":       [23.0220, 113.1216],
+  "Fuzhou,China":       [26.0745, 119.2965],
+  "Ganzhou,China":      [25.8312, 114.9348],
+  "Guiyang,China":      [26.5983, 106.7074],
+  "Guilin,China":       [25.2736, 110.2900],
+  "Haikou,China":       [20.0444, 110.3419],
+  "Harbin,China":       [45.8038, 126.5349],
+  "Hefei,China":        [31.8639, 117.2808],
+  "Hengyang,China":     [26.8938, 112.5706],
+  "Hohhot,China":       [40.8426, 111.7490],
+  "Hulun Buir,China":   [49.2129, 119.7659],
+  "Jilin,China":        [43.8376, 126.5501],
+  "Jinan,China":        [36.6512, 117.1201],
+  "Jinghong,China":     [22.0085, 100.7975],
+  "Jiujiang,China":     [29.7050, 116.0010],
+  "Kaifeng,China":      [34.7978, 114.3074],
+  "Kunming,China":      [24.8801, 102.8329],
+  "Lanzhou,China":      [36.0611, 103.8343],
+  "Leshan,China":       [29.5522, 103.7665],
+  "Lijiang,China":      [26.8721, 100.2260],
+  "Liuzhou,China":      [24.3264, 109.4281],
+  "Luoyang,China":      [34.6197, 112.4539],
+  "Luzhou,China":       [28.8716, 105.4418],
+  "Maanshan,China":     [31.6669, 118.5069],
+  "Macau,China":        [22.1987, 113.5439],
+  "Mianyang,China":     [31.4678, 104.6796],
+  "Nanchang,China":     [28.6820, 115.8579],
+  "Nanchong,China":     [30.7991, 106.0784],
+  "Nanning,China":      [22.8170, 108.3665],
+  "Nantong,China":      [31.9816, 120.8944],
+  "Ningbo,China":       [29.8683, 121.5440],
+  "Puer,China":         [22.8250, 100.9667],
+  "Qinhuangdao,China":  [39.9354, 119.5999],
+  "Qingdao,China":      [36.0671, 120.3826],
+  "Qujing,China":       [25.4847, 103.7976],
+  "Quanzhou,China":     [24.8741, 118.6757],
+  "Sanya,China":        [18.2479, 109.5117],
+  "Selangor,Malaysia":  [ 3.0738, 101.5183],
+  "Shantou,China":      [23.3535, 116.6820],
+  "Shenyang,China":     [41.8057, 123.4315],
+  "Shenzhen,China":     [22.5431, 114.0579],
+  "Shijiazhuang,China": [38.0428, 114.5149],
+  "Suzhou,China":       [31.2990, 120.5853],
+  "Taian,China":        [36.1963, 117.0874],
+  "Taiyuan,China":      [37.8706, 112.5489],
+  "Tianjin,China":      [39.3434, 117.3616],
+  "Tsingtao,China":     [36.0671, 120.3826],
+  "Wuhan,China":        [30.5928, 114.3055],
+  "Wuhu,China":         [31.3526, 118.4328],
+  "Wuxi,China":         [31.5693, 120.2880],
+  "Xian,China":         [34.2658, 108.9541],
+  "Xiamen,China":       [24.4798, 118.0894],
+  "Xiangyang,China":    [32.0096, 112.1221],
+  "Xining,China":       [36.6171, 101.7782],
+  "Yangzhou,China":     [32.3912, 119.4363],
+  "Yantai,China":       [37.5336, 121.3914],
+  "Yibin,China":        [28.7521, 104.6424],
+  "Yichang,China":      [30.6920, 111.2861],
+  "Yinchuan,China":     [38.4743, 106.2586],
+  "Yueyang,China":      [29.3570, 113.1291],
+  "Zhangjiajie,China":  [29.1248, 110.4792],
+  "Zhengzhou,China":    [34.7466, 113.6254],
+  "Zhongshan,China":    [22.5176, 113.3926],
+  "Zhuhai,China":       [22.2710, 113.5767],
+  "Zhuzhou,China":      [27.8406, 113.1519],
+  "Zunyi,China":        [27.7059, 106.9279],
+  // ── Taiwan ──────────────────────────────────────────────────────────────────
+  "Hsinchu,Taiwan":  [24.8138, 120.9675],
+  "Kaohsiung,Taiwan":[22.6273, 120.3014],
+  "Tainan,Taiwan":   [22.9999, 120.2269],
+  "Taichung,Taiwan": [24.1477, 120.6736],
+  "Taiwan,Taiwan":   [23.6978, 120.9605],
+  "Taoyuan,Taiwan":  [24.9936, 121.3010],
+  // ── Southeast Asia ──────────────────────────────────────────────────────────
+  "Ba Na Hills,Vietnam":       [15.9993, 107.9883],
+  "Bali,Indonesia":            [-8.3405, 115.0920],
+  "Chiang Mai,Thailand":       [18.7883,  98.9853],
+  "Da Nang,Vietnam":           [16.0544, 108.2022],
+  "Genting Highlands,Malaysia":[3.4268, 101.7933],
+  "Cameron Highlands,Malaysia":[4.4685, 101.3786],
+  "Hanoi,Vietnam":             [21.0285, 105.8542],
+  "Ho Chi Minh,Vietnam":       [10.8231, 106.6297],
+  "Ho Chi Minh City,Vietnam":  [10.8231, 106.6297],
+  "Hoi An,Vietnam":            [15.8800, 108.3380],
+  "Langkawi,Malaysia":         [6.3500,  99.8000],
+  "Luang Prabang,Laos":        [19.8833, 102.1333],
+  "Nha Trang,Vietnam":         [12.2388, 109.1967],
+  "Pattaya,Thailand":          [12.9236,  100.8825],
+  "Phnom Penh,Cambodia":       [11.5564, 104.9282],
+  "Phu Quoc,Vietnam":          [10.2899, 103.9840],
+  "Samui,Thailand":            [ 9.5120, 100.0136],
+  "Siem Reap,Cambodia":        [13.3633, 103.8564],
+  "Sihanoukville,Cambodia":    [10.6099, 103.5290],
+  "Sihanouk Ville,Cambodia":   [10.6099, 103.5290],
+  "Vientiane,Laos":            [17.9757, 102.6331],
+  "Hai Phong,Vietnam":         [20.8449, 106.6881],
+  // ── Philippines ─────────────────────────────────────────────────────────────
+  "Bacolod,Philippines":     [10.6765, 122.9509],
+  "Baguio,Philippines":      [16.4023, 120.5960],
+  "Batangas,Philippines":    [13.7565,  121.0583],
+  "Boracay,Philippines":     [11.9674, 121.9248],
+  "Bulacan,Philippines":     [14.7943, 120.8760],
+  "Cagayan De Oro,Philippines": [8.4542, 124.6319],
+  "Cavite,Philippines":      [14.4791, 120.8970],
+  "Cebu,Philippines":        [10.3157, 123.8854],
+  "Davao,Philippines":       [ 7.1907, 125.4553],
+  "Iloilo,Philippines":      [10.7202, 122.5621],
+  "Laguna,Philippines":      [14.2691, 121.3854],
+  "Makati,Philippines":      [14.5547, 121.0244],
+  "Pampanga,Philippines":    [15.0794, 120.6200],
+  "Philippines,Philippines": [12.8797, 121.7740],
+  "Quezon City,Philippines": [14.6760, 121.0437],
+  "Tagaytay,Philippines":    [14.1053, 120.9621],
+  // ── Malaysia ────────────────────────────────────────────────────────────────
+  "Johor,Malaysia":   [ 1.4854, 103.7618],
+  "Kedah,Malaysia":   [ 5.8707, 100.3747],
+  "Kuching,Malaysia": [ 1.5533, 110.3592],
+  "Malacca,Malaysia": [ 2.1896, 102.2501],
+  "Pahang,Malaysia":  [ 3.8077, 103.3260],
+  "Penang,Malaysia":  [ 5.4141, 100.3288],
+  "Perak,Malaysia":   [ 4.5921, 101.0901],
+  "Perlis,Malaysia":  [ 6.4449,  100.1982],
+  "Sabah,Malaysia":   [ 5.9788, 116.0753],
+  "Sarawak,Malaysia": [ 1.5533, 110.3592],
+  // ── India ───────────────────────────────────────────────────────────────────
+  "Bengaluru,India": [12.9716,  77.5946],
+  "Chennai,India":   [13.0827,  80.2707],
+  "Delhi,India":     [28.7041,  77.1025],
+  "Goa,India":       [15.2993,  74.1240],
+  "Hyderabad,India": [17.3850,  78.4867],
+  "Kolkata,India":   [22.5726,  88.3639],
+  "Pune,India":      [18.5204,  73.8567],
+  // ── Oceania ─────────────────────────────────────────────────────────────────
+  "Australia,Australia":    [-25.2744, 133.7751],
+  "Christchurch,New Zealand": [-43.5321, 172.6362],
+  "Dunedin,New Zealand":    [-45.8788, 170.5028],
+  "Gold Coast,Australia":   [-28.0167, 153.3999],
+  "North Island,New Zealand": [-40.9006, 174.8860],
+  "Perth,Australia":        [-31.9505, 115.8605],
+  "Philippines,Philippines": [12.8797, 121.7740],
+  "Queenstown,New Zealand": [-45.0312, 168.6626],
+  "South Island,New Zealand": [-44.0000, 170.5028],
+  "Taiwan,Taiwan":          [23.6978, 120.9605],
+  "Vietnam,Vietnam":        [14.0583, 108.2772],
+  "Wellington,New Zealand": [-41.2865, 174.7762],
+  // ── Latin America — additional ───────────────────────────────────────────────
+  "Antofagasta,Chile":     [-23.6509,  -70.3975],
+  "Arequipa,Peru":         [-16.4090,  -71.5375],
+  "Barranquilla,Colombia": [10.9685,   -74.7813],
+  "Belo Horizonte,Brazil": [-19.9167,  -43.9345],
+  "Bogota,Colombia":       [  4.7110,  -74.0721],
+  "Brasilia,Brazil":       [-15.7801,  -47.9292],
+  "Bucaramanga,Colombia":  [  7.1197,  -73.1227],
+  "Cali,Colombia":         [  3.4516,  -76.5320],
+  "Cartagena,Colombia":    [ 10.3910,  -75.4794],
+  "Chihuahua,Mexico":      [28.6329, -106.0691],
+  "Ciudad De Mexico,Mexico": [19.4326, -99.1332],
+  "Coquimbo,Chile":        [-29.9533,  -71.3436],
+  "Cordoba,Argentina":     [-31.4201,  -64.1888],
+  "Curitiba,Brazil":       [-25.4290,  -49.2671],
+  "Cusco,Peru":            [-13.5170,  -71.9784],
+  "Ensenada,Mexico":       [31.8667, -116.5967],
+  "Florianopolis,Brazil":  [-27.5954,  -48.5480],
+  "Goiania,Brazil":        [-16.6799,  -49.2550],
+  "Gramado,Brazil":        [-29.3797,  -50.8760],
+  "Guadalajara,Mexico":    [20.6597, -103.3496],
+  "Guanajuato,Mexico":     [21.0190, -101.2574],
+  "Leon,Mexico":           [21.1221, -101.6822],
+  "Los Cabos,Mexico":      [22.8905, -109.9167],
+  "Medellin,Colombia":     [  6.2442,  -75.5812],
+  "Mendoza,Argentina":     [-32.8908,  -68.8272],
+  "Monterrey,Mexico":      [25.6866, -100.3161],
+  "Morelia,Mexico":        [19.7060, -101.1951],
+  "Oaxaca,Mexico":         [17.0732,  -96.7266],
+  "Playa Del Carmen,Mexico": [20.6296, -87.0739],
+  "Porto Alegre,Brazil":   [-30.0346,  -51.2177],
+  "Puebla,Mexico":         [19.0414,  -98.2063],
+  "Puerto Vallarta,Mexico":[20.6534, -105.2253],
+  "Punta Del Este,Uruguay":[-34.9626,  -54.9459],
+  "Queretaro,Mexico":      [20.5888, -100.3899],
+  "Rio De Janeiro,Brazil": [-22.9068,  -43.1729],
+  "Rosario,Argentina":     [-32.9468,  -60.6393],
+  "Salvador,Brazil":       [-12.9714,  -38.5014],
+  "San Miguel De Allende,Mexico": [20.9147, -100.7453],
+  "Santiago Dr,Chile":     [-33.4489,  -70.6693],
+  "Sao Paulo,Brazil":      [-23.5505,  -46.6333],
+  "Temuco,Chile":          [-38.7396,  -72.5900],
+  "Valparaiso,Chile":      [-33.0472,  -71.6127],
+  "Veracruz,Mexico":       [19.1738,  -96.1342],
+  "Villahermosa,Mexico":   [17.9892,  -92.9474],
+  "Zacatecas,Mexico":      [22.7709, -102.5832],
+  // ── Caribbean ───────────────────────────────────────────────────────────────
+  "Aruba,Aruba":                     [12.5211, -69.9683],
+  "Barbados,Barbados":               [13.1939, -59.5432],
+  "Cayman Islands,Cayman Islands":   [19.3133, -81.2546],
+  "Curacao,Curacao":                 [12.1696, -68.9900],
+  "Punta Cana,Dominican Republic":   [18.5601, -68.3725],
+  "Santo Domingo,Dominican Republic":[18.4861, -69.9312],
+  "Trinidad Tobago,Trinidad and Tobago": [10.6918, -61.2225],
+  "Turks Caicos,Turks and Caicos Islands": [21.6940, -71.7979],
+  // ── Misc ─────────────────────────────────────────────────────────────────────
+  "Brunei,Brunei":    [ 4.5353, 114.7277],
+  "Niagara On The Lake,Canada": [43.2553, -79.0683],
+  // ── China — major cities missing from earlier block ──────────────────────────
+  "Chengdu,China":    [30.5728, 104.0668],
+  "Guangzhou,China":  [23.1291, 113.2644],
+  "Hangzhou,China":   [30.2741, 120.1551],
+  "Nanjing,China":    [32.0603, 118.7969],
+  // ── Southeast Asia — additional ──────────────────────────────────────────────
+  "Bangkok,Thailand": [13.7563, 100.5018],
+  "Phuket,Thailand":  [ 7.8804,  98.3923],
+  "Songkhla,Thailand":[  7.2066, 100.5969],
+  // ── Turkey ───────────────────────────────────────────────────────────────────
+  "Istanbul,Turkey":  [41.0082,  28.9784],
+  "Turkiye,Turkey":   [39.9334,  32.8597],
+  // ── Europe — cities missing from earlier block ───────────────────────────────
+  "Bari,Italy":       [41.1171,  16.8719],
+  "Bologna,Italy":    [44.4949,  11.3426],
+  "Den Haag,Netherlands":   [52.0705,   4.3007],
+  "Rotterdam,Netherlands":  [51.9244,   4.4777],
+  "Amersfoort,Netherlands": [52.1561,   5.3878],
+  "Schiphol,Netherlands":   [52.3105,   4.7683],
+  "Sofia,Bulgaria":   [42.6977,  23.3219],
+  "Torun,Poland":     [53.0138,  18.5984],
+  "Trojmiasto,Poland":[54.3520,  18.6466],
+  "Granada,Spain":    [37.1773,  -3.5986],
+  "Oktoberfest,Germany": [48.1351, 11.5820],
+  // ── China — Huizhou ──────────────────────────────────────────────────────────
+  "Huizhou,China":    [23.1116, 114.4152],
+  // ── Latin America — additional entries ──────────────────────────────────────
+  "Brasil,Brazil":    [-14.2350, -51.9253],
+  "Cancun,Mexico":    [21.1619,  -86.8515],
+  "Chiapas,Mexico":   [16.7521,  -93.1134],
+  "Cozumel,Mexico":   [20.5085,  -86.9468],
+  "Merida,Mexico":    [20.9674,  -89.5926],
+  "Tulum,Mexico":     [20.2114,  -87.4654],
+  "San Juan,Puerto Rico": [18.4655, -66.1057],
+  "San Miguel,Mexico":    [20.9147, -100.7453],
+  "Acapulco,Mexico":  [16.8531,  -99.8237],
+  "Republica Dominicana,Dominican Republic": [18.7357, -70.1627],
+  "Santa Cruz De La Sierra,Bolivia": [-17.7833, -63.1821],
+  // ── US — cities and campuses missing from earlier block ──────────────────────
+  "Santa Barbara,United States":         [34.4208, -119.6982],
+  "Canadas Wonderland,Canada":           [43.8418,  -79.5354],
+  "Universal Studios Resort,United States": [28.4772, -81.4680],
+  "Baylor,United States":                [31.5489,  -97.1131],
+  "Clemson University,United States":    [34.6834,  -82.8374],
+  "Fresno State,United States":          [36.8142, -119.7481],
+  "Georgetown University,United States": [38.9076,  -77.0723],
+  "Nc State,United States":              [35.7847,  -78.6821],
+  "Northeastern University,United States":[42.3401, -71.0889],
+  "Northwestern University,United States":[42.0565, -87.6753],
+  "Notre Dame,United States":            [41.7052,  -86.2386],
+  "Penn State,United States":            [40.7934,  -77.8600],
+  "Purdue University,United States":     [40.4237,  -86.9212],
+  "Rutgers,United States":               [40.5008,  -74.4474],
+  "Stanford,United States":              [37.4275, -122.1697],
+  "Unlv,United States":                  [36.1083, -115.1424],
 };
 
 const COUNTRY_CODES: Record<string, string> = {
@@ -450,6 +916,13 @@ const COUNTRY_CODES: Record<string, string> = {
   "Egypt": "EG", "Morocco": "MA", "South Africa": "ZA",
   "Kenya": "KE", "Tanzania": "TZ", "Nigeria": "NG",
   "Ethiopia": "ET", "Ghana": "GH",
+  // Additional
+  "Andorra": "AD", "Aruba": "AW", "Azerbaijan": "AZ",
+  "Barbados": "BB", "Brunei": "BN", "Cayman Islands": "KY",
+  "Curacao": "CW", "Cyprus": "CY", "Laos": "LA",
+  "Malta": "MT", "Monaco": "MC",
+  "Trinidad and Tobago": "TT",
+  "Turks and Caicos Islands": "TC",
 };
 
 // ── Catalog ───────────────────────────────────────────────────────────────────
@@ -464,6 +937,7 @@ interface CupEntry {
   moreInfoUrl?: string;   // explicit override — skip slug lookup when set
   scope?: string;         // defaults to "city"; set to "themed" for fictional/special-edition cups
   venue_series?: string;  // themed cups only: series of the venue cups they're sold alongside
+  item_type?: string;     // "mug" | "ornament"; defaults to "mug"
 }
 
 // YAH and BT entries are derived from the starbucks-mugs.com sitemap at
@@ -511,18 +985,249 @@ const CITY_TO_COUNTRY: Record<string, string> = {
   "New Delhi": "India", "Osaka": "Japan", "Seoul": "South Korea",
   "Shanghai": "China", "Singapore": "Singapore", "Taipei": "Taiwan",
   "Tel Aviv": "Israel", "Tokyo": "Japan",
+  // Asia — Relief/Icon Mini series cities
+  "Cebu": "Philippines", "Chengdu": "China", "Dongguan": "China",
+  "Guangzhou": "China", "Hangzhou": "China", "Hsinchu": "Taiwan",
+  "Johor": "Malaysia", "Kaohsiung": "Taiwan", "Macau": "China",
+  "Nanjing": "China", "Phuket": "Thailand", "Selangor": "Malaysia",
+  "Tainan": "Taiwan", "Taichung": "Taiwan", "Taoyuan": "Taiwan",
+  // Asia — additional YAH/BT cities
+  "Almaty": "Kazakhstan", "Astana": "Kazakhstan", "Baku": "Azerbaijan",
+  "Bali": "Indonesia", "Bangkok": "Thailand",
+  "Busan": "South Korea", "Chiang Mai": "Thailand",
+  "Fukuoka": "Japan", "Gifu": "Japan", "Gyeongju": "South Korea",
+  "Hanoi": "Vietnam", "Hiroshima": "Japan", "Ho Chi Minh": "Vietnam",
+  "Ho Chi Minh City": "Vietnam", "Hokkaido": "Japan",
+  "Hoi An": "Vietnam", "Jeju": "South Korea", "Kanazawa": "Japan",
+  "Kobe": "Japan", "Kumamoto": "Japan",
+  "Moscow": "Russia", "Nagano": "Japan", "Nagasaki": "Japan",
+  "Nagoya": "Japan", "Nara": "Japan", "Nha Trang": "Vietnam",
+  "Oita": "Japan", "Okinawa": "Japan", "Pattaya": "Thailand",
+  "Phnom Penh": "Cambodia", "Phu Quoc": "Vietnam",
+  "Saint Petersburg": "Russia", "Samui": "Thailand",
+  "Sendai": "Japan", "Siem Reap": "Cambodia", "Sihanoukville": "Cambodia",
+  "Sihanouk Ville": "Cambodia", "St Petersburg": "Russia",
+  "Tochigi": "Japan", "Vientiane": "Laos", "Wellington": "New Zealand",
+  "Yokohama": "Japan",
+  // Turkey (Türkiye)
+  "Adana": "Turkey", "Ankara": "Turkey", "Antalya": "Turkey",
+  "Bodrum": "Turkey", "Bursa": "Turkey", "Istanbul": "Turkey",
+  "Izmir": "Turkey", "Kapadokya": "Turkey", "Kusadasi": "Turkey",
+  "Turkiye": "Turkey",
+  // Middle East & Africa
+  "Abu Dhabi": "United Arab Emirates", "Al Madinah": "Saudi Arabia",
+  "Casablanca": "Morocco", "Durban": "South Africa",
+  "Jeddah": "Saudi Arabia", "Johannesburg": "South Africa",
+  "Mecca": "Saudi Arabia", "Pretoria": "South Africa",
+  "Rabat": "Morocco", "Ras Al Khaimah": "United Arab Emirates",
+  "Riyadh": "Saudi Arabia", "Sharjah": "United Arab Emirates",
+  "Sharn El Sheikh": "Egypt",
+  // Southeast Asia additions
+  "Ba Na Hills": "Vietnam", "Da Nang": "Vietnam", "Hai Phong": "Vietnam",
+  "Genting Highlands": "Malaysia", "Cameron Highlands": "Malaysia",
+  "Langkawi": "Malaysia", "Luang Prabang": "Laos",
+  "Kedah": "Malaysia", "Kuching": "Malaysia", "Pahang": "Malaysia",
+  "Penang": "Malaysia", "Perak": "Malaysia", "Perlis": "Malaysia",
+  "Sabah": "Malaysia", "Sarawak": "Malaysia", "Malacca": "Malaysia",
+  // India
+  "Bengaluru": "India", "Chennai": "India", "Delhi": "India",
+  "Goa": "India", "Hyderabad": "India", "Kolkata": "India", "Pune": "India",
   // Oceania
   "Auckland": "New Zealand", "Brisbane": "Australia",
-  "Melbourne": "Australia", "Sydney": "Australia",
-  // Latin America
-  "Antigua Guatemala": "Guatemala", "Bogotá": "Colombia",
-  "Buenos Aires": "Argentina", "El Salvador": "El Salvador",
-  "Guyana": "Guyana", "Lima": "Peru", "Mazatlan": "Mexico",
-  "Mexico": "Mexico", "Mexico City": "Mexico", "Rio de Janeiro": "Brazil",
-  "San Miguel": "Mexico", "Santiago": "Chile", "São Paulo": "Brazil",
+  "Christchurch": "New Zealand", "Dunedin": "New Zealand",
+  "Gold Coast": "Australia", "Melbourne": "Australia",
+  "North Island": "New Zealand", "Perth": "Australia",
+  "Queenstown": "New Zealand", "South Island": "New Zealand",
+  "Sydney": "Australia",
+  // China — additional cities
+  "Baotou": "China", "Bengbu": "China", "Changchun": "China",
+  "Changde": "China", "Changsa": "China", "Changsha": "China",
+  "Changzhou": "China", "Chongqing": "China", "Dalian": "China",
+  "Dali": "China", "Datong": "China", "Deyang": "China",
+  "Foshan": "China", "Fuzhou": "China", "Ganzhou": "China",
+  "Guiyang": "China", "Guilin": "China", "Haikou": "China",
+  "Hangzhou": "China", "Harbin": "China", "Hefei": "China",
+  "Hengyang": "China", "Hohhot": "China", "Hulun Buir": "China",
+  "Jilin": "China", "Jinan": "China", "Jinghong": "China",
+  "Jiujiang": "China", "Kaifeng": "China", "Kunming": "China",
+  "Lanzhou": "China", "Leshan": "China", "Lijiang": "China",
+  "Liuzhou": "China", "Luoyang": "China", "Luzhou": "China",
+  "Maanshan": "China", "Mianyang": "China", "Nanchang": "China",
+  "Nanchong": "China", "Nanjing": "China", "Nanning": "China",
+  "Nantong": "China", "Ningbo": "China", "Puer": "China",
+  "Qinhuangdao": "China", "Qingdao": "China", "Qujing": "China",
+  "Quanzhou": "China", "Sanya": "China", "Shantou": "China",
+  "Shenyang": "China", "Shenzhen": "China", "Shijiazhuang": "China",
+  "Suzhou": "China", "Taian": "China", "Taiyuan": "China",
+  "Tianjin": "China", "Tsingtao": "China", "Wuhan": "China",
+  "Wuhu": "China", "Wuxi": "China", "Xian": "China",
+  "Xiamen": "China", "Xiangyang": "China", "Xining": "China",
+  "Yangzhou": "China", "Yantai": "China", "Yibin": "China",
+  "Yichang": "China", "Yinchuan": "China", "Yueyang": "China",
+  "Zhangjiajie": "China", "Zhengzhou": "China", "Zhongshan": "China",
+  "Zhuhai": "China", "Zhuzhou": "China", "Zunyi": "China",
+  // Europe — cities not yet covered
+  "Aberdeen": "United Kingdom", "Adana": "Turkey",
+  "Aix En Provence": "France", "Albi": "France",
+  "Algarve": "Portugal", "Alicante": "Spain",
+  "Andorra": "Andorra", "Angers": "France", "Annecy": "France",
+  "Antwerp": "Belgium", "Augsburg": "Germany", "Avignon": "France",
+  "Basel": "Switzerland", "Bayonne": "France",
+  "Belfast": "United Kingdom", "Belfort": "France",
+  "Belgrade": "Serbia", "Bergen": "Norway", "Bergamo": "Italy",
+  "Bern": "Switzerland", "Bielefeld": "Germany",
+  "Bilbao": "Spain", "Bodrum": "Turkey", "Bologna": "Italy",
+  "Bordeaux": "France", "Brasov": "Romania", "Bratislava": "Slovakia",
+  "Braunschweig": "Germany", "Bremen": "Germany", "Brno": "Czech Republic",
+  "Brugge": "Belgium", "Bucharest": "Romania", "Bydgoszcz": "Poland",
+  "Bari": "Italy", "Caerdydd": "United Kingdom",
+  "Canary Islands": "Spain", "Cannes": "France",
+  "Caserta": "Italy", "Ceske Budejovice": "Czech Republic",
+  "Cluj Napoca": "Romania", "Colmar": "France",
+  "Constanta": "Romania", "Corfu": "Greece",
+  "Clermont Ferrand": "France", "Crete": "Greece",
+  "Dijon": "France", "Dresden": "Germany",
+  "Dusseldorf": "Germany", "Eindhoven": "Netherlands",
+  "England": "United Kingdom",
+  "Euskadi": "Spain", "Firenze": "Italy", "Florence": "Italy",
+  "Frankfurt": "Germany", "Gdansk": "Poland", "Gdynia": "Poland",
+  "Geneva": "Switzerland", "Genova": "Italy",
+  "Glasgow": "United Kingdom", "Gothenburg": "Sweden",
+  "Grenoble": "France", "Groningen": "Netherlands",
+  "Haguenau": "France", "Hamburg": "Germany",
+  "Heidelberg": "Germany", "Innsbruck": "Austria",
+  "Italia": "Italy", "Karlovy Vary": "Czech Republic",
+  "Katowice": "Poland", "Kiel": "Germany",
+  "Koln": "Germany", "Kosice": "Slovakia",
+  "Krakow": "Poland", "Kristiansand": "Norway",
+  "Le Havre": "France", "Le Mans": "France",
+  "Leipzig": "Germany",
+  "Lille": "France", "Lillehammer": "Norway",
+  "Limassol": "Cyprus", "Lisboa": "Portugal",
+  "Liverpool": "United Kingdom", "Lodz": "Poland",
+  "Lucerne": "Switzerland", "Lyon": "France",
+  "Malaga": "Spain", "Malmo": "Sweden", "Marbella": "Spain",
+  "Marseille": "France", "Metz": "France",
+  "Metzingen": "Germany", "Milano": "Italy",
+  "Milan": "Italy", "Monaco": "Monaco",
+  "Montpellier": "France", "Mulhouse": "France",
+  "Munchen": "Germany", "Mykonos": "Greece",
+  "Nancy": "France", "Nantes": "France",
+  "Napoli": "Italy", "Newcastle Upon Tyne": "United Kingdom",
+  "Nice": "France", "Northern Ireland": "United Kingdom",
+  "Nurnberg": "Germany", "Orleans": "France",
+  "Ostrava": "Czech Republic", "Oxford": "United Kingdom",
+  "Pau": "France", "Perpignan": "France", "Plzen": "Czech Republic",
+  "Porto": "Portugal", "Poznan": "Poland",
+  "Ramstein": "Germany", "Reims": "France",
+  "Rennes": "France", "Rhodes": "Greece",
+  "Roermond": "Netherlands", "Roma": "Italy",
+  "Rouen": "France", "Ruhrgebiet": "Germany",
+  "Rzeszow": "Poland", "St Andrews": "United Kingdom",
+  "Salzburg": "Austria", "Scotland": "United Kingdom",
+  "Sevilla": "Spain", "Seville": "Spain",
+  "Stavanger": "Norway", "Strasbourg": "France",
+  "Stuttgart": "Germany", "Szczecin": "Poland",
+  "Thessaloniki": "Greece", "Torino": "Italy",
+  "Toulouse": "France", "Tours": "France",
+  "Trondheim": "Norway", "Turin": "Italy",
+  "Utrecht": "Netherlands", "Valencia": "Spain",
+  "Venezia": "Italy", "Verona": "Italy",
+  "Wales": "United Kingdom", "Wolfsburg": "Germany",
+  "Wroclaw": "Poland", "Yorkshire": "United Kingdom",
+  // Latin America additions
+  "Antofagasta": "Chile", "Arequipa": "Peru",
+  "Barranquilla": "Colombia", "Belo Horizonte": "Brazil",
+  "Bogota": "Colombia", "Bucaramanga": "Colombia",
+  "Cali": "Colombia", "Cancun": "Mexico",
+  "Cartagena": "Colombia", "Chiapas": "Mexico",
+  "Chihuahua": "Mexico", "Ciudad De Mexico": "Mexico",
+  "Coquimbo": "Chile", "Cordoba": "Argentina",
+  "Cozumel": "Mexico", "Curitiba": "Brazil",
+  "Cusco": "Peru", "Ensenada": "Mexico",
+  "Florianopolis": "Brazil", "Goiania": "Brazil",
+  "Gramado": "Brazil", "Guadalajara": "Mexico",
+  "Guanajuato": "Mexico", "Leon": "Mexico",
+  "Los Cabos": "Mexico", "Medellin": "Colombia",
+  "Mendoza": "Argentina", "Merida": "Mexico",
+  "Monterrey": "Mexico", "Morelia": "Mexico",
+  "Niagara On The Lake": "Canada",
+  "Oaxaca": "Mexico", "Playa Del Carmen": "Mexico",
+  "Porto Alegre": "Brazil", "Puebla": "Mexico",
+  "Puerto Vallarta": "Mexico", "Punta Del Este": "Uruguay",
+  "Queretaro": "Mexico", "Rio De Janeiro": "Brazil",
+  "Rosario": "Argentina", "Salvador": "Brazil",
+  "San Miguel De Allende": "Mexico",
+  "Santiago Dr": "Chile", "Sao Paulo": "Brazil",
+  "Temuco": "Chile", "Tulum": "Mexico",
+  "Valparaiso": "Chile", "Veracruz": "Mexico",
+  "Villahermosa": "Mexico", "Zacatecas": "Mexico",
+  // Caribbean & Pacific
+  "Aruba": "Aruba", "Barbados": "Barbados",
+  "Cayman Islands": "Cayman Islands", "Curacao": "Curacao",
+  "Punta Cana": "Dominican Republic",
+  "Republica Dominicana": "Dominican Republic",
+  "Santo Domingo": "Dominican Republic",
+  "Trinidad Tobago": "Trinidad and Tobago",
+  "Turks Caicos": "Turks and Caicos Islands",
+  // Philippines — additional cities
+  "Bacolod": "Philippines", "Baguio": "Philippines",
+  "Batangas": "Philippines", "Boracay": "Philippines",
+  "Bulacan": "Philippines", "Cagayan De Oro": "Philippines",
+  "Cavite": "Philippines", "Davao": "Philippines",
+  "Iloilo": "Philippines", "Laguna": "Philippines",
+  "Makati": "Philippines", "Pampanga": "Philippines",
+  "Quezon City": "Philippines", "Tagaytay": "Philippines",
+  // Country self-mappings (so progressive stripping can detect country scope)
+  "Australia": "Australia", "Austria": "Austria",
+  "Argentina": "Argentina", "Belgium": "Belgium",
+  "Bolivia": "Bolivia", "Brazil": "Brazil", "Brasil": "Brazil",
+  "Brunei": "Brunei",
+  "Bulgaria": "Bulgaria", "Cambodia": "Cambodia",
+  "Chile": "Chile", "China": "China",
+  "Colombia": "Colombia", "Cyprus": "Cyprus",
+  "Czech Republic": "Czech Republic",
+  "Denmark": "Denmark", "Egypt": "Egypt",
+  "Finland": "Finland", "France": "France",
+  "Germany": "Germany", "Greece": "Greece",
+  "Hungary": "Hungary", "Iceland": "Iceland",
+  "India": "India", "Indonesia": "Indonesia",
+  "Ireland": "Ireland", "Israel": "Israel",
+  "Italy": "Italy", "Japan": "Japan",
+  "Jordan": "Jordan", "Kazakhstan": "Kazakhstan",
+  "Laos": "Laos", "Lebanon": "Lebanon",
+  "Malaysia": "Malaysia", "Malta": "Malta",
+  "Morocco": "Morocco", "Netherlands": "Netherlands",
+  "New Zealand": "New Zealand", "Norway": "Norway",
+  "Peru": "Peru", "Philippines": "Philippines",
+  "Poland": "Poland", "Portugal": "Portugal",
+  "Romania": "Romania", "Russia": "Russia",
+  "Saudi Arabia": "Saudi Arabia", "South Africa": "South Africa",
+  "South Korea": "South Korea", "Spain": "Spain",
+  "Sweden": "Sweden", "Switzerland": "Switzerland",
+  "Taiwan": "Taiwan", "Thailand": "Thailand",
+  "Turkey": "Turkey", "Ukraine": "Ukraine",
+  "United Arab Emirates": "United Arab Emirates",
+  "Vietnam": "Vietnam",
   // Africa
   "Cairo": "Egypt", "Cape Town": "South Africa",
   "Marrakech": "Morocco", "Nairobi": "Kenya",
+  // Missing European cities
+  "Amersfoort": "Netherlands", "Balearic Islands": "Spain",
+  "Den Haag": "Netherlands", "Granada": "Spain",
+  "Oktoberfest": "Germany", "Rotterdam": "Netherlands",
+  "Schiphol": "Netherlands", "Sofia": "Bulgaria",
+  "Torun": "Poland", "Trojmiasto": "Poland",
+  // Missing Asian cities
+  "Huizhou": "China", "Songkhla": "Thailand",
+  // Missing Latin American cities
+  "Acapulco": "Mexico", "Brasilia": "Brazil", "Buenos Aires": "Argentina",
+  "Lima": "Peru", "Mazatlan": "Mexico",
+  "San Juan": "Puerto Rico", "San Miguel": "Mexico",
+  "Santa Cruz De La Sierra": "Bolivia", "Santiago": "Chile",
+  // US venues
+  "Canadas Wonderland": "Canada",
+  "Universal Studios Resort": "United States",
 };
 
 // ── Whole-country slug detection ──────────────────────────────────────────────
@@ -609,7 +1314,7 @@ const DISCOVERY_EXCLUDE_PREFIXES = ["wicked-"];
 
 // Star Wars bare planet slugs (no "star-wars-" prefix on starbucks-mugs.com).
 const STAR_WARS_BARE_SLUGS = new Set([
-  "ahch-to", "crait", "endor", "geonosis", "hoth", "naboo", "tatooine",
+  "ahch-to", "crait", "endor", "geonosis", "hoth", "naboo", "nevarro", "tatooine",
 ]);
 
 // Name overrides for Star Wars slugs that don't title-case correctly.
@@ -681,7 +1386,32 @@ function buildSeriesFromSitemap(
     cityName = cityName.replace(/\bD C\b/, "DC");
     if (cityName === "St Louis") cityName = "St. Louis";
 
-    let country = CITY_TO_COUNTRY[cityName] ?? "United States";
+    // Cruise ships have no fixed location — include as themed with no coords.
+    if (/\bOf The Seas\b/.test(cityName) || /^Norwegian /.test(cityName)) {
+      entries.push({
+        city: cityName, region: "", country: "",
+        series: seriesName, year: defaultYear,
+        scope: "themed", notes: "Cruise ship", moreInfoUrl: url,
+      });
+      continue;
+    }
+
+    // Star Wars planets — include as themed with no coords.
+    if (STAR_WARS_BARE_SLUGS.has(locationSlug) || locationSlug.startsWith("star-wars-")) {
+      const rawSlug = locationSlug.startsWith("star-wars-")
+        ? locationSlug.replace("star-wars-", "") : locationSlug;
+      const swName = STAR_WARS_NAME_FIXES[rawSlug] ?? rawSlug
+        .split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+      entries.push({
+        city: swName, region: "", country: "",
+        series: seriesName, year: defaultYear,
+        scope: "themed", venue_series: "Been There Disney Parks",
+        notes: "Star Wars — available at Disney parks (Galaxy's Edge)", moreInfoUrl: url,
+      });
+      continue;
+    }
+
+    let country = resolveCountry(cityName);
 
     let scope = "city";
     let region = "";
@@ -697,6 +1427,21 @@ function buildSeriesFromSitemap(
     } else if (COUNTRY_CODES[cityName]) {
       scope = "country";
       country = cityName;
+    } else if (scope === "city") {
+      // Progressive check: if stripping affixes reveals a known country code entry,
+      // this is a country-level cup (e.g. "Christmas France", "Japan 5 Fall Edition").
+      const words = cityName.split(" ");
+      let found = false;
+      for (let i = words.length - 1; i >= 1 && !found; i--) {
+        const base = words.slice(0, i).join(" ");
+        if (COUNTRY_CODES[base]) { scope = "country"; found = true; }
+      }
+      for (let s = 1; s < words.length && !found; s++) {
+        for (let e = words.length; e > s && !found; e--) {
+          const base = words.slice(s, e).join(" ");
+          if (COUNTRY_CODES[base]) { scope = "country"; found = true; }
+        }
+      }
     }
 
     if (scope === "city" && !region) {
@@ -767,7 +1512,7 @@ function buildDiscoverySeriesFromSitemap(mugsIndex: Map<string, string>): CupEnt
     cityName = cityName.replace(/\bD C\b/, "DC");  // washington-d-c → Washington DC
     if (cityName === "St Louis") cityName = "St. Louis";
 
-    let country = CITY_TO_COUNTRY[cityName] ?? "United States";
+    let country = resolveCountry(cityName);
 
     let scope = "city";
     let region = "";
@@ -786,6 +1531,19 @@ function buildDiscoverySeriesFromSitemap(mugsIndex: Map<string, string>): CupEnt
       // Auto-detect: slug title-cases to a known country name not in WHOLE_COUNTRY_SLUGS
       scope = "country";
       country = cityName;
+    } else if (scope === "city") {
+      const words = cityName.split(" ");
+      let found = false;
+      for (let i = words.length - 1; i >= 1 && !found; i--) {
+        const base = words.slice(0, i).join(" ");
+        if (COUNTRY_CODES[base]) { scope = "country"; found = true; }
+      }
+      for (let s = 1; s < words.length && !found; s++) {
+        for (let e = words.length; e > s && !found; e--) {
+          const base = words.slice(s, e).join(" ");
+          if (COUNTRY_CODES[base]) { scope = "country"; found = true; }
+        }
+      }
     }
 
     // For city-scope cups with no region, infer from combined lookup map
@@ -864,6 +1622,211 @@ async function withConcurrency<T>(
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
 }
 
+// ── Coordinate / country resolution with progressive fallback ────────────────
+// For Relief variants like "Manila Red", "Hong Kong 2 Dragon", "Mini Shanghai Gold":
+// strip trailing words (then leading words) one at a time until a match is found.
+
+function resolveCountry(cityName: string): string {
+  if (CITY_TO_COUNTRY[cityName]) return CITY_TO_COUNTRY[cityName];
+  const words = cityName.split(" ");
+  // Strip from end: "Manila Red" → "Manila"
+  for (let i = words.length - 1; i >= 1; i--) {
+    const c = words.slice(0, i).join(" ");
+    if (CITY_TO_COUNTRY[c]) return CITY_TO_COUNTRY[c];
+  }
+  // Strip from front: "Mini Shanghai Gold" → "Shanghai Gold" → "Shanghai"
+  for (let start = 1; start < words.length; start++) {
+    for (let end = words.length; end > start; end--) {
+      const c = words.slice(start, end).join(" ");
+      if (CITY_TO_COUNTRY[c]) return CITY_TO_COUNTRY[c];
+    }
+  }
+  return "United States";
+}
+
+function resolveCoords(city: string, country: string): [number, number] {
+  const exact = COORDS[`${city},${country}`];
+  if (exact) return exact;
+  const words = city.split(" ");
+  // Strip from end: "Hong Kong 2 Dragon" → "Hong Kong 2" → "Hong Kong"
+  for (let i = words.length - 1; i >= 1; i--) {
+    const shorter = words.slice(0, i).join(" ");
+    const fallback = COORDS[`${shorter},${country}`];
+    if (fallback) return fallback;
+  }
+  // Strip from front: "Mini Shanghai Gold" → "Shanghai Gold" → "Shanghai"
+  for (let start = 1; start < words.length; start++) {
+    for (let end = words.length; end > start; end--) {
+      const c = words.slice(start, end).join(" ");
+      const fallback = COORDS[`${c},${country}`];
+      if (fallback) return fallback;
+    }
+  }
+  return [0, 0];
+}
+
+// ── Ornament series builder ───────────────────────────────────────────────────
+// Handles slugs of the form <prefix>-ornament-<location>.
+
+function buildOrnamentsFromSitemap(
+  mugsIndex: Map<string, string>,
+  slugPrefix: string,
+  seriesName: string,
+  defaultYear: number,
+): CupEntry[] {
+  const entries: CupEntry[] = [];
+  const ornamentPrefix = `${slugPrefix}-ornament-`;
+
+  for (const [slug, url] of mugsIndex) {
+    if (!slug.startsWith(ornamentPrefix)) continue;
+
+    const locationSlug = slug.replace(ornamentPrefix, "");
+
+    // Skip Disney parks and Star Wars planets — no standalone coords needed
+    if (locationSlug.startsWith("disney-")) continue;
+    if (locationSlug.startsWith("star-wars-") || STAR_WARS_BARE_SLUGS.has(locationSlug)) continue;
+
+    let cityName = locationSlug
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+    cityName = cityName.replace(/\bD C\b/, "DC");
+    if (cityName === "St Louis") cityName = "St. Louis";
+
+    const country = resolveCountry(cityName);
+    let scope = "city";
+    let region = "";
+
+    if (US_STATES.has(cityName))    { scope = "state"; region = cityName; }
+    else if (CA_PROVINCES.has(cityName)) { scope = "state"; region = cityName; }
+    else if (AU_STATES.has(cityName))    { scope = "state"; region = cityName; }
+    else if (WHOLE_COUNTRY_SLUGS.has(cityName)) { scope = "country"; }
+    else if (COUNTRY_CODES[cityName]) { scope = "country"; }
+    else if (scope === "city") {
+      const words = cityName.split(" ");
+      let found = false;
+      for (let i = words.length - 1; i >= 1 && !found; i--) {
+        const base = words.slice(0, i).join(" ");
+        if (COUNTRY_CODES[base]) { scope = "country"; found = true; }
+      }
+      for (let s = 1; s < words.length && !found; s++) {
+        for (let e = words.length; e > s && !found; e--) {
+          const base = words.slice(s, e).join(" ");
+          if (COUNTRY_CODES[base]) { scope = "country"; found = true; }
+        }
+      }
+    }
+
+    if (scope === "city" && !region) region = CITY_TO_REGION[cityName] ?? "";
+
+    entries.push({
+      city: cityName,
+      region,
+      country,
+      series: seriesName,
+      year: defaultYear,
+      scope,
+      notes: "",
+      moreInfoUrl: url,
+      item_type: "ornament",
+    });
+  }
+
+  return entries;
+}
+
+// ── Relief series builder ─────────────────────────────────────────────────────
+// Relief mugs follow `relief-<location>` slugs. Variant suffixes like "-red" or
+// "-2-dragon" are kept as part of the display name (they are distinct products).
+// Coordinates use progressive fallback: "Manila Red" → "Manila", etc.
+
+function buildReliefFromSitemap(mugsIndex: Map<string, string>): CupEntry[] {
+  const entries: CupEntry[] = [];
+
+  for (const [slug, url] of mugsIndex) {
+    if (!slug.startsWith("relief-")) continue;
+
+    const locationSlug = slug.replace("relief-", "");
+    if (locationSlug.includes("ornament")) continue;
+
+    const cityName = locationSlug
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+
+    const country = resolveCountry(cityName);
+    const region = CITY_TO_REGION[cityName] ?? "";
+
+    entries.push({
+      city: cityName,
+      region,
+      country,
+      series: "Relief",
+      year: 2014,
+      scope: "city",
+      notes: "",
+      moreInfoUrl: url,
+      item_type: "mug",
+    });
+  }
+
+  return entries;
+}
+
+// ── Icon Mini series builder ──────────────────────────────────────────────────
+
+function buildIconMiniFromSitemap(mugsIndex: Map<string, string>): CupEntry[] {
+  const entries: CupEntry[] = [];
+
+  for (const [slug, url] of mugsIndex) {
+    if (!slug.startsWith("icon-mini-")) continue;
+
+    const locationSlug = slug.replace("icon-mini-", "");
+    if (locationSlug.includes("ornament")) continue;
+
+    let cityName = locationSlug
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+    cityName = cityName.replace(/\bD C\b/, "DC");
+
+    const country = resolveCountry(cityName);
+    const region = CITY_TO_REGION[cityName] ?? "";
+
+    let scope = "city";
+    if (WHOLE_COUNTRY_SLUGS.has(cityName)) { scope = "country"; }
+    else if (COUNTRY_CODES[cityName]) { scope = "country"; }
+    else {
+      const words = cityName.split(" ");
+      let found = false;
+      for (let i = words.length - 1; i >= 1 && !found; i--) {
+        const base = words.slice(0, i).join(" ");
+        if (COUNTRY_CODES[base]) { scope = "country"; found = true; }
+      }
+      for (let s = 1; s < words.length && !found; s++) {
+        for (let e = words.length; e > s && !found; e--) {
+          const base = words.slice(s, e).join(" ");
+          if (COUNTRY_CODES[base]) { scope = "country"; found = true; }
+        }
+      }
+    }
+
+    entries.push({
+      city: cityName,
+      region,
+      country,
+      series: "Icon Mini",
+      year: 2016,
+      scope,
+      notes: "",
+      moreInfoUrl: url,
+      item_type: "mug",
+    });
+  }
+
+  return entries;
+}
+
 // ── Build output rows ─────────────────────────────────────────────────────────
 
 interface OutputRow {
@@ -887,9 +1850,9 @@ function buildRows(filterSeries: string | null, mugsIndex: Map<string, string>):
   // Static catalog entries (Disney Parks + special editions only)
   const catalogEntries = CATALOG.filter((e) => !filterSeries || e.series === filterSeries);
 
-  // You Are Here — derived live from sitemap
+  // You Are Here — derived live from sitemap (exclude disney-* park cups — already in static CATALOG)
   const yahEntries = (!filterSeries || filterSeries === "You Are Here")
-    ? buildSeriesFromSitemap(mugsIndex, "you-are-here", "You Are Here", ["ornament"], 2015)
+    ? buildSeriesFromSitemap(mugsIndex, "you-are-here", "You Are Here", ["ornament", "disney-"], 2015)
     : [];
 
   // Been There — derived live from sitemap (exclude disney-*, marvel-*, pin-drop-*, ornament*)
@@ -902,14 +1865,40 @@ function buildRows(filterSeries: string | null, mugsIndex: Map<string, string>):
     ? buildDiscoverySeriesFromSitemap(mugsIndex)
     : [];
 
-  // Deduplicate by (city, series) — CATALOG entries first so they win
+  // Ornaments — one builder per series prefix; excluded from mug builders above
+  const yahOrnaments = (!filterSeries || filterSeries === "You Are Here")
+    ? buildOrnamentsFromSitemap(mugsIndex, "you-are-here", "You Are Here", 2015)
+    : [];
+  const btOrnaments = (!filterSeries || filterSeries === "Been There")
+    ? buildOrnamentsFromSitemap(mugsIndex, "been-there", "Been There", 2019)
+    : [];
+  const discoveryOrnaments = (!filterSeries || filterSeries === "Discovery Series")
+    ? buildOrnamentsFromSitemap(mugsIndex, "discovery-series", "Discovery Series", 2020)
+    : [];
+
+  // Relief — ~164 entries, variant slugs kept as distinct cups
+  const reliefEntries = (!filterSeries || filterSeries === "Relief")
+    ? buildReliefFromSitemap(mugsIndex)
+    : [];
+
+  // Icon Mini — older Asia-focused series
+  const iconMiniEntries = (!filterSeries || filterSeries === "Icon Mini")
+    ? buildIconMiniFromSitemap(mugsIndex)
+    : [];
+
+  // Deduplicate by (city, series, item_type) — CATALOG entries first so they win
   // over any auto-detected duplicates (e.g. Singapore appears as both city and country).
   // Year is excluded from the key because YAH/BT years are scraped later and
   // the same city could otherwise appear twice at different default years.
   const seen = new Map<string, true>();
   const deduped: CupEntry[] = [];
-  for (const e of [...catalogEntries, ...yahEntries, ...btEntries, ...discoveryEntries]) {
-    const key = `${e.city}|${e.series}`;
+  for (const e of [
+    ...catalogEntries,
+    ...yahEntries, ...btEntries, ...discoveryEntries,
+    ...yahOrnaments, ...btOrnaments, ...discoveryOrnaments,
+    ...reliefEntries, ...iconMiniEntries,
+  ]) {
+    const key = `${e.city}|${e.series}|${e.item_type ?? "mug"}`;
     if (!seen.has(key)) {
       seen.set(key, true);
       deduped.push(e);
@@ -921,8 +1910,7 @@ function buildRows(filterSeries: string | null, mugsIndex: Map<string, string>):
   const noCoords: string[] = [];
 
   for (const e of allEntries) {
-    const coordKey = `${e.city},${e.country}`;
-    const [lat, lng] = COORDS[coordKey] ?? [0, 0];
+    const [lat, lng] = resolveCoords(e.city, e.country);
 
     // State/country/themed cups appear in city-pin popups — no standalone pin needed,
     // so 0,0 coords are fine. Only skip city-scope entries that are missing coords.
@@ -940,7 +1928,7 @@ function buildRows(filterSeries: string | null, mugsIndex: Map<string, string>):
       name: e.city,
       scope: e.scope ?? "city",
       venue_series: e.venue_series ?? "",
-      item_type: "mug",
+      item_type: e.item_type ?? "mug",
       region: e.region,
       country: e.country,
       country_code: COUNTRY_CODES[e.country] ?? "",
