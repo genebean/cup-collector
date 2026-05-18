@@ -55,18 +55,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: "Dev Bypass",
           credentials: {
             role: { label: "Role", type: "text" },
+            household: { label: "Household", type: "text" },
           },
-          authorize(_credentials, req) {
-            // Read role from the URL query param — query params are reliably
-            // forwarded by Auth.js to authorize(), unlike parsed form bodies.
-            const role = new URL(req.url).searchParams.get("role") ?? "viewer";
-            // Groups follow the same "cup-collector-{slug}-{role}" convention as production.
-            // The test household has group_slug "test-household".
+          authorize(credentials, req) {
+            // signIn() passes credentials as form body; e2e tests post directly
+            // with URL query params — check both so both paths work.
+            const params = new URL(req.url).searchParams;
+            const role = (credentials.role as string | undefined) ?? params.get("role") ?? "viewer";
+            const household = (credentials.household as string | undefined) ?? params.get("household") ?? "test-household";
             return {
-              id: `dev-${role}`,
-              name: `Dev ${role}`,
+              id: `dev-${household}-${role}`,
+              name: `Dev ${role} (${household})`,
               email: `dev-${role}@playwright.local`,
-              groups: [`cup-collector-test-household-${role}`],
+              groups: [`cup-collector-${household}-${role}`],
             };
           },
         }),
@@ -93,21 +94,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, account, profile, trigger, session }) {
+    async jwt({ token, user, account, profile, trigger, session }) {
       if (profile) {
         // OIDC path: groups come from the PocketID profile claim
         token.pocketIdSub = profile.sub as string;
         token.groups = (profile.groups as string[]) ?? [];
       } else if (account?.provider === "dev-bypass") {
-        // Dev bypass path: role is encoded in providerAccountId ("dev-{role}").
-        // account is only set during sign-in, so this only runs once per session.
-        const id = (account.providerAccountId ?? "") as string;
-        // Groups follow the same convention as production: "cup-collector-{slug}-{role}".
-        // The role suffix is everything after "dev-" (e.g. "dev-owner" → "owner").
-        const roleLabel = id.replace(/^dev-/, "");
-        token.groups = [`cup-collector-test-household-${roleLabel}`];
-        // Stable synthetic sub for requireWriter() and marked_by_sub in tests.
-        token.pocketIdSub = id;
+        // Dev bypass path: groups are set by authorize() and available on
+        // the user object (only present during initial sign-in).
+        token.groups = ((user as { groups?: string[] }).groups) ?? [];
+        token.pocketIdSub = (user?.id ?? "dev-viewer") as string;
       }
 
       // Handle household switch triggered from client via session.update().

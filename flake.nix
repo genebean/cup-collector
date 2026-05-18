@@ -77,6 +77,18 @@
           exec env PLAYWRIGHT_BYPASS_AUTH=1 npm run dev
         '';
 
+        # Start the Next.js dev server with auth bypass bound to a specific address.
+        # Useful for testing from a phone over Tailscale.
+        # Usage: dev-next-network <address>   e.g. dev-next-network 100.127.228.31
+        # Overrides AUTH_URL so Auth.js redirects go to the right host without
+        # editing .env.local. Access at http://<address>:3000
+        ccDevNextNetwork = pkgs.writeShellScriptBin "cc-dev-next-network" ''
+          ADDR="''${1:?Usage: dev-next-network <address>  e.g. dev-next-network 100.127.228.31}"
+          PROJ_ROOT="$(git rev-parse --show-toplevel)"
+          cd "$PROJ_ROOT/app"
+          exec env PLAYWRIGHT_BYPASS_AUTH=1 AUTH_URL="http://''${ADDR}:3000" npm run dev -- --hostname "''${ADDR}"
+        '';
+
         # Install Playwright's Chrome browser to ~/.cache/ms-playwright.
         # Run once after `npm install` or when @playwright/test is updated.
         ccPlaywrightInstall = pkgs.writeShellScriptBin "cc-playwright-install" ''
@@ -169,7 +181,7 @@
         '';
 
         devScripts = [
-          ccPbServe ccPocketidServe ccDevNext ccDevNextBypass
+          ccPbServe ccPocketidServe ccDevNext ccDevNextBypass ccDevNextNetwork
           ccPlaywrightInstall ccPlayE2e ccGenAuthSecret
           ccDocsServe ccCheck ccImportCups ccBuildCatalog ccCreateHousehold
         ];
@@ -229,6 +241,7 @@
             pocketid-serve()     { cc-pocketid-serve "$@"; }
             dev-next()           { cc-dev-next "$@"; }
             dev-next-bypass()    { cc-dev-next-bypass "$@"; }
+            dev-next-network()   { cc-dev-next-network "$@"; }
             playwright-install() { cc-playwright-install "$@"; }
             play-e2e()           { cc-play-e2e "$@"; }
             gen-auth-secret()    { cc-gen-auth-secret "$@"; }
@@ -245,6 +258,7 @@
               echo "  pocketid-serve      start PocketID OIDC provider on :1411 via podman"
               echo "  dev-next            start Next.js dev server on :3000"
               echo "  dev-next-bypass     start Next.js dev server with auth bypass (optional; play-e2e auto-starts one)"
+              echo "  dev-next-network    start Next.js on <address>:3000 with auth bypass (phone/Tailscale testing)"
               echo "  gen-auth-secret     generate a new AUTH_SECRET value"
               echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run])"
               echo "  build-catalog       generate starter catalog CSV (--out cups.csv [--series <name>])"
