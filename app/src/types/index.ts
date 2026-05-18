@@ -61,6 +61,13 @@ export interface CupWithOwnership extends Cup {
   ownedRecord?: OwnedCup; // Present when isOwned is true
 }
 
+// Per-household preferences for which series and item types to track.
+// Absent or empty arrays mean "track everything."
+export interface CollectionPrefs {
+  excluded_series?: string[]; // e.g. ["Icon Mini", "Relief"]
+  excluded_types?: string[];  // e.g. ["ornament"]
+}
+
 // A Starbucks store returned by the /api/nearby-starbucks proxy route
 export interface NearbyStore {
   name: string;
