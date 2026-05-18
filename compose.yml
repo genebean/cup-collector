@@ -1,0 +1,137 @@
+# Cup Collector — self-contained compose stack for non-Nix environments.
+#
+# Quick start:
+#   1. cp .env.compose.example .env.compose
+#   2. Edit .env.compose — fill in all required values (see comments there)
+#   3. Build and load the app container image (requires Nix):
+#        nix build .#dockerImage && docker load < result
+#   4. First-time TLS setup (run once before starting the stack):
+#        bash nginx/init-letsencrypt.sh
+#   5. Start the stack:
+#        docker compose --env-file .env.compose up -d
+#
+# Services:
+#   nginx      — reverse proxy + TLS termination (ports 80 and 443)
+#   certbot    — automatic Let's Encrypt cert renewal
+#   app        — Next.js app (internal only; nginx proxies to it)
+#   pocketbase — PocketBase backend (localhost:8090 by default)
+#   pocketid   — PocketID OIDC provider (port 1411)
+#
+# PocketBase is NOT exposed publicly by default (bound to 127.0.0.1).
+# All browser PocketBase traffic goes through the Next.js /api/pb proxy.
+# To access the PocketBase admin UI during setup, use:
+#   http://localhost:8090/_/
+# or set POCKETBASE_BIND_IP=0.0.0.0 to expose it on all interfaces.
+
+services:
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+      - ./data/certbot/www:/var/www/certbot:ro
+      - ./data/certbot/conf:/etc/letsencrypt:ro
+    environment:
+      DOMAIN: "${DOMAIN}"
+    # envsubst '$DOMAIN' replaces only $DOMAIN / ${DOMAIN}, leaving nginx
+    # variables like $host and $request_uri untouched.
+    command:
+      - /bin/sh
+      - -c
+      - "envsubst '$DOMAIN' < /etc/nginx/templates/nginx.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"
+    depends_on:
+      - app
+    networks:
+      - internal
+
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - ./data/certbot/www:/var/www/certbot
+      - ./data/certbot/conf:/etc/letsencrypt
+    # Check for renewal every 12 hours; certbot only renews within 30 days of expiry.
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - "trap exit TERM; while :; do certbot renew; sleep 12h & wait $$!; done"
+
+  app:
+    image: ${APP_IMAGE:-ghcr.io/genebean/cup-collector:latest}
+    # Image is published to ghcr.io/genebean/cup-collector by CI via `nix build .#dockerImage`.
+    # To use a locally built image instead:
+    #   nix build .#dockerImage && docker load < result
+    #   APP_IMAGE=cup-collector:latest docker compose --env-file .env.compose up
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      # Auth.js
+      AUTH_SECRET: "${AUTH_SECRET}"
+      AUTH_URL: "${AUTH_URL}"
+      # PocketBase — internal service name resolves inside the compose network
+      POCKETBASE_URL: "${POCKETBASE_URL:-http://pocketbase:8090}"
+      POCKETBASE_ADMIN_EMAIL: "${POCKETBASE_ADMIN_EMAIL}"
+      POCKETBASE_ADMIN_PASSWORD: "${POCKETBASE_ADMIN_PASSWORD}"
+      # PocketID OIDC
+      POCKETID_ISSUER_URL: "${POCKETID_ISSUER_URL}"
+      POCKETID_CLIENT_ID: "${POCKETID_CLIENT_ID}"
+      POCKETID_CLIENT_SECRET: "${POCKETID_CLIENT_SECRET}"
+      # Optional: Google Places API key for the Nearby Starbucks feature
+      GOOGLE_PLACES_API_KEY: "${GOOGLE_PLACES_API_KEY:-}"
+      # Optional: override the PocketBase hostname used in Next.js image optimisation
+      POCKETBASE_HOST: "${POCKETBASE_HOST:-}"
+    depends_on:
+      pocketbase:
+        condition: service_started
+      pocketid:
+        condition: service_started
+    networks:
+      - internal
+
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:0.38.0
+    restart: unless-stopped
+    command:
+      - serve
+      - --dir=/pb/pb_data
+      - --migrationsDir=/pb/pb_migrations
+      - --http=0.0.0.0:8090
+    ports:
+      # Bind to 127.0.0.1 by default — admin UI reachable at http://localhost:8090/_/
+      # Set POCKETBASE_BIND_IP=0.0.0.0 to expose on all interfaces (not recommended for prod)
+      - "${POCKETBASE_BIND_IP:-127.0.0.1}:${POCKETBASE_PORT:-8090}:8090"
+    volumes:
+      # Persistent data — back this up
+      - pocketbase_data:/pb/pb_data
+      # Migrations — read-only; bind-mount from repo so they stay in sync
+      - ./pocketbase/migrations:/pb/pb_migrations:ro
+    networks:
+      - internal
+
+  pocketid:
+    image: ghcr.io/pocket-id/pocket-id:v2
+    restart: unless-stopped
+    ports:
+      - "${POCKETID_PORT:-1411}:1411"
+    environment:
+      APP_URL: "${POCKETID_APP_URL}"
+      ENCRYPTION_KEY: "${POCKETID_ENCRYPTION_KEY}"
+      # Set TRUST_PROXY=true when running behind a reverse proxy (e.g. nginx)
+      TRUST_PROXY: "${POCKETID_TRUST_PROXY:-false}"
+    volumes:
+      - pocketid_data:/app/data
+    networks:
+      - internal
+
+volumes:
+  pocketbase_data:
+  pocketid_data:
+
+networks:
+  internal:

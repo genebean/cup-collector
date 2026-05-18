@@ -2,6 +2,9 @@
 pocketbase/pb_data/
 pocketid/
 
+# Compose stack runtime data (certbot certs and webroot)
+data/
+
 # Claude Code personal settings (permissions, MCP config) — not for public repos
 .claude/
 .mcp.json

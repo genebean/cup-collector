@@ -267,17 +267,8 @@ NGINXEOF
           ccDocsServe ccCheck ccImportCups ccBuildCatalog ccCreateHousehold
         ];
 
-      in {
-
-        # `nix build .#migrations` — produces the PocketBase migrations as a store path
-        # Reference in the NixOS module: migrationsDir = inputs.cup-collector.packages.${system}.migrations;
-        packages.migrations = pkgs.runCommand "cup-collector-migrations" {} ''
-          cp -r ${./pocketbase/migrations} $out
-        '';
-
-        # `nix build` — produces the Next.js app as a Nix package
-        # Uses standalone output mode so it can run as a plain Node process.
-        packages.default = pkgs.buildNpmPackage {
+        # `nix build` / `nix build .#dockerImage` share this derivation.
+        appPkg = pkgs.buildNpmPackage {
           pname = "cup-collector";
           version = "0.1.0";
           src = ./app;
@@ -299,6 +290,40 @@ NGINXEOF
             cp -r public $out/standalone/public
             cp -r .next/static $out/standalone/.next/static
           '';
+        };
+
+      in {
+
+        # `nix build .#migrations` — produces the PocketBase migrations as a store path
+        # Reference in the NixOS module: migrationsDir = inputs.cup-collector.packages.${system}.migrations;
+        packages.migrations = pkgs.runCommand "cup-collector-migrations" {} ''
+          cp -r ${./pocketbase/migrations} $out
+        '';
+
+        # `nix build` — produces the Next.js app as a Nix package.
+        packages.default = appPkg;
+
+        # `nix build .#dockerImage` — produces a Docker/OCI image loadable with `docker load`.
+        # Load and run:
+        #   nix build .#dockerImage && docker load < result
+        #   docker compose --env-file .env.compose up
+        packages.dockerImage = pkgs.dockerTools.buildLayeredImage {
+          name = "cup-collector";
+          tag = "latest";
+          contents = [ pkgs.nodejs_24 pkgs.cacert ];
+          config = {
+            WorkingDir = "${appPkg}/standalone";
+            Cmd = [ "${pkgs.nodejs_24}/bin/node" "${appPkg}/standalone/server.js" ];
+            Env = [
+              "NODE_ENV=production"
+              "PORT=3000"
+              "HOSTNAME=0.0.0.0"
+              "PATH=${pkgs.nodejs_24}/bin:/usr/local/bin:/usr/bin:/bin"
+              "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+              "NODE_EXTRA_CA_CERTS=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            ];
+            ExposedPorts = { "3000/tcp" = {}; };
+          };
         };
 
         # `nix develop` — dev shell with all required tooling

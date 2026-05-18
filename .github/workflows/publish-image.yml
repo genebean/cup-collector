@@ -1,0 +1,47 @@
+name: Publish Docker Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    name: Build and push to GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@v14
+      - uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Build Docker image
+        run: nix build .#dockerImage
+
+      - name: Log in to GHCR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+
+      - name: Load image and push
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+        run: |
+          docker load < result
+
+          # Always push :latest
+          docker tag cup-collector:latest "${IMAGE}:latest"
+          docker push "${IMAGE}:latest"
+
+          # On a version tag, also push the versioned tag (e.g. :v1.2.3)
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            docker tag cup-collector:latest "${IMAGE}:${GITHUB_REF_NAME}"
+            docker push "${IMAGE}:${GITHUB_REF_NAME}"
+          fi
