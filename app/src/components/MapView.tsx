@@ -10,6 +10,7 @@ import type { CupWithOwnership, NearbyStore } from "@/types";
 import { useRouter } from "next/navigation";
 import { useUiTheme } from "@/hooks/useUiTheme";
 import { MapBottomSheet } from "@/components/MapBottomSheet";
+import { haversineMi, parseAddressComponents } from "@/lib/geo";
 
 const MAP_POSITION_KEY = "map_position";
 
@@ -118,6 +119,50 @@ function ZoomUpdater({ location, zoom }: { location: { lat: number; lng: number 
   }, [zoom, location, map]);
 
   return null;
+}
+
+// City cups whose centroid is within this radius are considered "available" at a store.
+// 50 miles covers suburban/exurban stores — e.g. Villa Rica GA is ~35 miles from
+// the Atlanta cup centroid, just past a 30-mile cutoff.
+const STORE_CUP_RADIUS_MI = 50;
+
+interface StoreCupGroups {
+  neededCity: CupWithOwnership[];
+  neededState: CupWithOwnership[];
+  neededCountry: CupWithOwnership[];
+  ownedCity: CupWithOwnership[];
+  ownedState: CupWithOwnership[];
+  ownedCountry: CupWithOwnership[];
+}
+
+function getCupsForStore(store: NearbyStore, cups: CupWithOwnership[]): StoreCupGroups {
+  const byYearDesc = (a: CupWithOwnership, b: CupWithOwnership) => b.year - a.year;
+  const isNeeded = (c: CupWithOwnership) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false);
+
+  // City cups: proximity-based — any city cup whose centroid is within range.
+  const nearbyCityCups = cups.filter(
+    (c) =>
+      (c.scope === "city" || !c.scope) &&
+      haversineMi({ lat: store.lat, lng: store.lng }, { lat: c.lat, lng: c.lng }) <= STORE_CUP_RADIUS_MI
+  );
+
+  // State & country cups: address-based — every store in a state/country shows its cups.
+  const { region, countryCode } = parseAddressComponents(store.address);
+  const stateCups = region
+    ? cups.filter((c) => c.scope === "state" && c.region === region && c.country_code === countryCode)
+    : [];
+  const countryCups = countryCode
+    ? cups.filter((c) => c.scope === "country" && c.country_code === countryCode)
+    : [];
+
+  return {
+    neededCity:    nearbyCityCups.filter(isNeeded).sort(byYearDesc),
+    neededState:   stateCups.filter(isNeeded).sort(byYearDesc),
+    neededCountry: countryCups.filter(isNeeded).sort(byYearDesc),
+    ownedCity:     nearbyCityCups.filter((c) => !isNeeded(c)).sort(byYearDesc),
+    ownedState:    stateCups.filter((c) => !isNeeded(c)).sort(byYearDesc),
+    ownedCountry:  countryCups.filter((c) => !isNeeded(c)).sort(byYearDesc),
+  };
 }
 
 // Groups all cups into pins for city-scope cups.
@@ -244,7 +289,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
           <CircleMarker
             key={`${group.lat},${group.lng}`}
             center={[group.lat, group.lng]}
-            radius={7}
+            radius={12}
             pathOptions={{
               color: isGreen ? "#00704A" : "#ea580c",
               fillColor: isGreen ? "#00704A" : "#f97316",
@@ -253,126 +298,171 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
             }}
           >
             <Popup>
-              <div className="text-sm min-w-[160px]">
-                {/* City-scope cups */}
-                <div className="font-semibold mb-1">{locationName}</div>
-                {group.cityCups.map((cup) => {
-                  const nr = cup.ownedRecord?.needs_replacing;
-                  const green = cup.isOwned && !nr;
-                  return (
-                    <div key={cup.id} className="mb-1">
-                      <div className="text-gray-500">{cup.series} · {cup.year}</div>
-                      <div className={green ? "text-green-700" : "text-orange-600"}>
-                        {nr ? "⚠ Needs replacing" : cup.isOwned ? "✓ Owned" : "Needed"}
-                      </div>
-                      <button onClick={() => router.push(`/cup/${cup.id}`)} className="text-green-700 underline text-xs cursor-pointer">
-                        View details →
-                      </button>
+              {(() => {
+                const isNeeded = (c: CupWithOwnership) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false);
+                const neededCity    = group.cityCups.filter(isNeeded);
+                const neededState   = group.stateCups.filter(isNeeded);
+                const neededCountry = group.countryCups.filter(isNeeded);
+                const neededThemed  = group.themedCups.filter(isNeeded);
+                const ownedAll = [
+                  ...group.cityCups.filter((c) => !isNeeded(c)),
+                  ...group.stateCups.filter((c) => !isNeeded(c)),
+                  ...group.countryCups.filter((c) => !isNeeded(c)),
+                  ...group.themedCups.filter((c) => !isNeeded(c)),
+                ];
+
+                const neededRow = (cup: CupWithOwnership, showName = false) => (
+                  <div key={cup.id} className="mb-1">
+                    {showName && <div className="font-medium text-purple-700">{cup.name}</div>}
+                    <div className="text-gray-500">{cup.series} · {cup.year}</div>
+                    <div className="text-orange-600">
+                      {cup.ownedRecord?.needs_replacing ? "⚠ Needs replacing" : "Needed"}
                     </div>
-                  );
-                })}
+                    <button onClick={() => router.push(`/cup/${cup.id}`)} className="text-green-700 underline text-xs cursor-pointer">
+                      View details →
+                    </button>
+                  </div>
+                );
 
-                {/* State-scope cups */}
-                {group.stateCups.length > 0 && (
-                  <>
-                    <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2">{group.stateCups[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span></div>
-                    {group.stateCups.map((cup) => {
-                      const nr = cup.ownedRecord?.needs_replacing;
-                      const green = cup.isOwned && !nr;
-                      return (
-                        <div key={cup.id} className="mb-1">
-                          <div className="text-gray-500">{cup.series} · {cup.year}</div>
-                          <div className={green ? "text-green-700" : "text-orange-600"}>
-                            {nr ? "⚠ Needs replacing" : cup.isOwned ? "✓ Owned" : "Needed"}
-                          </div>
-                          <button onClick={() => router.push(`/cup/${cup.id}`)} className="text-green-700 underline text-xs cursor-pointer">
-                            View details →
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </>
-                )}
+                return (
+                  <div className="text-sm min-w-[160px]">
+                    <div className="font-semibold mb-1">{locationName}</div>
 
-                {/* Country-scope cups */}
-                {group.countryCups.length > 0 && (
-                  <>
-                    <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2">{group.countryCups[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span></div>
-                    {group.countryCups.map((cup) => {
-                      const nr = cup.ownedRecord?.needs_replacing;
-                      const green = cup.isOwned && !nr;
-                      return (
-                        <div key={cup.id} className="mb-1">
-                          <div className="text-gray-500">{cup.series} · {cup.year}</div>
-                          <div className={green ? "text-green-700" : "text-orange-600"}>
-                            {nr ? "⚠ Needs replacing" : cup.isOwned ? "✓ Owned" : "Needed"}
-                          </div>
-                          <button onClick={() => router.push(`/cup/${cup.id}`)} className="text-green-700 underline text-xs cursor-pointer">
-                            View details →
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </>
-                )}
+                    {neededCity.map((cup) => neededRow(cup))}
 
-                {/* Themed / special-edition cups sold at this venue */}
-                {group.themedCups.length > 0 && (
-                  <>
-                    <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2 text-purple-700">Special Edition</div>
-                    {group.themedCups.map((cup) => {
-                      const nr = cup.ownedRecord?.needs_replacing;
-                      const green = cup.isOwned && !nr;
-                      return (
-                        <div key={cup.id} className="mb-1">
-                          <div className="font-medium text-purple-700">{cup.name}</div>
-                          <div className="text-gray-500">{cup.series} · {cup.year}</div>
-                          <div className={green ? "text-green-700" : "text-orange-600"}>
-                            {nr ? "⚠ Needs replacing" : cup.isOwned ? "✓ Owned" : "Needed"}
-                          </div>
-                          <button onClick={() => router.push(`/cup/${cup.id}`)} className="text-green-700 underline text-xs cursor-pointer">
-                            View details →
-                          </button>
+                    {neededState.length > 0 && (
+                      <>
+                        <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2">
+                          {neededState[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span>
                         </div>
-                      );
-                    })}
-                  </>
+                        {neededState.map((cup) => neededRow(cup))}
+                      </>
+                    )}
+
+                    {neededCountry.length > 0 && (
+                      <>
+                        <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2">
+                          {neededCountry[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span>
+                        </div>
+                        {neededCountry.map((cup) => neededRow(cup))}
+                      </>
+                    )}
+
+                    {neededThemed.length > 0 && (
+                      <>
+                        <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2 text-purple-700">Special Edition</div>
+                        {neededThemed.map((cup) => neededRow(cup, true))}
+                      </>
+                    )}
+
+                    {ownedAll.length > 0 && (
+                      <>
+                        <div className="text-xs font-semibold text-green-700 mt-2 mb-1 border-t border-gray-200 pt-2">
+                          Already owned
+                        </div>
+                        {ownedAll.map((cup) => {
+                          const scopeSuffix = cup.scope === "state" || cup.scope === "country"
+                            ? ` (${cup.scope})` : "";
+                          return (
+                            <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
+                              ✓ {cup.name}{scopeSuffix} · {cup.series} · {cup.year}
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+            </Popup>
+          </CircleMarker>
+        );
+      })}
+
+      {/* Nearby Starbucks pins — blue — tap shows popup with directions link and relevant cups */}
+      {stores.map((store) => {
+        const { neededCity, neededState, neededCountry, ownedCity, ownedState, ownedCountry } =
+          getCupsForStore(store, cups);
+        const allNeeded = [...neededCity, ...neededState, ...neededCountry];
+        const allOwned  = [...ownedCity,  ...ownedState,  ...ownedCountry];
+        const hasCups = allNeeded.length > 0 || allOwned.length > 0;
+
+        return (
+          <CircleMarker
+            key={store.place_id}
+            center={[store.lat, store.lng]}
+            radius={10}
+            pathOptions={{
+              color: "#1d4ed8",
+              fillColor: "#3b82f6",
+              fillOpacity: 0.9,
+              weight: 2,
+            }}
+          >
+            <Popup>
+              <div className="text-sm min-w-[180px]">
+                <div className="font-semibold">☕ {store.name}</div>
+                <div className="text-gray-500 text-xs">{store.address}</div>
+                <a
+                  href={`https://maps.apple.com/?daddr=${store.lat},${store.lng}&dirflg=d`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 text-xs underline"
+                >
+                  Get directions →
+                </a>
+
+                {hasCups && (
+                  <div className="border-t border-gray-200 mt-2 pt-2">
+                    {allNeeded.length > 0 && (
+                      <>
+                        <div className="text-xs font-semibold text-orange-600 mb-1">Needed here</div>
+                        {allNeeded.map((cup) => {
+                          const nr = cup.ownedRecord?.needs_replacing;
+                          const scopeLabel = cup.scope === "state" || cup.scope === "country"
+                            ? <span className="text-gray-400 font-normal"> ({cup.scope})</span>
+                            : null;
+                          return (
+                            <div key={cup.id} className="mb-1.5">
+                              <div className="font-medium">{cup.name}{scopeLabel}</div>
+                              <div className="text-gray-500 text-xs">{cup.series} · {cup.year}</div>
+                              <div className="text-orange-600 text-xs">{nr ? "⚠ Needs replacing" : "Needed"}</div>
+                              <button
+                                onClick={() => router.push(`/cup/${cup.id}`)}
+                                className="text-green-700 underline text-xs cursor-pointer"
+                              >
+                                View details →
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+
+                    {allOwned.length > 0 && (
+                      <>
+                        <div className={`text-xs font-semibold text-green-700 mb-1 ${allNeeded.length > 0 ? "mt-2" : ""}`}>
+                          Already owned
+                        </div>
+                        {allOwned.map((cup) => {
+                          const scopeLabel = cup.scope === "state" || cup.scope === "country"
+                            ? ` (${cup.scope})`
+                            : "";
+                          return (
+                            <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
+                              ✓ {cup.name}{scopeLabel} · {cup.series} · {cup.year}
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
             </Popup>
           </CircleMarker>
         );
       })}
-
-      {/* Nearby Starbucks pins — blue — tap shows popup with directions link */}
-      {stores.map((store) => (
-        <CircleMarker
-          key={store.place_id}
-          center={[store.lat, store.lng]}
-          radius={6}
-          pathOptions={{
-            color: "#1d4ed8",
-            fillColor: "#3b82f6",
-            fillOpacity: 0.9,
-            weight: 2,
-          }}
-        >
-          <Popup>
-            <div className="text-sm">
-              <div className="font-semibold">☕ {store.name}</div>
-              <div className="text-gray-500 text-xs">{store.address}</div>
-              <a
-                href={`https://maps.apple.com/?daddr=${store.lat},${store.lng}&dirflg=d`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 text-xs underline"
-              >
-                Get directions →
-              </a>
-            </div>
-          </Popup>
-        </CircleMarker>
-      ))}
     </MapContainer>
     <MapBottomSheet cups={visibleCups} />
     </div>
