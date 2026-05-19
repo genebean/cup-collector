@@ -52,7 +52,7 @@ export default function AdminImportPage() {
 
   return (
     <div className="min-h-screen bg-cream dark:bg-gray-900">
-      <header className="bg-green-dark text-white px-4 py-3 flex items-center gap-3 flex-shrink-0">
+      <header className="bg-green-dark text-white px-4 py-3 header-safe-top flex items-center gap-3 flex-shrink-0">
         <Link href="/settings" className="text-xl">←</Link>
         <h1 className="font-bold text-lg">Import Cups</h1>
       </header>

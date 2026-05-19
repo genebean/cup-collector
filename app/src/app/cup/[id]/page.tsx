@@ -287,8 +287,8 @@ export default function CupDetailPage() {
     : null);
 
   return (
-    <div className="flex flex-col h-screen dark:bg-gray-900">
-      <header className="bg-green-dark text-white px-4 py-3 flex items-center gap-3 flex-shrink-0">
+    <div className="flex flex-col h-screen bg-cream dark:bg-gray-900">
+      <header className="bg-green-dark text-white px-4 py-3 header-safe-top flex items-center gap-3 flex-shrink-0">
         <button onClick={() => router.back()} className="text-xl cursor-pointer">←</button>
         <div>
           <h1 className="font-bold text-lg leading-tight">{cup.name}</h1>
