@@ -22,6 +22,7 @@ export default function MapPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const { radiusMeters, setRadius } = useNearbyRadius();
   const [worldViewTick, setWorldViewTick] = useState(0);
+  const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
 
   // Request geolocation on mount — falls back gracefully if denied
   useEffect(() => {
@@ -62,15 +63,28 @@ export default function MapPage() {
     enabled: !!householdId,
   });
 
-  // Fetch nearby Starbucks when location is known; re-fetches when radius changes
+  // "Search here" uses the current map center; falls back to GPS location for auto-fetch.
+  // Changing the radius clears the manual search so it reverts to GPS mode.
+  const storeLat = searchCenter?.lat ?? userLocation?.lat;
+  const storeLng = searchCenter?.lng ?? userLocation?.lng;
+
   const { data: storesData } = useQuery<{ stores: NearbyStore[] }>({
-    queryKey: ["nearby-stores", userLocation?.lat, userLocation?.lng, radiusMeters],
+    queryKey: ["nearby-stores", storeLat, storeLng, radiusMeters],
     queryFn: () =>
-      fetch(
-        `/api/nearby-starbucks?lat=${userLocation!.lat}&lng=${userLocation!.lng}&radius=${radiusMeters}`
-      ).then((r) => r.json()),
-    enabled: !!userLocation,
+      fetch(`/api/nearby-starbucks?lat=${storeLat}&lng=${storeLng}&radius=${radiusMeters}`).then((r) =>
+        r.json()
+      ),
+    enabled: !!(storeLat && storeLng),
   });
+
+  function handleSearchHere() {
+    try {
+      const pos = JSON.parse(sessionStorage.getItem("map_position") ?? "null");
+      if (pos?.lat !== undefined && pos?.lng !== undefined) {
+        setSearchCenter({ lat: pos.lat, lng: pos.lng });
+      }
+    } catch { /* ignore */ }
+  }
 
   // Subscribe to realtime owned_cups changes — updates all connected devices
   useEffect(() => {
@@ -131,27 +145,36 @@ export default function MapPage() {
             🌍
           </button>
         </div>
-        {/* Radius selector — only shown when location is active */}
-        {userLocation && (
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs text-white/50">Nearby:</span>
-            <div className="flex gap-1">
-              {RADIUS_OPTIONS.map((opt) => (
-                <button
-                  key={opt.meters}
-                  onClick={() => setRadius(opt.meters)}
-                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                    radiusMeters === opt.meters
-                      ? "bg-gold text-green-dark border-gold font-semibold"
-                      : "border-white/30 text-white/70 hover:border-white/60"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+        {/* Controls row — radius chips (GPS only) on left, Search here always on right */}
+        <div className="flex items-center justify-between mt-2">
+          {userLocation ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/50">Nearby:</span>
+              <div className="flex gap-1">
+                {RADIUS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.meters}
+                    onClick={() => { setRadius(opt.meters); setSearchCenter(null); }}
+                    className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                      radiusMeters === opt.meters
+                        ? "bg-gold text-green-dark border-gold font-semibold"
+                        : "border-white/30 text-white/70 hover:border-white/60"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          ) : <div />}
+
+          <button
+            onClick={handleSearchHere}
+            className="text-xs px-2 py-0.5 rounded-full border border-white/30 text-white/70 hover:border-white/60 hover:text-white active:bg-white/20 transition-colors"
+          >
+            Search here
+          </button>
+        </div>
       </header>
 
       {/* z-0 creates a stacking context that isolates Leaflet's internal z-indices */}
