@@ -153,7 +153,7 @@ export default function CollectionPrefsPage() {
 
   return (
     <div className="flex flex-col h-screen bg-cream dark:bg-gray-900">
-      <header className="bg-green-dark text-white px-4 py-3 flex-shrink-0">
+      <header className="bg-green-dark text-white px-4 py-3 header-safe-top flex-shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}

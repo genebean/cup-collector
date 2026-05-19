@@ -110,11 +110,11 @@ export default function MapPage() {
   const targetZoom = RADIUS_OPTIONS.find((o) => o.meters === radiusMeters)?.zoom ?? 11;
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-cream dark:bg-gray-900">
       <OfflineBanner />
 
       {/* App header */}
-      <header className="bg-green-dark text-white px-4 py-3 flex-shrink-0">
+      <header className="bg-green-dark text-white px-4 py-3 header-safe-top flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-bold text-lg leading-tight">Cup Collector</h1>

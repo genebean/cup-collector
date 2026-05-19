@@ -16,7 +16,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col h-screen bg-cream dark:bg-gray-900">
-      <header className="bg-green-dark text-white px-4 py-3 flex-shrink-0">
+      <header className="bg-green-dark text-white px-4 py-3 header-safe-top flex-shrink-0">
         <h1 className="font-bold text-lg leading-tight">Settings</h1>
         {session.user.householdName && (
           <p className="text-xs text-white/60 leading-tight">{session.user.householdName}</p>

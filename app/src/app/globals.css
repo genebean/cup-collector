@@ -27,25 +27,53 @@
 
 /* Safe area insets for iPhone notch/home indicator */
 :root {
+  --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Nav content (~3.5rem) + the 0.5rem extra bottom padding used in browser mode */
+  --bottom-nav-height: 4rem;
+}
+
+/* In PWA mode (apple-mobile-web-app-status-bar-style: black-translucent) the
+   status bar is transparent and shows the element directly behind it. Setting
+   html background to green-dark ensures that area always matches the app header
+   rather than revealing the cream body background. */
+html {
+  background-color: #1E3932;
 }
 
 body {
   /* Prevent iOS Safari rubber-band scroll on the root */
   overscroll-behavior: none;
-  background-color: #FAF7F2;
+  /* Green-dark matches the header and bottom nav so the iOS safe areas
+     (notch top, home indicator bottom) always show the right color in PWA mode.
+     Page content areas declare their own bg-cream / dark:bg-gray-900. */
+  background-color: #1E3932;
   /* System font stack — avoids a Google Fonts network fetch at build time,
      and SF Pro / Segoe UI are visually equivalent to Inter on target platforms */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
 
-.dark body {
-  background-color: #111827; /* gray-900 */
+/* Page headers clear the iPhone notch/dynamic island in PWA mode.
+   Overrides the padding-top set by Tailwind's py-3 on every green header. */
+.header-safe-top {
+  padding-top: calc(0.75rem + var(--safe-top));
 }
 
 /* Bottom nav clears the iPhone home indicator */
 .bottom-nav {
   padding-bottom: calc(0.5rem + var(--safe-bottom));
+}
+
+/* In PWA mode the nav items' own py-2 already provides enough visual breathing
+   room above the home indicator — drop the extra 0.5rem. Update --bottom-nav-height
+   so the map bottom sheet stays flush with the nav top. */
+@media (display-mode: standalone) {
+  :root {
+    --bottom-nav-height: calc(3.5rem - 4px + var(--safe-bottom));
+  }
+  .bottom-nav {
+    padding-bottom: var(--safe-bottom);
+  }
 }
 
 

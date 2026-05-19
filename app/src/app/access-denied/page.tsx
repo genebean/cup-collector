@@ -3,7 +3,7 @@ import { signOut } from "@/app/auth";
 export default function AccessDeniedPage() {
   return (
     <div className="flex flex-col min-h-screen bg-cream dark:bg-gray-900">
-      <header className="bg-green-dark text-white px-4 py-3">
+      <header className="bg-green-dark text-white px-4 py-3 header-safe-top">
         <h1 className="font-bold text-lg">Cup Collector</h1>
       </header>
 

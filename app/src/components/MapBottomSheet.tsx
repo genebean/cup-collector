@@ -15,7 +15,7 @@ export function MapBottomSheet({ cups }: Props) {
   return (
     <div
       data-testid="bottom-sheet"
-      className={`fixed bottom-16 left-0 right-0 z-[1100] transition-transform duration-300 ease-in-out ${
+      className={`fixed bottom-[var(--bottom-nav-height)] left-0 right-0 z-[1100] transition-transform duration-300 ease-in-out ${
         expanded ? "translate-y-0" : "translate-y-[calc(100%-2.5rem)]"
       }`}
     >
