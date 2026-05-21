@@ -328,7 +328,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                 );
 
                 return (
-                  <div className="text-sm min-w-[160px]">
+                  <div className="text-sm min-w-[160px] max-h-[60vh] overflow-y-auto pr-1">
                     <div className="font-semibold mb-1">{locationName}</div>
 
                     {neededCity.map((cup) => neededRow(cup))}
@@ -404,7 +404,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
             }}
           >
             <Popup>
-              <div className="text-sm min-w-[180px]">
+              <div className="text-sm min-w-[180px] max-h-[60vh] overflow-y-auto pr-1">
                 <div className="font-semibold">☕ {store.name}</div>
                 <div className="text-gray-500 text-xs">{store.address}</div>
                 <a
