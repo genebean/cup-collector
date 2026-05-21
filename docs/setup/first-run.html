@@ -3,121 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Post-deployment infrastructure checklist — verify services, init service, PocketBase collections, and PocketID group assignments before handing the app to users.">
 <link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
 <title>First Run Checklist — Cup Collector</title>
-<style>
-  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
-  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
-  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
-  h2:first-of-type { border-top: none; }
-  p { color: #333; margin-bottom: 0.8rem; }
-  .checklist { list-style: none; padding: 0; }
-  .checklist li { padding: 0.75rem 0 0.75rem 2.5rem; border-bottom: 1px solid #ece8e1; position: relative; font-size: 0.92rem; }
-  .checklist li::before { content: '☐'; position: absolute; left: 0; top: 0.75rem; font-size: 1.1rem; color: #CBA258; }
-  .checklist li:last-child { border-bottom: none; }
-  .verify { font-size: 0.82rem; color: #6b6457; margin-top: 0.3rem; }
-  pre { background: #1a2820; color: #a8d8b0; padding: 0.85rem 1rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; }
-  code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
-  .callout { border-left: 3px solid #00704A; background: #e8f2ee; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
-  a { color: #00704A; }
-  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
-  .page-nav a { color: #00704A; text-decoration: none; }
-  .page-nav a:hover { text-decoration: underline; }
-  .page-nav .prev::before { content: '← '; }
-  .page-nav .next::after { content: ' →'; }
-</style>
 </head>
 <body>
 
-<nav><a href="../index.html">← Docs home</a></nav>
+<div class="topbar">
+  <a href="../index.html" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">/</span>
+  <span>Setup</span>
+  <span class="sep">/</span>
+  First Run Checklist
+  <span class="guide-badge badge-operator">Operator Guide</span>
+</nav>
 
 <h1>First Run Checklist</h1>
-<p>After deploying, work through this list in order. Each item includes a verification step so you know it's working before moving on.</p>
+<p>Verify the infrastructure is healthy after completing all setup steps — PocketID, Deployment, and Catalog Setup. Once everything checks out, sign in yourself and work through <a href="../using/getting-started.html">Getting Started</a> — you'll catch any issues that way, and you'll already know the app when household members ask questions.</p>
 
+<h2 class="no-rule">Infrastructure</h2>
 <ul class="checklist">
   <li>
     <strong>Both services are running</strong>
     <div class="verify">Run: <code>systemctl status cup-collector</code> and <code>systemctl status podman-cup-collector-pb</code>. Both should show "active (running)".</div>
   </li>
   <li>
-    <strong>PocketBase superuser created</strong>
-    <div class="verify">SSH into the server and run:
-      <pre>sudo systemctl exec cup-collector-pb -- \
-  pocketbase superuser upsert YOUR_EMAIL YOUR_PASSWORD \
-  --dir=/var/lib/cup-collector-pb/pb_data</pre>
-      See the <a href="pocketbase.html">PocketBase setup guide</a> for details.
+    <strong>Init service ran — superuser and household records created</strong>
+    <div class="verify">The <code>cup-collector-pb-init</code> service creates the PocketBase superuser and all household records automatically. Verify it succeeded:
+      <pre>systemctl status cup-collector-pb-init</pre>
+      It should show "active (exited)". If it failed, check <code>journalctl -u cup-collector-pb-init</code> for details.
     </div>
   </li>
   <li>
-    <strong>The three collections exist in PocketBase</strong>
-    <div class="verify">Open an SSH tunnel (<code>ssh -L 8090:localhost:8090 yourserver</code>), log in to <code>http://localhost:8090/_/</code>, and check Collections. <code>households</code>, <code>cups</code>, and <code>owned_cups</code> should all be present. If not, follow the <a href="pocketbase.html">PocketBase setup guide</a>.</div>
+    <strong>All three collections exist in PocketBase</strong>
+    <div class="verify">Open an SSH tunnel (<code>ssh -L 8090:localhost:8090 yourserver</code>), log in to <code>http://localhost:8090/_/</code>, and check Collections. <code>households</code>, <code>cups</code>, and <code>owned_cups</code> should all be present. If missing, check the migrations log: <code>journalctl -u podman-cup-collector-pb</code>.</div>
   </li>
   <li>
-    <strong>Household record and PocketID groups created</strong>
-    <div class="verify">From inside <code>nix develop</code>, run the household script (SSH tunnel must be open):
-      <pre>POCKETBASE_URL=http://localhost:8090 \
-POCKETBASE_ADMIN_EMAIL=admin@example.com \
-POCKETBASE_ADMIN_PASSWORD=yourpassword \
-  create-household --name "Our Collection" --slug our-collection</pre>
-      Then in PocketID admin, create groups named <code>our-collection-owner</code> and/or <code>our-collection-viewer</code> and add users to them. See the <a href="pocketbase.html">PocketBase setup guide</a>.
-    </div>
-  </li>
-  <li>
-    <strong>Import the cup catalog</strong>
-    <div class="verify">
-      Enter the dev shell and run the import script:
-      <pre>nix develop
-
-# Preview what will change (no data written)
-import-cups --file your-cups.csv --dry-run
-
-# Review the output, then apply:
-import-cups --file your-cups.csv</pre>
-      Verify in PocketBase admin UI → Collections → cups that records appear.
-    </div>
-  </li>
-  <li>
-    <strong>Sign in on first phone</strong>
-    <div class="verify">Open <code>https://cups.yourdomain.com</code> in Safari, tap "Sign in with PocketID", and log in with your passkey. You should land on the map screen with cup pins visible. Check Settings to confirm your role shows correctly.</div>
-  </li>
-  <li>
-    <strong>Sign in on second phone</strong>
-    <div class="verify">Repeat for the second household member. Both should be signed in with their own accounts, each showing their appropriate role.</div>
-  </li>
-  <li>
-    <strong>Test real-time sync</strong>
-    <div class="verify">With both phones open, have one person mark a cup as owned. Within 1–2 seconds, the other phone's map should update — the orange pin should turn green without any manual refresh.</div>
-  </li>
-  <li>
-    <strong>Install as PWA on each phone</strong>
-    <div class="verify">In Safari, tap Share → "Add to Home Screen" → Add. The Cup Collector icon should appear on the home screen. Tap it — the app should open full-screen with no Safari UI. See <a href="../using/getting-started.html">Getting Started</a> for the full walkthrough.</div>
-  </li>
-  <li>
-    <strong>Test location and nearby stores</strong>
-    <div class="verify">Open the app on your phone with a real GPS signal. Allow location access. The map should zoom to your position and show blue Starbucks pins nearby (default search radius is 10 miles). Tap a blue pin to verify the "Get directions" link opens Apple Maps.</div>
+    <strong>PocketID groups have users assigned</strong>
+    <div class="verify">Confirm that groups <code>cup_collector_{slug}_owner</code> and/or <code>cup_collector_{slug}_viewer</code> exist in PocketID and have users assigned. See the <a href="pocketid.html">PocketID setup guide</a>.</div>
   </li>
 </ul>
 
-<h2>Local development</h2>
-<p>To run the full stack locally without touching production, the dev shell provides three commands:</p>
-
-<pre>nix develop
-
-pb-serve          # PocketBase on http://localhost:8090
-pocketid-serve    # PocketID on http://localhost:1411
-dev-next          # Next.js dev server on http://localhost:3000</pre>
-
-<p>Each runs in its own terminal. On first run, open <code>http://localhost:8090/_/</code> and <code>http://localhost:1411</code> to complete the initial setup for each service (create admin accounts, register the OIDC app, create role groups). See the <a href="pocketid.html">PocketID setup guide</a> and <a href="pocketbase.html">PocketBase setup guide</a> for details.</p>
-
-<div class="callout">
-  <strong>Dev data is separate from production</strong><br>
-  PocketBase stores data in <code>pocketbase/pb_data/</code> and PocketID stores data in <code>pocketid/data/</code>. Both directories are gitignored. The dev PocketID generates its own encryption key in <code>pocketid/encryption_key</code> (also gitignored, mode 600).
-</div>
-
 <nav class="page-nav">
-  <a class="prev" href="deployment.html">Deployment</a>
-  <a class="next" href="../index.html">Docs Home</a>
+  <a class="prev" href="catalog.html">Catalog Setup</a>
+  <a class="next" href="../using/getting-started.html">Getting Started</a>
 </nav>
 
 </body>

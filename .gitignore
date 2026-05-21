@@ -10,6 +10,7 @@ pocketid/
 app/.next/
 app/node_modules/
 app/.env.local
+app/.env.prod
 app/next-env.d.ts
 app/tsconfig.tsbuildinfo
 app/public/sw.js

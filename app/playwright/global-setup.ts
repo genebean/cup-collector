@@ -94,11 +94,11 @@ export default async function globalSetup() {
 }
 
 async function seedTestData(pb: PocketBase): Promise<void> {
-  // The dev-bypass auth provider generates groups like "test-household-owner" and
-  // "test-household-viewer". The JWT callback uses group_slug to resolve the household.
+  // The dev-bypass auth provider generates groups like "cup_collector_test_household_owner".
+  // The JWT callback uses group_slug to resolve the household.
   await pb.collection("households").create({
     name: "Test Household",
-    group_slug: "test-household",
+    group_slug: "test_household",
   });
 
   const cups = [

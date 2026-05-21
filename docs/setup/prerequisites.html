@@ -3,54 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Infrastructure, accounts, and domain names required before deploying Cup Collector on a NixOS homelab server.">
 <link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
 <title>Prerequisites — Cup Collector Setup</title>
-<style>
-  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
-  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
-  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
-  h2:first-of-type { border-top: none; }
-  p { color: #333; margin-bottom: 0.8rem; }
-  ul, ol { padding-left: 1.25rem; } li { margin-bottom: 0.35rem; font-size: 0.92rem; }
-  .req { background: white; border: 1px solid #d8d0c4; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.85rem; }
-  .req-title { font-weight: 700; color: #1E3932; margin-bottom: 0.3rem; }
-  .req-desc { font-size: 0.88rem; color: #444; }
-  .req-level { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 3px; margin-left: 0.4rem; }
-  .required { background: #fde8d5; color: #7a3a10; }
-  .optional { background: #e8e4f4; color: #4a2880; }
-  code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
-  a { color: #00704A; }
-  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
-  .page-nav a { color: #00704A; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
-  .page-nav a:hover { text-decoration: underline; }
-  .page-nav .prev::before { content: '←'; }
-  .page-nav .next::after { content: '→'; }
-  .page-nav span { color: #6b6457; }
-</style>
 </head>
 <body>
 
-<nav><a href="../index.html">← Docs home</a></nav>
+<div class="topbar">
+  <a href="../index.html" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">/</span>
+  <span>Setup</span>
+  <span class="sep">/</span>
+  Prerequisites
+  <span class="guide-badge badge-operator">Operator Guide</span>
+</nav>
 
 <h1>Prerequisites</h1>
 <p>Everything you need in place before deploying Cup Collector. Most of this infrastructure you likely already have if you're running a NixOS homelab.</p>
 
-<h2>Infrastructure</h2>
+<h2 class="no-rule">Infrastructure</h2>
 
 <div class="req">
   <div class="req-title">NixOS server <span class="req-level required">Required</span></div>
-  <div class="req-desc">A machine running NixOS, reachable from the internet. The app and PocketBase both run here. Your existing homelab host is fine — the module adds to whatever is already running.</div>
+  <div class="req-desc">A machine running NixOS, reachable from the internet. The app and PocketBase both run here. Your existing homelab host works fine — the Cup Collector module adds to whatever is already running.</div>
 </div>
 
 <div class="req">
-  <div class="req-title">nginx <span class="req-level required">Required</span></div>
-  <div class="req-desc">nginx must be running on the host, configured via the NixOS <code>services.nginx</code> module. The Cup Collector NixOS module adds its own virtual hosts automatically.</div>
+  <div class="req-title">Nginx <span class="req-level required">Required</span></div>
+  <div class="req-desc">Nginx must be running on the host, configured via the NixOS <code>services.nginx</code> module. The Cup Collector NixOS module adds its own virtual hosts automatically.</div>
 </div>
 
 <div class="req">
   <div class="req-title">ACME / Let's Encrypt <span class="req-level required">Required</span></div>
-  <div class="req-desc">TLS is required for PWA installation and geolocation. NixOS handles this automatically via <code>security.acme</code>. You need a valid domain pointed at your server and port 80 open for the ACME challenge.</div>
+  <div class="req-desc">TLS is required for PWA installation and geolocation. NixOS handles this automatically via <code>security.acme</code>. You need a valid domain pointed at your server and port 80 open for the ACME HTTP challenge.</div>
 </div>
 
 <div class="req">
@@ -60,37 +53,42 @@
 
 <div class="req">
   <div class="req-title">OCI container runtime <span class="req-level required">Required</span></div>
-  <div class="req-desc">PocketBase runs as a container. Enable <code>virtualisation.docker.enable = true</code> or <code>virtualisation.podman.enable = true</code> in your NixOS config.</div>
+  <div class="req-desc">PocketBase runs as a container. The project is developed and tested with Podman — enable <code>virtualisation.podman.enable = true</code> in your NixOS configuration. Docker works too (<code>virtualisation.docker.enable = true</code>), but Podman is what the dev shell and docs assume.</div>
 </div>
 
 <h2>Domain names</h2>
-<p>You need two subdomains, both pointing to your server's public IP:</p>
+<p>You need at least one subdomain pointing to your server's public IP:</p>
 <ul>
-  <li><strong>cups.yourdomain.com</strong> — the Next.js app</li>
-  <li><strong>pb.yourdomain.com</strong> — PocketBase</li>
+  <li><strong>cups.yourdomain.com</strong> — the Next.js app (required)</li>
+  <li><strong>pb.yourdomain.com</strong> — PocketBase admin UI (optional — omit to keep PocketBase off the public internet)</li>
 </ul>
-<p>You can use any subdomain names; just update the module options accordingly.</p>
+<p>You can use any subdomain names; update the module options to match.</p>
+
+<div class="callout tip">
+  <strong>Keep PocketBase internal</strong>
+  Omitting <code>pbDomain</code> from the module config keeps PocketBase off the public internet. You access the admin UI via SSH tunnel when needed. This is the recommended production setup.
+</div>
 
 <h2>External services</h2>
 
 <div class="req">
   <div class="req-title">Google Places API key <span class="req-level required">Required</span></div>
-  <div class="req-desc">Used server-side to find nearby Starbucks stores. Enable the <a href="https://console.cloud.google.com/apis/library/places.googleapis.com">Places API (New)</a> in Google Cloud Console, then create a key under APIs &amp; Services → Credentials. Personal use will almost certainly stay in the free tier. The key is kept server-side only — never exposed to the browser.</div>
+  <div class="req-desc">Used server-side to find nearby Starbucks stores. Enable the <a href="https://console.cloud.google.com/apis/library/places.googleapis.com">Places API (New)</a> in Google Cloud Console, then create a key under APIs &amp; Services → Credentials. Personal use will almost certainly stay in the free tier. The key is kept server-side only — it is never exposed to the browser.</div>
 </div>
 
 <div class="req">
-  <div class="req-title">GitHub account (for the repo and docs) <span class="req-level optional">Optional</span></div>
+  <div class="req-title">GitHub account <span class="req-level optional">Optional</span></div>
   <div class="req-desc">The app can be hosted on any Git forge. GitHub is assumed in the docs deployment workflow. If you use Forgejo or GitLab, adjust the Actions workflow accordingly.</div>
 </div>
 
 <h2>Local development (optional)</h2>
 <p>To run the app locally for development or testing, you only need:</p>
 <ul>
-  <li>Nix installed on your machine (<code>nix develop</code> provides everything else)</li>
+  <li>Nix installed on your machine (<code>nix develop</code> provides everything else — Node, PocketBase, all tooling)</li>
   <li>Podman available on your host (<code>virtualisation.podman.enable = true</code> on NixOS) — used by <code>pocketid-serve</code> to run the dev PocketID container</li>
-  <li>A <code>app/.env.local</code> file with real values (PocketID client credentials, PocketBase admin email/password)</li>
+  <li>A <code>app/.env.local</code> file with real values — PocketID client credentials, PocketBase admin email/password, and Google Places API key</li>
 </ul>
-<p>The dev shell provides <code>pb-serve</code>, <code>pocketid-serve</code>, and <code>dev-next</code> commands to run the full stack locally without touching any production services. You do not need to install Node, npm, or PocketBase separately.</p>
+<p>The dev shell provides <code>pb-serve</code>, <code>pocketid-serve</code>, and <code>dev-next</code> to run the full stack locally without touching any production services.</p>
 
 <nav class="page-nav">
   <a class="prev" href="../index.html">Docs Home</a>

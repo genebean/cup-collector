@@ -15,8 +15,8 @@ export default function AccessDeniedPage() {
         </p>
         <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mb-8">
           Ask the app owner to add you to a{" "}
-          <strong>cup-collector-&lt;household&gt;-owner</strong> or{" "}
-          <strong>cup-collector-&lt;household&gt;-viewer</strong> group in PocketID.
+          <strong>cup_collector_&lt;household&gt;_owner</strong> or{" "}
+          <strong>cup_collector_&lt;household&gt;_viewer</strong> group in PocketID.
         </p>
 
         <form

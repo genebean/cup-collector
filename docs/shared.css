@@ -1,0 +1,777 @@
+/* Cup Collector Docs — Shared Stylesheet */
+@font-face {
+  font-family: 'Bitter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('fonts/bitter-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('fonts/dmsans-400-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/ibmplexmono-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('fonts/ibmplexmono-500.woff2') format('woff2');
+}
+
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --bg:              #FAF7F2;
+  --text:            #0f1a14;
+  --text-body:       #2c2c2c;
+  --text-muted:      #6b6457;
+  --green-dark:      #1E3932;
+  --green:           #00704A;
+  /* Accessible link green: #005C3A passes 5.1:1 on white (WCAG AA) */
+  --green-link:      #005C3A;
+  --green-light:     #e8f2ee;
+  --gold:            #CBA258;
+  --gold-light:      #f5edd8;
+  --orange:          #E8833A;
+  --orange-light:    #fdf0e6;
+  --border:          #d8d0c4;
+  --border-light:    #ece8e1;
+  --white:           #fff;
+  --code-bg:         #1a2820;
+  --code-text:       #a8d8b0;
+  --inline-code-bg:  #dfeadf;
+  /* Focus ring — high-visibility teal against both light and dark backgrounds */
+  --focus-ring:      #007aff;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+body {
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 1.5rem 5rem;
+  line-height: 1.7;
+  font-size: 16px;
+}
+
+/* ── Persistent top bar ────────────────────────────────────────────────────── */
+.topbar {
+  background: var(--green-dark);
+  margin: 0 -1.5rem;
+  padding: 0.55rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  /* Subtle shadow to lift topbar off page content when scrolled */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+
+.topbar-brand {
+  font-weight: 600;
+  color: var(--gold);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+
+.topbar-brand:hover { color: #e0b870; text-decoration: none; }
+
+.topbar-brand:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.topbar-nav { display: flex; gap: 1.25rem; }
+
+.topbar-nav a {
+  color: rgba(255,255,255,0.82);
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.topbar-nav a:hover { color: white; text-decoration: underline; }
+
+.topbar-nav a:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ── Global focus indicator ────────────────────────────────────────────────── */
+/*
+  Apply a consistent focus ring to all interactive elements for keyboard
+  navigation. :focus-visible ensures it only shows for keyboard, not mouse.
+*/
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────────── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  margin: 1.25rem 0 0.6rem;
+  color: var(--text-muted);
+}
+
+.breadcrumb a { color: var(--green-link); text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+.breadcrumb .sep { opacity: 0.5; }
+
+/* Guide badge sits after breadcrumb text — add a small gap before it */
+.breadcrumb .guide-badge { margin-left: 0.35rem; }
+
+/* ── Guide-type badge ──────────────────────────────────────────────────────── */
+.guide-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.55rem;
+  border-radius: 20px;
+  vertical-align: middle;
+  /* Prevent badge from line-breaking mid-word */
+  white-space: nowrap;
+}
+
+.badge-user     { background: #ddf0e8; color: #1a4d30; }
+.badge-operator { background: #e5e0f2; color: #3c2a80; }
+
+/* ── Headings ──────────────────────────────────────────────────────────────── */
+h1 {
+  font-family: 'Bitter', Georgia, serif;
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  margin: 0.6rem 0 0.4rem;
+  line-height: 1.2;
+}
+
+h2 {
+  /* Bumped from 1.08rem → clearer hierarchy against 0.92rem body text */
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--green-dark);
+  margin: 2.5rem 0 0.6rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+h2:first-of-type,
+h2.no-rule { border-top: none; padding-top: 0; }
+
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--green-dark);
+  margin: 1.5rem 0 0.4rem;
+}
+
+/* ── Prose ─────────────────────────────────────────────────────────────────── */
+p { color: var(--text-body); margin-bottom: 0.85rem; }
+
+/* Use accessible link green (#005C3A = 5.1:1 on white, passes WCAG AA) */
+a { color: var(--green-link); }
+a:hover { text-decoration-thickness: 2px; }
+
+ul, ol { padding-left: 1.3rem; margin-bottom: 0.75rem; }
+li { margin-bottom: 0.4rem; font-size: 1rem; color: var(--text-body); line-height: 1.6; }
+
+strong { color: var(--text); font-weight: 600; }
+
+/* ── Inline code ───────────────────────────────────────────────────────────── */
+code {
+  font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
+  background: var(--inline-code-bg);
+  /* #1a5c3a on #dfeadf = ~5.7:1 — passes WCAG AA */
+  color: #1a5c3a;
+  padding: 0.12rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.84em;
+  border: 1px solid rgba(0,80,54,0.18);
+}
+
+/* ── Code blocks ───────────────────────────────────────────────────────────── */
+pre {
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 0.89rem;
+  line-height: 1.65;
+  overflow-x: auto;
+  margin: 0.85rem 0;
+  border-left: 3px solid #3a7a52;
+  /* Prevent long unbroken strings from overflowing on very narrow screens */
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+  border: none;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* ── ASCII / terminal art ──────────────────────────────────────────────────── */
+.ascii {
+  font-family: 'IBM Plex Mono', 'Menlo', monospace;
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.89rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+figure { margin: 1.25rem 0; }
+figcaption { font-size: 0.79rem; color: var(--text-muted); margin-top: 0.4rem; text-align: center; }
+
+/* ── Callout boxes ─────────────────────────────────────────────────────────── */
+/*
+  Types: .callout (info/green)  .callout.tip (gold)
+         .callout.warn (orange) .callout.critical (red)
+*/
+.callout {
+  border-left: 4px solid var(--green);
+  background: var(--green-light);
+  border-radius: 0 8px 8px 0;
+  padding: 0.9rem 1.1rem;
+  margin: 1.25rem 0;
+  font-size: 0.96rem;
+  color: var(--text-body);
+}
+
+/* Callout label line — only the first strong is the title */
+.callout > strong:first-child {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.94rem;
+  letter-spacing: 0.01em;
+}
+.callout strong { color: #1a4d30; }
+
+.callout p:last-child { margin-bottom: 0; }
+
+.callout.tip {
+  border-left-color: var(--gold);
+  background: var(--gold-light);
+}
+.callout.tip strong { color: #5c3d0a; }
+
+.callout.warn {
+  border-left-color: var(--orange);
+  background: var(--orange-light);
+}
+.callout.warn strong { color: #6b2c08; }
+
+.callout.critical {
+  border-left-color: #b83225;
+  background: #fde9e7;
+}
+.callout.critical strong { color: #6b1208; }
+
+/* ── Tables ────────────────────────────────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.93rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+thead tr { background: var(--green-dark); color: white; }
+
+th {
+  text-align: left;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+td {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+tr:last-child td { border-bottom: none; }
+tbody tr:nth-child(even) { background: rgba(0,0,0,0.018); }
+
+/* ── Numbered step list ────────────────────────────────────────────────────── */
+.steps {
+  list-style: none;
+  padding: 0;
+  counter-reset: steps;
+}
+
+.steps > li {
+  counter-increment: steps;
+  padding: 0.9rem 0 0.9rem 3.6rem;
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+  font-size: 1rem;
+  color: var(--text-body);
+  line-height: 1.6;
+}
+
+.steps > li:last-child { border-bottom: none; }
+
+.steps > li::before {
+  content: counter(steps);
+  position: absolute;
+  left: 0;
+  top: 0.9rem;
+  /* Circle proportions: slightly larger, visually centered */
+  width: 2.2rem;
+  height: 2.2rem;
+  background: var(--green-dark);
+  color: var(--gold);
+  border-radius: 50%;
+  /* Grid center is more reliable than flex on pseudoelements */
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.86rem;
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1;
+  /* Subtle ring so circle pops off light backgrounds */
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+/* ── Checklist ─────────────────────────────────────────────────────────────── */
+.checklist {
+  list-style: none;
+  padding: 0;
+}
+
+.checklist > li {
+  padding: 0.9rem 0 0.9rem 2.75rem;
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+  font-size: 1rem;
+  color: var(--text-body);
+  line-height: 1.6;
+}
+
+.checklist > li:last-child { border-bottom: none; }
+
+.checklist > li::before {
+  content: '☐';
+  position: absolute;
+  left: 0;
+  top: 0.85rem;
+  font-size: 1.2rem;
+  color: var(--gold);
+  line-height: 1;
+}
+
+/* Verification hint under each checklist item */
+.verify {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  line-height: 1.55;
+}
+
+/* Code blocks inside checklist verify sections stay readable */
+.verify pre {
+  margin-top: 0.5rem;
+  font-size: 0.79rem;
+}
+
+/* ── Requirement cards (prerequisites page) ────────────────────────────────── */
+.req {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.85rem;
+  transition: box-shadow 0.15s;
+}
+
+.req:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+
+.req-title {
+  font-weight: 600;
+  color: var(--green-dark);
+  margin-bottom: 0.35rem;
+  font-size: 1rem;
+}
+
+.req-desc {
+  font-size: 0.93rem;
+  color: #444;
+  line-height: 1.6;
+}
+
+.req-level {
+  display: inline-block;
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  margin-left: 0.45rem;
+  vertical-align: middle;
+}
+
+.required { background: #fde8d5; color: #6b2c08; }
+.optional  { background: #e5e0f2; color: #4a2880; }
+
+/* ── Map pin legend ────────────────────────────────────────────────────────── */
+.pin-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.pin-row {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  font-size: 1rem;
+  color: var(--text-body);
+}
+
+/* Wrapper so all legend items align on the same horizontal axis */
+.pin-row .pin-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+/* Teardrop map pin shape */
+.pin {
+  width: 20px;
+  height: 26px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 1px 1px 4px rgba(0,0,0,0.25);
+}
+
+.pin-green  { background: #00704A; }
+.pin-orange { background: #f97316; }
+.pin-blue   { background: #3b82f6; }
+
+/* Pulsing blue location dot — centred within pin-cell */
+.pin-you {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59,130,246,0.22), 0 0 0 8px rgba(59,130,246,0.1);
+}
+
+/* ── Story card (traveling page) ───────────────────────────────────────────── */
+.story {
+  background: var(--white);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 1.75rem;
+  line-height: 1.9;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.story p { margin-bottom: 1.1rem; font-size: 1rem; color: var(--text-body); }
+.story p:last-child { margin-bottom: 0; }
+
+.highlight {
+  background: var(--green-light);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  /* Ensure enough contrast — dark green on light green bg */
+  color: #1a4d30;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Screenshot placeholder ────────────────────────────────────────────────── */
+.screenshot-placeholder {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  padding: 3rem 1.5rem;
+  text-align: center;
+  margin: 1.25rem 0;
+  color: var(--text-muted);
+}
+
+.screenshot-placeholder .ph-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.65rem;
+  /* Less opacity = more readable intent signal */
+  opacity: 0.65;
+}
+
+.screenshot-placeholder .ph-label {
+  font-size: 0.89rem;
+  line-height: 1.5;
+  max-width: 30ch;
+  margin: 0 auto;
+  font-style: italic;
+}
+
+/* ── Page navigation (prev / next) ────────────────────────────────────────── */
+.page-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 0.75rem;
+  margin-top: 3.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.page-nav a {
+  color: var(--green-link);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  /* Allow up to half the available width, not more */
+  max-width: calc(50% - 0.375rem);
+  line-height: 1.4;
+}
+
+.page-nav a:hover {
+  border-color: var(--green);
+  background: var(--green-light);
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0,112,74,0.1);
+}
+
+.page-nav a:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.page-nav .prev::before {
+  content: '←';
+  font-size: 1rem;
+  flex-shrink: 0;
+  /* Arrow stays flush left */
+  order: -1;
+}
+
+.page-nav .next {
+  margin-left: auto;
+  text-align: right;
+  /* Reverse the flex direction so arrow appears after text */
+  flex-direction: row-reverse;
+}
+
+.page-nav .next::after {
+  content: '→';
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* ── Index page — Hero ─────────────────────────────────────────────────────── */
+.hero {
+  background: var(--green-dark);
+  color: white;
+  border-radius: 14px;
+  padding: 2.5rem 2rem 2.25rem;
+  margin: 1.5rem 0 2.5rem;
+}
+
+.hero h1 {
+  font-family: 'Bitter', Georgia, serif;
+  color: var(--gold);
+  font-size: 2.25rem;
+  margin: 0 0 0.6rem;
+}
+
+.hero .tagline {
+  color: rgba(255,255,255,0.92);
+  font-size: 1rem;
+  margin: 0 0 0.85rem;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+.hero .about {
+  font-size: 0.94rem;
+  color: rgba(255,255,255,0.72);
+  margin: 0;
+  line-height: 1.65;
+  border-top: 1px solid rgba(255,255,255,0.15);
+  padding-top: 0.85rem;
+}
+
+/* ── Index page — Section headings ─────────────────────────────────────────── */
+.section-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 2.25rem 0 0.75rem;
+}
+
+.section-label h2 {
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.audience-note {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ── Index page — Cards ─────────────────────────────────────────────────────── */
+.cards {
+  display: grid;
+  /*
+    At 320px: auto-fill with minmax(140px, 1fr) → two columns of ~140px each.
+    The original minmax(190px, 1fr) forced a single column at 400px or less.
+    Using 140px minimum keeps two columns usable down to 320px.
+  */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1.1rem 1.25rem;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 18px rgba(0,0,0,0.09);
+  border-color: #a0bdb3;
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-color: #a0bdb3;
+}
+
+.card-icon { font-size: 1.65rem; margin-bottom: 0.55rem; display: block; }
+.card-title { font-weight: 600; color: var(--green-dark); margin-bottom: 0.25rem; font-size: 1rem; }
+.card-desc { font-size: 0.87rem; color: var(--text-muted); line-height: 1.5; }
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
+footer {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.79rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.8;
+}
+
+footer a { color: var(--green-link); }
+
+/* ── Responsive — small phones (≤520px) ─────────────────────────────────────── */
+@media (max-width: 520px) {
+  body    { padding: 0 1rem 4rem; }
+  .topbar { margin: 0 -1rem; padding: 0.5rem 1rem; }
+
+  h1 { font-size: 1.6rem; }
+  h2 { font-size: 1.08rem; }
+
+  .hero { padding: 1.5rem 1.25rem 1.35rem; border-radius: 10px; }
+  .hero h1 { font-size: 1.85rem; }
+
+  /* Single column on very narrow screens — cards get full width */
+  .cards { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+
+  pre { font-size: 0.83rem; padding: 0.85rem 1rem; }
+
+  .page-nav a { font-size: 0.88rem; padding: 0.45rem 0.7rem; }
+
+  table { font-size: 0.88rem; }
+  th, td { padding: 0.5rem 0.7rem; }
+
+  .screenshot-placeholder { padding: 2.25rem 1rem; }
+}
+
+/* ── Responsive — very narrow (≤380px) ─────────────────────────────────────── */
+@media (max-width: 380px) {
+  /*
+    At 320px two-column cards are ~130px each — still workable.
+    Drop to single column only below 320px (extremely rare).
+  */
+  .cards { grid-template-columns: 1fr; }
+
+  /* Page nav stacks vertically so buttons aren't squeezed */
+  .page-nav {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .page-nav a {
+    max-width: 100%;
+  }
+
+  .page-nav .next {
+    margin-left: 0;
+    text-align: left;
+    flex-direction: row;
+  }
+
+  .page-nav .next::after { order: 1; }
+}

@@ -57,7 +57,7 @@ cup-collector/
 │   ├── tsconfig.json
 │   ├── public/
 │   │   ├── manifest.json  # PWA manifest
-│   │   └── icons/         # PWA icons (192, 512, 512-maskable)
+│   │   └── icons/         # PWA icons (192, 512, 512-maskable, splash/ — 15 device sizes)
 │   ├── playwright.config.ts
 │   ├── e2e/               # Playwright e2e tests (run via `play-e2e` in dev shell)
 │   ├── playwright/        # Playwright global setup/teardown helpers and test-pb constants
@@ -69,7 +69,7 @@ cup-collector/
 │       │   ├── pocketbase.ts  # PocketBase client (browser → proxy, server → direct)
 │       │   ├── roles.ts       # Role resolution from PocketID groups
 │       │   ├── country.ts     # Country code → flag emoji (ISO 3166-1 alpha-2)
-│       │   └── geo.ts         # Haversine distance calculation
+│       │   └── geo.ts         # Haversine distance; parseAddressComponents() (US state + country code from Google Places address)
 │       ├── hooks/         # React hooks — browser-dependent, e2e tested only
 │       │   ├── useNearbyRadius.ts # Nearby search radius preference
 │       │   └── useUiTheme.ts      # UI dark mode preference; applies .dark to <html>
@@ -81,9 +81,9 @@ cup-collector/
 │           ├── browse/    # Browse + filter screen
 │           ├── cup/[id]/  # Cup detail screen
 │           ├── search/    # Full-text search screen
-│           ├── settings/  # Account info, map theme, sign out
+│           ├── settings/  # Account info, appearance, household switcher, collection preferences
 │           ├── admin/
-│           │   └── import/    # CSV import screen (owner/collaborator only)
+│           │   └── import/    # CSV import screen (owner only)
 │           └── api/
 │               ├── auth/[...nextauth]/     # Auth.js route handler
 │               ├── pb/[...path]/           # Authenticated PocketBase proxy
@@ -92,7 +92,8 @@ cup-collector/
 ├── pocketbase/
 │   └── migrations/        # PocketBase JS migrations — version controlled
 ├── scripts/
-│   └── import-cups.ts     # CSV catalog import — run via `import-cups` in dev shell
+│   ├── import-cups.ts          # CSV catalog import — run via `import-cups` in dev shell
+│   └── check-docs-links.py     # Internal link checker for docs/ HTML (run via pre-commit / `check`)
 ├── docs/                  # GitHub Pages site (pure HTML — no generator)
 │   ├── index.html
 │   ├── using/             # End-user guides
@@ -149,8 +150,12 @@ Each command has two forms:
 | `pocketid-serve` / `cc-pocketid-serve` | Start PocketID container on localhost:1411 |
 | `dev-next` / `cc-dev-next` | Start Next.js dev server on localhost:3000 |
 | `dev-next-bypass` / `cc-dev-next-bypass` | Start Next.js dev server with Playwright auth bypass |
+| `dev-next-network <addr>` / `cc-dev-next-network` | Start Next.js on `<addr>:3000` with auth bypass (phone/Tailscale testing) |
+| `dev-next-https <addr>` / `cc-dev-next-https` | Start Next.js with local HTTPS proxy on `:8443` (mobile/geolocation testing over Tailscale) |
 | `import-cups --file cups.csv` | Import cup catalog from CSV |
 | `import-cups --file cups.csv --dry-run` | Preview import without writing |
+| `build-catalog --out cups.csv` | Build a starter catalog CSV from community-sourced data (see `scripts/scrape-catalog.ts`) |
+| `create-household --name "..." --slug "..."` | Create a household record in PocketBase |
 | `gen-auth-secret` / `cc-gen-auth-secret` | Generate a new AUTH_SECRET value |
 | `docs-serve` / `cc-docs-serve` | Serve the docs site at localhost:4000 |
 | `check` / `cc-check` | Run pre-commit hooks, unit tests with coverage, and ESLint locally (fast CI check) |
@@ -179,17 +184,23 @@ Master catalog of all known location cups.
 | Field | Type | Purpose |
 |---|---|---|
 | `id` | string | PocketBase auto-ID |
+| `name` | string | Display name: city ("Atlanta"), state ("Georgia"), or country ("Canada") |
+| `scope` | string | "city" \| "state" \| "country" \| "themed" — controls pin rendering and popup grouping |
 | `city` | string | e.g. "San Francisco" |
 | `region` | string | State/province, e.g. "California" |
 | `country` | string | Full name, e.g. "United States" |
 | `country_code` | string | ISO 3166-1 alpha-2, e.g. "US" |
 | `series` | string | "You Are Here" \| "Been There" \| "Ornament" \| other |
+| `item_type` | string | "mug" \| "ornament" \| "" — blank treated as "mug" |
 | `year` | number | 4-digit release year |
 | `image` | file | Primary cup photo in PocketBase storage |
 | `image_credit` | string | Source URL or "own photo" |
-| `lat` | number | City centroid latitude for map pin |
-| `lng` | number | City centroid longitude for map pin |
+| `lat` | number | City/state/country centroid latitude for map pin |
+| `lng` | number | City/state/country centroid longitude for map pin |
 | `notes` | text | Optional freeform notes |
+| `venue_series` | string | Themed cups only: series name of the venue whose stores sell them |
+| `hobbydb_url` | string | Optional direct URL to hobbyDB record |
+| `more_info_url` | string | Optional fallback external reference URL |
 
 ### `owned_cups`
 Which cups the household has collected. Ownership = record existence.
@@ -233,7 +244,7 @@ User visits app
   → PocketID returns OIDC token with groups[] claim
   → Auth.js JWT callback stores groups as token.groups
   → Auth.js session callback exposes as session.user.groups
-  → roleFromGroups(session.user.groups) resolves: owner | collaborator | viewer | none
+  → roleFromGroups(session.user.groups) resolves: owner | viewer | none
   → canWrite(role) determines UI controls and API route access
 ```
 
@@ -243,7 +254,7 @@ Roles map from PocketID group names — see `src/lib/roles.ts` for the exact map
 
 ## Role Enforcement
 
-Write access (mark/remove owned cups, import) requires `owner` or `collaborator` role.
+Write access (mark/remove owned cups, import) requires `owner` role.
 Viewers can browse and search but cannot write. Role is checked:
 
 1. **API layer** — every mutating API route calls `requireWriter()` / `resolveRole()`

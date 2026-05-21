@@ -235,7 +235,7 @@ code { color: var(--code-text); }
       <li>Public sharing or social features — private household app</li>
       <li>E-commerce or purchase tracking</li>
       <li>Native iOS App Store distribution</li>
-      <li>Android-specific optimization (works in any browser; not a priority)</li>
+      <li>Android App Store distribution or Android-specific native features — PWA install works on Android Chrome, but iOS/Safari is the primary target</li>
     </ul>
 
     <div class="callout info">
@@ -437,7 +437,7 @@ code { color: var(--code-text); }
       <li>Group names default to <span class="ic">cup-owner</span>, <span class="ic">cup-collaborator</span>, <span class="ic">cup-viewer</span> — configurable via env vars</li>
       <li>No matching group → access denied, redirect to an "access not granted" page</li>
     </ul>
-    <p>The household record is looked up at sign-in by matching the user's PocketID group slug (e.g. <span class="ic">smith-family-owner</span> → slug <span class="ic">smith-family</span>) against the <span class="ic">group_slug</span> field on each household record. A user may belong to groups for multiple households; all matching households are resolved and stored in the JWT. The <strong>Settings</strong> screen shows a switcher when more than one household is resolved. This lookup is for data scoping, not for role determination.</p>
+    <p>The household record is looked up at sign-in by matching the user's PocketID group slug (e.g. <span class="ic">cup_collector_smith_family_owner</span> → slug <span class="ic">smith_family</span>) against the <span class="ic">group_slug</span> field on each household record. A user may belong to groups for multiple households; all matching households are resolved and stored in the JWT. The <strong>Settings</strong> screen shows a switcher when more than one household is resolved. This lookup is for data scoping, not for role determination.</p>
   </div>
 
   <!-- ══ 05 DATA MODEL ══ -->
@@ -451,7 +451,7 @@ code { color: var(--code-text); }
       <div class="schema-body">
         <div class="schema-field"><div class="field-name">id</div><div class="field-type">string</div><div class="field-desc">PocketBase auto-ID</div></div>
         <div class="schema-field"><div class="field-name">name</div><div class="field-type">string</div><div class="field-desc">Display name, e.g. "The Smith Collection"</div></div>
-        <div class="schema-field"><div class="field-name">group_slug</div><div class="field-type">string</div><div class="field-desc">Base slug for the household's PocketID groups, e.g. <span class="ic">smith-family</span>. The app derives group names as <span class="ic">{slug}-owner</span>, <span class="ic">{slug}-collaborator</span>, <span class="ic">{slug}-viewer</span>. Used at sign-in to match the user's group membership to a household record.</div></div>
+        <div class="schema-field"><div class="field-name">group_slug</div><div class="field-type">string</div><div class="field-desc">Base slug for the household's PocketID groups, e.g. <span class="ic">smith_family</span>. The app derives group names as <span class="ic">cup_collector_{slug}_owner</span> and <span class="ic">cup_collector_{slug}_viewer</span>. Used at sign-in to match the user's group membership to a household record.</div></div>
         <div class="schema-field"><div class="field-name">created</div><div class="field-type">datetime</div><div class="field-desc">Auto-managed by PocketBase</div></div>
       </div>
     </div>
@@ -468,17 +468,21 @@ code { color: var(--code-text); }
       <div class="schema-header">cups — master catalog of all known location cups</div>
       <div class="schema-body">
         <div class="schema-field"><div class="field-name">id</div><div class="field-type">string</div><div class="field-desc">PocketBase auto-ID</div></div>
+        <div class="schema-field"><div class="field-name">name</div><div class="field-type">string</div><div class="field-desc">Display name: city ("Atlanta"), state ("Georgia"), or country ("Canada")</div></div>
+        <div class="schema-field"><div class="field-name">scope</div><div class="field-type">string</div><div class="field-desc">"city" | "state" | "country" | "themed" — controls map pin rendering and store-popup grouping. City cups require real lat/lng; state/country/themed cups appear in store popups via address matching.</div></div>
         <div class="schema-field"><div class="field-name">city</div><div class="field-type">string</div><div class="field-desc">e.g. "San Francisco", "Tokyo"</div></div>
         <div class="schema-field"><div class="field-name">region</div><div class="field-type">string</div><div class="field-desc">State/province where applicable, e.g. "California"</div></div>
         <div class="schema-field"><div class="field-name">country</div><div class="field-type">string</div><div class="field-desc">Full country name, e.g. "United States"</div></div>
         <div class="schema-field"><div class="field-name">country_code</div><div class="field-type">string</div><div class="field-desc">ISO 3166-1 alpha-2, e.g. "US" — used for flag emoji</div></div>
         <div class="schema-field"><div class="field-name">series</div><div class="field-type">string</div><div class="field-desc">"You Are Here" | "Been There" | "Ornament" | other</div></div>
+        <div class="schema-field"><div class="field-name">item_type</div><div class="field-type">string</div><div class="field-desc">"mug" | "ornament" | "" — blank treated as "mug". Used with collection preferences to filter out item types the household doesn't collect.</div></div>
         <div class="schema-field"><div class="field-name">year</div><div class="field-type">number</div><div class="field-desc">4-digit release year</div></div>
         <div class="schema-field"><div class="field-name">image</div><div class="field-type">file</div><div class="field-desc">Primary cup photo stored in PocketBase file storage</div></div>
         <div class="schema-field"><div class="field-name">image_credit</div><div class="field-type">string</div><div class="field-desc">Source URL or "own photo" — for attribution tracking</div></div>
-        <div class="schema-field"><div class="field-name">lat</div><div class="field-type">number</div><div class="field-desc">Latitude of city centroid for map pin placement</div></div>
-        <div class="schema-field"><div class="field-name">lng</div><div class="field-type">number</div><div class="field-desc">Longitude of city centroid for map pin placement</div></div>
+        <div class="schema-field"><div class="field-name">lat</div><div class="field-type">number</div><div class="field-desc">Latitude of city/state/country centroid for map pin placement and Near Me sorting</div></div>
+        <div class="schema-field"><div class="field-name">lng</div><div class="field-type">number</div><div class="field-desc">Longitude of city/state/country centroid</div></div>
         <div class="schema-field"><div class="field-name">notes</div><div class="field-type">text</div><div class="field-desc">Optional freeform notes (variants, limited editions, etc.)</div></div>
+        <div class="schema-field"><div class="field-name">venue_series</div><div class="field-type">string</div><div class="field-desc">Themed cups only: series name of the venue whose stores sell them (e.g. "You Are Here" for themed Disney cups sold at YAH stores)</div></div>
         <div class="schema-field"><div class="field-name">hobbydb_url</div><div class="field-type">string</div><div class="field-desc">Optional. Direct URL to this cup's hobbyDB record for collector reference</div></div>
         <div class="schema-field"><div class="field-name">more_info_url</div><div class="field-type">string</div><div class="field-desc">Optional. Fallback external reference URL (e.g. starbucks-mugs.com) when hobbydb_url is absent</div></div>
       </div>
@@ -534,8 +538,11 @@ code { color: var(--code-text); }
           <div class="screen-note">Green pin = owned, orange = needed, blue = Starbucks store</div>
           <div class="screen-note">Globe button (🌍) zooms to world view of full collection</div>
           <div class="screen-note">Bottom sheet shows cups relevant to current viewport</div>
-          <div class="screen-note">Tap cup pin → Cup Detail screen</div>
-          <div class="screen-note">Tap store pin → opens Apple Maps directly</div>
+          <div class="screen-note">Radius chips (5/10/25 mi) control nearby store search distance</div>
+          <div class="screen-note">"Search here" chip re-runs store search centered on current map view</div>
+          <div class="screen-note">Tap cup pin → popup with cup info + "View details" link → Cup Detail</div>
+          <div class="screen-note">Tap store pin → popup with store info, available cups, and directions link</div>
+          <div class="screen-note">Collection preferences (excluded series/types) filter which cups appear</div>
         </div>
       </div>
       <div class="screen-card">
@@ -670,6 +677,29 @@ pb.collection(<span class="cs">'owned_cups'</span>).subscribe(<span class="cs">'
   window.open(url, <span class="cs">'_blank'</span>)
 }
 </code></pre>
+
+    <h3>Store Popup — Available Cups</h3>
+    <p>Tapping a Starbucks store pin opens a popup that shows which cups from the catalog are available at that store. Three groups of cups are matched:</p>
+    <ul class="feature-list">
+      <li><strong>City cups</strong> — cups whose centroid is within 50 miles of the store (Haversine distance)</li>
+      <li><strong>State cups</strong> — cups with <span class="ic">scope="state"</span> whose <span class="ic">region</span> matches the state extracted from the store's Google Places <span class="ic">formattedAddress</span></li>
+      <li><strong>Country cups</strong> — cups with <span class="ic">scope="country"</span> whose <span class="ic">country_code</span> matches the ISO code extracted from the store's address</li>
+    </ul>
+    <p>Address parsing is done by <span class="ic">parseAddressComponents()</span> in <span class="ic">src/lib/geo.ts</span>: US addresses are detected by the ZIP-code pattern <span class="ic">/,\s*([A-Z]{2})\s+\d{5}/</span>; country is taken from the last comma-separated segment. Cups are shown needed-first, with already-owned cups collapsed at the bottom.</p>
+
+    <h3>Map Nearby Search — Radius and "Search Here"</h3>
+    <ul class="feature-list">
+      <li>Radius chips in the map header (5 mi / 10 mi / 25 mi) let the user control how far out to search for stores; default is 10 mi; preference is persisted in <span class="ic">localStorage</span></li>
+      <li>"Search here" chip (always visible, right-aligned) re-runs the store search centered on the current map viewport, not the user's GPS location — read from <span class="ic">sessionStorage["map_position"]</span> written by the map on every pan/zoom</li>
+      <li>Changing the radius chip clears any manual "search here" center and reverts to GPS mode</li>
+    </ul>
+
+    <h3>Collection Preferences</h3>
+    <p>Household-level preferences (stored server-side, fetched from <span class="ic">/api/household-prefs</span>) let households exclude series or item types they don't collect. Excluded cups are hidden from the map and browse screens — but owned cups are always shown regardless of preferences.</p>
+    <ul class="feature-list">
+      <li><span class="ic">excluded_series</span> — array of series names to hide (e.g. <span class="ic">["Icon Mini", "Relief"]</span>)</li>
+      <li><span class="ic">excluded_types</span> — array of item types to hide (e.g. <span class="ic">["ornament"]</span>)</li>
+    </ul>
 
     <h3>Cup Images</h3>
     <ul class="feature-list">
@@ -966,14 +996,7 @@ jobs:
       </div>
     </div>
 
-    <div class="doc-spec">
-      <div class="doc-spec-header"><div class="doc-spec-path">docs/setup/pocketbase.html</div><div class="doc-spec-audience">Owner / self-hosters</div></div>
-      <div class="doc-spec-body">
-        <p>How to access the PocketBase admin UI. How to create the three collections with the correct fields and types (reference Section 05 of this spec exactly). How to configure access rules per collection. How to create the household record manually on first run. How to find and add a user's PocketID <span class="ic">sub</span> value when adding a viewer.</p>
-      </div>
-    </div>
-
-    <div class="doc-spec">
+<div class="doc-spec">
       <div class="doc-spec-header"><div class="doc-spec-path">docs/setup/deployment.html</div><div class="doc-spec-audience">Owner / self-hosters</div></div>
       <div class="doc-spec-body">
         <p>How to add the flake input to the NixOS config repo. All module options explained. How to create and populate the secrets env file. How to run <span class="ic">nixos-rebuild switch</span>. How to verify both services are running. Common first-deployment issues and how to resolve them. Must emphasize clearly: all app commands must run inside <span class="ic">nix develop</span> — never on the bare host.</p>
@@ -1117,7 +1140,7 @@ jobs:
       <div class="decision">
         <div class="decision-q">Why drive permissions from PocketID groups and support multiple households per user?</div>
         <div class="decision-a"><strong>Diverged from original spec.</strong> Two goals drove this change together: (1) drive as much access control as practical through PocketID rather than the app's own database, and (2) allow a user to belong to more than one household (e.g. helping curate a friend's collection) without schema changes.<br><br>
-        The original design stored PocketID <span class="ic">sub</span> values in <span class="ic">member_sub_1</span>, <span class="ic">member_sub_2</span>, and <span class="ic">viewer_subs</span> on the household record. Role and household membership were both derived by looking up those fields at sign-in. The replacement: household records carry a single <span class="ic">group_slug</span> field (e.g. <span class="ic">smith-family</span>). PocketID groups follow the naming convention <span class="ic">cup-collector-{slug}-{role}</span> (e.g. <span class="ic">cup-collector-smith-family-owner</span>). The <span class="ic">cup-collector-</span> prefix namespaces groups so other apps sharing the same PocketID instance don't interfere — the app silently ignores any group without this prefix. At sign-in the JWT callback reads the <span class="ic">groups</span> claim, strips the prefix and role suffix to recover the slug, and queries PocketBase for matching households. Role comes from the suffix; household comes from the slug match. All matched households are stored in the JWT as <span class="ic">householdMemberships</span>. Adding a user to a second household is just a PocketID group assignment — no database changes needed.<br><br>
+        The original design stored PocketID <span class="ic">sub</span> values in <span class="ic">member_sub_1</span>, <span class="ic">member_sub_2</span>, and <span class="ic">viewer_subs</span> on the household record. Role and household membership were both derived by looking up those fields at sign-in. The replacement: household records carry a single <span class="ic">group_slug</span> field (e.g. <span class="ic">smith_family</span>). PocketID groups follow the naming convention <span class="ic">cup_collector_{slug}_{role}</span> (e.g. <span class="ic">cup_collector_smith_family_owner</span>). The <span class="ic">cup_collector_</span> prefix namespaces groups so other apps sharing the same PocketID instance don't interfere — the app silently ignores any group without this prefix. At sign-in the JWT callback reads the <span class="ic">groups</span> claim, strips the prefix and role suffix to recover the slug, and queries PocketBase for matching households. Role comes from the suffix; household comes from the slug match. All matched households are stored in the JWT as <span class="ic">householdMemberships</span>. Adding a user to a second household is just a PocketID group assignment — no database changes needed.<br><br>
         When more than one household is resolved, the Settings screen shows a household switcher. Switching is instant: Auth.js <span class="ic">session.update()</span> swaps the active <span class="ic">householdId</span> without a sign-out. The net result: PocketID is the single source of truth for who has access to what, and the app's database holds only cup data.</div>
       </div>
 
@@ -1150,8 +1173,6 @@ jobs:
     </div>
 
   </div>
-
-</div>
 
 <div style="max-width: 920px; margin: 0 auto; padding: 0 1.5rem 3rem;">
   <nav class="page-nav">

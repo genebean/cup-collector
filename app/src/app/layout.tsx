@@ -66,8 +66,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Apple touch icon — same 192px icon as PWA manifest and PocketID registration */}
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        {/* Apple touch icon — 180px full-bleed (maskable) so iOS squircle clip has no black corners */}
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body>
         {/* Providers wraps everything in SessionProvider and QueryClientProvider */}

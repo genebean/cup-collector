@@ -3,81 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Curator workflow for adding cups to the catalog — CSV format, spreadsheet export, and running the import script via CLI or web UI.">
 <link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
 <title>Adding Cups — Cup Collector</title>
 <style>
-  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
-  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
-  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
-  h2:first-of-type { border-top: none; }
-  p { color: #333; margin-bottom: 0.8rem; }
-  ol, ul { padding-left: 1.25rem; } li { margin-bottom: 0.4rem; font-size: 0.92rem; }
-  pre { background: #1a2820; color: #a8d8b0; padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; }
-  code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
-  .callout { border-left: 3px solid #00704A; background: #e8f2ee; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
-  thead tr { background: #1E3932; color: white; }
-  th { text-align: left; padding: 0.55rem 0.85rem; }
-  td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #ece8e1; vertical-align: top; }
-  tr:last-child td { border-bottom: none; }
-  td:first-child { font-family: monospace; font-weight: 600; color: #2d5a3d; font-size: 0.82rem; }
-  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
-  .page-nav a { color: #00704A; text-decoration: none; }
-  .page-nav a:hover { text-decoration: underline; }
-  .page-nav .prev::before { content: '← '; }
-  .page-nav .next::after { content: ' →'; }
+  /* Column name styling in CSV table */
+  .csv-table td:first-child { font-family: 'IBM Plex Mono', 'Menlo', monospace; font-weight: 600; color: #2d5a3d; font-size: 0.82rem; }
 </style>
 </head>
 <body>
 
-<nav><a href="../index.html">← Docs home</a></nav>
+<div class="topbar">
+  <a href="../index.html" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">/</span>
+  <span>Maintenance</span>
+  <span class="sep">/</span>
+  Adding Cups
+  <span class="guide-badge badge-operator">Operator Guide</span>
+</nav>
 
 <h1>Adding Cups to the Catalog</h1>
-<p>The cup catalog is maintained in a spreadsheet and imported via a script. Here's the full workflow from updating the spreadsheet to having new cups appear in the app.</p>
+<p>The cup catalog is maintained in a spreadsheet and imported via a script. Here's the full workflow — from updating the spreadsheet to having new cups appear in the app.</p>
 
-<h2>The two roles in this workflow</h2>
+<h2 class="no-rule">The two roles in this workflow</h2>
 <ul>
-  <li><strong>Curator</strong> (the collaborator) — maintains the spreadsheet, adds new cups, exports CSV</li>
-  <li><strong>Importer</strong> (the owner) — receives the CSV, runs the import script</li>
+  <li><strong>Curator</strong> — maintains the spreadsheet, adds new cups, exports CSV</li>
+  <li><strong>Importer</strong> — receives the CSV, runs the import script</li>
 </ul>
-<p>The same person can do both. The split exists because the spreadsheet lives in Google Sheets or Excel, and the import script runs in a terminal.</p>
+<p>The same person can do both. The split exists because the spreadsheet lives in Google Sheets or Excel, while the import script runs in a terminal.</p>
 
 <h2>Step 1 (Curator) — Update the spreadsheet</h2>
-<p>The spreadsheet has one row per cup, one column per field. The column order matters — it must match the CSV format exactly:</p>
+<p>The spreadsheet has one row per cup, one column per field. The column names must match the CSV header exactly (case-insensitive). Required columns are marked below; all others are optional but recommended:</p>
 
-<table>
+<table class="csv-table">
   <thead><tr><th>Column</th><th>Example</th><th>Notes</th></tr></thead>
   <tbody>
-    <tr><td>city</td><td>San Francisco</td><td>Required</td></tr>
-    <tr><td>region</td><td>California</td><td>State or province — leave blank if not applicable</td></tr>
-    <tr><td>country</td><td>United States</td><td>Required. Full name</td></tr>
-    <tr><td>country_code</td><td>US</td><td>Required. 2-letter ISO code</td></tr>
-    <tr><td>series</td><td>You Are Here</td><td>Required. Must be consistent — check existing entries</td></tr>
-    <tr><td>year</td><td>2021</td><td>Required. 4-digit year</td></tr>
-    <tr><td>lat</td><td>37.7749</td><td>City centroid latitude — find via Google Maps</td></tr>
-    <tr><td>lng</td><td>-122.4194</td><td>City centroid longitude</td></tr>
-    <tr><td>image_url</td><td>https://example.com/cup.jpg</td><td>Public image URL — downloaded and stored during import</td></tr>
-    <tr><td>notes</td><td>Limited edition 2021</td><td>Optional freeform notes</td></tr>
+    <tr><td>name</td><td>San Francisco</td><td><strong>Required.</strong> Display name — city, state, country, or themed location. Old CSVs using <code>city</code> as the column header are also accepted.</td></tr>
+    <tr><td>scope</td><td>city</td><td><strong>Recommended.</strong> "city" | "state" | "country" | "themed". Defaults to "city" if the column is absent or blank.</td></tr>
+    <tr><td>item_type</td><td>mug</td><td>Optional. "mug" | "ornament". Defaults to "mug" if absent.</td></tr>
+    <tr><td>region</td><td>California</td><td>Optional. State or province — leave blank if not applicable.</td></tr>
+    <tr><td>country</td><td>United States</td><td><strong>Required.</strong> Full country name.</td></tr>
+    <tr><td>country_code</td><td>US</td><td><strong>Required.</strong> ISO 3166-1 alpha-2 code.</td></tr>
+    <tr><td>series</td><td>You Are Here</td><td><strong>Required.</strong> Must be consistent — check existing entries for exact spelling.</td></tr>
+    <tr><td>year</td><td>2021</td><td><strong>Required.</strong> 4-digit year.</td></tr>
+    <tr><td>lat</td><td>37.7749</td><td>Recommended. City/region centroid latitude — find via Google Maps. Without this, the cup won't appear on the map.</td></tr>
+    <tr><td>lng</td><td>-122.4194</td><td>Recommended. City/region centroid longitude.</td></tr>
+    <tr><td>image_url</td><td>https://example.com/cup.jpg</td><td>Optional. Public image URL — downloaded and stored in PocketBase during import.</td></tr>
+    <tr><td>venue_series</td><td>You Are Here</td><td>Optional. Themed cups only: the venue series name this cup is sold alongside.</td></tr>
+    <tr><td>hobbydb_url</td><td>https://hobbydb.com/...</td><td>Optional. Link to the HobbyDB listing for reference.</td></tr>
+    <tr><td>more_info_url</td><td>https://...</td><td>Optional. Any other reference URL.</td></tr>
+    <tr><td>notes</td><td>Limited edition 2021</td><td>Optional. Freeform notes shown on the cup detail screen.</td></tr>
   </tbody>
 </table>
 
+<div class="callout tip">
+  <strong>Upsert key: name + series + year</strong>
+  The import script matches records on the combination of <code>name</code>, <code>series</code>, and <code>year</code>. If a matching record exists it's updated; if not, it's created. This means the script is safe to re-run at any time without duplicating records.
+</div>
+
 <h2>Step 2 (Curator) — Export as CSV</h2>
-<ol>
-  <li>In Google Sheets: File → Download → Comma Separated Values (.csv)</li>
-  <li>In Excel: File → Save As → CSV (Comma delimited)</li>
+<ol class="steps">
+  <li>In Google Sheets: <strong>File → Download → Comma Separated Values (.csv)</strong></li>
+  <li>In Excel: <strong>File → Save As → CSV (Comma delimited)</strong></li>
   <li>Send or share the file with the importer.</li>
 </ol>
 
 <h2>Step 3 (Importer) — Run the import</h2>
+<p>There are two ways to run an import: the CLI script (recommended for large imports) or the web UI.</p>
 
-<p>There are two ways to run an import: the CLI script (preferred for large imports) or the web UI.</p>
-
-<h3 style="border-top: none; margin-top: 1rem; font-size: 1rem;">Option A — CLI (recommended)</h3>
+<h3>Option A — CLI (recommended)</h3>
 
 <div class="callout">
-  <strong>Enter the dev shell first.</strong><br>
-  All commands must run inside <code>nix develop</code>. Never run <code>npx</code> or <code>ts-node</code> on the bare host.
+  <strong>Enter the dev shell first</strong>
+  All commands must run inside <code>nix develop</code>. Never run <code>npx</code> or <code>ts-node</code> directly on the host.
 </div>
 
 <pre># 1. Enter the dev shell
@@ -91,15 +97,15 @@ import-cups --file /path/to/cups.csv --dry-run
 # 4. Apply the import
 import-cups --file /path/to/cups.csv</pre>
 
-<h3 style="border-top: none; margin-top: 1rem; font-size: 1rem;">Option B — Web UI</h3>
-<p>Open the app, go to <strong>Settings</strong> → <strong>Import Cups</strong>. Upload the CSV file, review the dry-run preview, then submit. The web UI uses the same upsert logic as the CLI script. Suitable for small updates; the CLI is faster and more informative for large imports.</p>
+<p>The script prints a summary of created, updated, unchanged, and errored records. Run with <code>--dry-run</code> first whenever you're unsure about the data.</p>
 
-<p>Both options are <strong>safe to re-run at any time</strong>. They use upsert logic (match on city + series + year) — existing records are updated, new ones are created, nothing is duplicated.</p>
+<h3>Option B — Web UI</h3>
+<p>Open the app, go to <strong>Settings → Import Cups</strong>. Upload the CSV file, review the dry-run preview, then submit. The web UI uses the same upsert logic as the CLI script. Suitable for small updates; the CLI is faster and more informative for large imports.</p>
 
 <h2>Step 4 — Verify</h2>
-<ol>
+<ol class="steps">
   <li>Open the PocketBase admin UI → Collections → cups — new entries should appear.</li>
-  <li>Open the app — new cups should appear in Browse and on the map (if they have lat/lng).</li>
+  <li>Open the app — new cups should appear in Browse and on the map (if they have lat/lng coordinates).</li>
 </ol>
 
 <nav class="page-nav">

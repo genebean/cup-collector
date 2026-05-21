@@ -192,10 +192,29 @@ NGINXEOF
         '';
 
         # Serve the docs/ directory on localhost so you can preview the HTML locally.
-        ccDocsServe = pkgs.writeShellScriptBin "cc-docs-serve" ''
-          PROJ_ROOT="$(git rev-parse --show-toplevel)"
-          echo "Docs available at http://localhost:4000"
-          exec python3 -m http.server 4000 --directory "$PROJ_ROOT/docs"
+        # Uses a custom server class to suppress BrokenPipeError — python's http.server
+        # prints a full traceback when a browser closes a connection mid-transfer (normal
+        # browser behavior, harmless, but noisy — especially now that shared.css causes
+        # browsers to open multiple parallel connections per page load).
+        ccDocsServe = pkgs.writeScriptBin "cc-docs-serve" ''
+          #!${pkgs.python3}/bin/python3
+          import http.server, os, subprocess, sys
+
+          proj_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
+          os.chdir(os.path.join(proj_root, "docs"))
+
+          class QuietHTTPServer(http.server.ThreadingHTTPServer):
+              def handle_error(self, request, client_address):
+                  # BrokenPipeError / ConnectionResetError happen when a browser closes a
+                  # keepalive connection while the server is still writing the response body.
+                  # This is normal browser behaviour — suppress the traceback.
+                  if sys.exc_info()[0] in (BrokenPipeError, ConnectionResetError):
+                      return
+                  super().handle_error(request, client_address)
+
+          print("Docs available at http://localhost:4000")
+          with QuietHTTPServer(("0.0.0.0", 4000), http.server.SimpleHTTPRequestHandler) as httpd:
+              httpd.serve_forever()
         '';
 
         # Run the fast CI checks locally — useful before pushing.
@@ -216,19 +235,29 @@ NGINXEOF
         '';
 
         # Import cups from a CSV file into PocketBase.
-        # Usage: import-cups --file cups.csv [--dry-run]
-        # Requires POCKETBASE_ADMIN_EMAIL and POCKETBASE_ADMIN_PASSWORD in app/.env.local.
+        # Usage: import-cups --file cups.csv [--dry-run] [--prod]
+        # --prod loads app/.env.prod instead of app/.env.local (targets production PocketBase).
+        # Requires POCKETBASE_ADMIN_EMAIL and POCKETBASE_ADMIN_PASSWORD in the env file.
         ccImportCups = pkgs.writeShellScriptBin "cc-import-cups" ''
           PROJ_ROOT="$(git rev-parse --show-toplevel)"
+          ENV_FILE="$PROJ_ROOT/app/.env.local"
+          PASS_ARGS=()
+          for arg in "$@"; do
+            if [[ "$arg" == "--prod" ]]; then
+              ENV_FILE="$PROJ_ROOT/app/.env.prod"
+            else
+              PASS_ARGS+=("$arg")
+            fi
+          done
           set -a
-          source "$PROJ_ROOT/app/.env.local"
+          source "$ENV_FILE"
           set +a
           NODE_PATH="$PROJ_ROOT/app/node_modules" \
             "$PROJ_ROOT/app/node_modules/.bin/ts-node" \
             --transpile-only \
             --project "$PROJ_ROOT/scripts/tsconfig.json" \
             "$PROJ_ROOT/scripts/import-cups.ts" \
-            "$@"
+            "''${PASS_ARGS[@]}"
         '';
 
         # Build a starter cup catalog CSV from the verified community-sourced data table.
@@ -237,9 +266,7 @@ NGINXEOF
         ccBuildCatalog = pkgs.writeShellScriptBin "cc-build-catalog" ''
           PROJ_ROOT="$(git rev-parse --show-toplevel)"
           NODE_PATH="$PROJ_ROOT/app/node_modules" \
-            "$PROJ_ROOT/app/node_modules/.bin/ts-node" \
-            --transpile-only \
-            --project "$PROJ_ROOT/scripts/tsconfig.json" \
+            "$PROJ_ROOT/app/node_modules/.bin/tsx" \
             "$PROJ_ROOT/scripts/scrape-catalog.ts" \
             "$@"
         '';
@@ -287,7 +314,7 @@ NGINXEOF
           #   1. Set npmDepsHash = pkgs.lib.fakeHash;
           #   2. Run `nix build` — it fails with "got: sha256-..."
           #   3. Copy that hash here and run `nix build` again.
-          npmDepsHash = "sha256-86kGffmVCHED69T3UwEN2yIIyotayuNFUBLVM1e0ang=";
+          npmDepsHash = "sha256-nUxu/48XCVjsEX41ZccmYnVQKLnjztfxN1m9/O7IMYk=";
 
           buildPhase = "npm run build";
 
@@ -369,21 +396,23 @@ NGINXEOF
         #   services.cupCollector.appPackage = inputs.cup-collector.packages.${pkgs.system}.default;
         nixosModules.default = { lib, pkgs, ... }: {
           imports = [ ./nixos/module.nix ];
-          services.cupCollector.appPackage = lib.mkDefault self.packages.${pkgs.system}.default;
+          services.cupCollector.appPackage = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
         };
 
         # Minimal NixOS configuration used by CI to verify the module evaluates and
         # builds cleanly without deploying to production.
         # Verified by: nix build .#nixosConfigurations.test.config.system.build.toplevel
         nixosConfigurations.test = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
           modules = [
             self.nixosModules.default
             {
+              nixpkgs.hostPlatform = "x86_64-linux";
               services.cupCollector = {
                 enable = true;
                 domain = "cups.example.com";
+                pocketidIssuerUrl = "https://id.example.com";
                 migrationsDir = self.packages.x86_64-linux.migrations;
+                households = [{ name = "Test Household"; slug = "test_household"; }];
                 # envFile is a runtime secret path — not evaluated at build time.
                 envFile = "/run/secrets/cup-collector";
               };

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="The Cup Collector Settings tab — appearance (dark mode), account info, household switcher, collection preferences, and import.">
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
+<title>Settings — Cup Collector</title>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="../index.html" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">/</span>
+  <span>User Guides</span>
+  <span class="sep">/</span>
+  Settings
+  <span class="guide-badge badge-user">User Guide</span>
+</nav>
+
+<h1>⚙️ Settings</h1>
+<p>Tap <strong>Settings</strong> in the bottom navigation to access your account info, appearance options, and household configuration. What you see here depends on your role.</p>
+
+<h2 class="no-rule">Account</h2>
+<p>Shows your name, email address, and role (Owner or Viewer). These are read-only — they come from your PocketID account and can only be changed by your household's PocketID administrator.</p>
+
+<h2>Household</h2>
+<p>Shows the name of your current household (e.g., "Our Collection"). If your account belongs to more than one household, a <strong>household switcher</strong> appears here instead — tap it to change which collection you're viewing. The switch takes effect immediately; no sign-out required.</p>
+
+<h2>Appearance</h2>
+<p>Choose how the app looks:</p>
+<ul>
+  <li><strong>System</strong> — follows your device's light/dark mode setting (default)</li>
+  <li><strong>Light</strong> — always light mode</li>
+  <li><strong>Dark</strong> — always dark mode</li>
+</ul>
+<p>This preference is stored on your device only — it doesn't affect other household members' devices.</p>
+
+<h2>What I Collect</h2>
+<p>Tap <strong>"What I Collect"</strong> to open the collection preferences screen. This lets you tell the app which types of cups and series your household tracks.</p>
+
+<h3>Item types</h3>
+<ul>
+  <li><strong>Mugs</strong> — always tracked (cannot be turned off)</li>
+  <li><strong>Ornaments</strong> — Starbucks also sells miniature ornament versions of some location cups. Toggle this on to include ornaments in your Browse list and map, or off to hide them.</li>
+</ul>
+
+<h3>Series</h3>
+<p>Each cup series (You Are Here, Been There, Discovery Series, etc.) has its own toggle. Turn off any series you don't collect and those cups disappear from Browse and the map — keeping the view focused on what matters to you.</p>
+
+<div class="callout">
+  <strong>Owned cups always stay visible</strong>
+  Turning off a series or item type only hides <em>unowned</em> cups. Any cup you've already marked as owned will still appear in Browse and on the map, regardless of your preferences. You won't lose track of what you have.
+</div>
+
+<div class="callout tip">
+  <strong>Search is not filtered</strong>
+  The Search screen always shows every cup in the catalog, regardless of your collection preferences. Use Search to discover cups from series you don't usually track.
+</div>
+
+<div class="callout warn">
+  <strong>Only the household owner can change collection preferences</strong>
+  Viewers can open "What I Collect" and see the current settings, but the toggles are disabled. Contact your household owner to change them.
+</div>
+
+<h2>Admin <span style="font-size:0.75rem; font-weight:400; color:#6b6457;">(owners only)</span></h2>
+<p>Owners see an <strong>Import Cups</strong> link in the Admin section. This opens the in-app cup import tool — upload a CSV file, preview what will change, and apply the import. For large catalog updates, the CLI script in the dev shell is faster; see <a href="../maintenance/adding-cups.html">Adding Cups</a>.</p>
+
+<h2>Sign Out</h2>
+<p>Tap <strong>Sign Out</strong> to end your session. You'll be returned to the login screen. Your collection data stays on the server.</p>
+
+<nav class="page-nav">
+  <a class="prev" href="browsing.html">Browsing &amp; Searching</a>
+  <a class="next" href="../index.html">Docs Home</a>
+</nav>
+
+</body>
+</html>

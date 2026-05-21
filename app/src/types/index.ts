@@ -8,7 +8,7 @@ export type UserRole = "owner" | "viewer" | "none";
 export interface Household {
   id: string;
   name: string;
-  group_slug: string; // matches PocketID group prefix: "{slug}-owner" / "{slug}-viewer"
+  group_slug: string; // matches PocketID group prefix: "{slug}_owner" / "{slug}_viewer"
   created: string;
 }
 

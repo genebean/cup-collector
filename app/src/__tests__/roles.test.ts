@@ -3,18 +3,18 @@ import { parseHouseholdGroups, roleFromMembership, canWrite } from "@/lib/roles"
 
 describe("parseHouseholdGroups", () => {
   it("parses an owner group", () => {
-    expect(parseHouseholdGroups(["cup-collector-my-household-owner"])).toEqual([
-      { slug: "my-household", role: "owner" },
+    expect(parseHouseholdGroups(["cup_collector_my_household_owner"])).toEqual([
+      { slug: "my_household", role: "owner" },
     ]);
   });
 
   it("parses a viewer group", () => {
-    expect(parseHouseholdGroups(["cup-collector-my-household-viewer"])).toEqual([
-      { slug: "my-household", role: "viewer" },
+    expect(parseHouseholdGroups(["cup_collector_my_household_viewer"])).toEqual([
+      { slug: "my_household", role: "viewer" },
     ]);
   });
 
-  it("ignores groups from other apps (no cup-collector- prefix)", () => {
+  it("ignores groups from other apps (no cup_collector_ prefix)", () => {
     expect(parseHouseholdGroups(["admin", "superuser", "other-app-owner"])).toEqual([]);
   });
 
@@ -24,8 +24,8 @@ describe("parseHouseholdGroups", () => {
 
   it("parses multiple household memberships", () => {
     const result = parseHouseholdGroups([
-      "cup-collector-home-owner",
-      "cup-collector-work-viewer",
+      "cup_collector_home_owner",
+      "cup_collector_work_viewer",
       "irrelevant-other-app-group",
     ]);
     expect(result).toEqual([
@@ -34,14 +34,14 @@ describe("parseHouseholdGroups", () => {
     ]);
   });
 
-  it("handles slugs with hyphens", () => {
-    expect(parseHouseholdGroups(["cup-collector-my-test-household-owner"])).toEqual([
-      { slug: "my-test-household", role: "owner" },
+  it("handles multi-word slugs", () => {
+    expect(parseHouseholdGroups(["cup_collector_my_test_household_owner"])).toEqual([
+      { slug: "my_test_household", role: "owner" },
     ]);
   });
 
   it("ignores prefixed groups with unknown role suffix", () => {
-    expect(parseHouseholdGroups(["cup-collector-my-household-collaborator"])).toEqual([]);
+    expect(parseHouseholdGroups(["cup_collector_my_household_collaborator"])).toEqual([]);
   });
 });
 

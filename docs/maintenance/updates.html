@@ -3,35 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Update Cup Collector by bumping the Nix flake input and rebuilding — with rollback instructions and guidance on when to update.">
 <link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
 <title>Updating the App — Cup Collector</title>
-<style>
-  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
-  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
-  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
-  h2:first-of-type { border-top: none; }
-  p { color: #333; margin-bottom: 0.8rem; }
-  ul, ol { padding-left: 1.25rem; } li { margin-bottom: 0.4rem; font-size: 0.92rem; }
-  pre { background: #1a2820; color: #a8d8b0; padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; }
-  code { font-family: monospace; background: #e8ede8; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
-  .callout { border-left: 3px solid #CBA258; background: #f5edd8; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
-  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
-  .page-nav a { color: #00704A; text-decoration: none; }
-  .page-nav a:hover { text-decoration: underline; }
-  .page-nav .prev::before { content: '← '; }
-  .page-nav .next::after { content: ' →'; }
-</style>
 </head>
 <body>
 
-<nav><a href="../index.html">← Docs home</a></nav>
+<div class="topbar">
+  <a href="../index.html" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">/</span>
+  <span>Maintenance</span>
+  <span class="sep">/</span>
+  Updating the App
+  <span class="guide-badge badge-operator">Operator Guide</span>
+</nav>
 
 <h1>Updating the App</h1>
-<p>Because Cup Collector is deployed as a Nix flake, updating it means bumping the flake input and rebuilding. There's no manual download or installation step.</p>
+<p>Because Cup Collector is deployed as a Nix flake, updating means bumping the flake input and rebuilding. There is no manual download or installation step.</p>
 
-<h2>The normal update flow</h2>
-<pre># In the genebean/dots repo:
+<h2 class="no-rule">The normal update flow</h2>
+<pre># In your NixOS config repository:
+
 # 1. Bump the cup-collector flake input to latest
 nix flake update cup-collector
 
@@ -42,27 +42,35 @@ git diff flake.lock
 sudo nixos-rebuild switch --flake .#your-hostname</pre>
 
 <h2>Checking what changed</h2>
-<p>Before rebuilding, you can see what commits are included in the update:</p>
-<pre>nix flake update cup-collector --commit-lock-file  # Updates and commits lock file
-# Or: browse https://github.com/genebean/cup-collector/commits/main</pre>
+<p>Before rebuilding, you can review the commits included in the update:</p>
+<pre># Update the lock file and commit it in one step
+nix flake update cup-collector --commit-lock-file</pre>
+<p>Or browse the commit history directly at <code>github.com/genebean/cup-collector/commits/main</code>.</p>
 
 <h2>Rolling back</h2>
-<p>If something breaks after an update, NixOS keeps the previous generation. Roll back instantly:</p>
+<p>If something breaks after an update, NixOS keeps the previous generation — you can roll back instantly:</p>
 <pre>sudo nixos-rebuild --rollback switch</pre>
-<p>Or choose a specific generation:</p>
-<pre>sudo nixos-rebuild switch --flake .#your-hostname --rollback</pre>
-<p>This restores the previous version of the app, its config, and all NixOS services — no data is affected, only the running software.</p>
+<p>Or switch to a specific earlier generation:</p>
+<pre># List available generations
+nix-env --list-generations --profile /nix/var/nix/profiles/system
+
+# Switch to a specific generation number
+sudo nix-env --switch-generation 42 --profile /nix/var/nix/profiles/system
+sudo systemctl daemon-reload
+sudo systemctl restart cup-collector</pre>
+
+<p>Rolling back restores the previous version of the app, its config, and all NixOS services. Your PocketBase data is not affected — only the running software changes.</p>
 
 <h2>When to update</h2>
 <ul>
-  <li><strong>Update promptly</strong> when the release notes mention a security fix or a bug that affects you.</li>
+  <li><strong>Update promptly</strong> when release notes mention a security fix or a bug that affects you.</li>
   <li><strong>Update at leisure</strong> for new features — the app is designed for long-term stability.</li>
-  <li>Cup Collector has no external runtime dependencies that go stale (other than the Google Places API, which is controlled by Google's versioning, not app releases).</li>
+  <li>Cup Collector has no external runtime dependencies that go stale (other than the Google Places API, which is versioned by Google independently of app releases).</li>
 </ul>
 
 <div class="callout">
-  <strong>No PocketBase data is affected by app updates.</strong><br>
-  The PocketBase data lives at <code>/var/lib/cup-collector/pb_data/</code>. An app update only changes the Next.js server binary and static assets. Your collection, photos, and household record are untouched.
+  <strong>Your collection data is not affected by app updates</strong>
+  The PocketBase data lives at <code>/var/lib/cup-collector/pb_data/</code>. An app update only changes the Next.js server binary and static assets — your cups, photos, and household record are untouched.
 </div>
 
 <nav class="page-nav">
