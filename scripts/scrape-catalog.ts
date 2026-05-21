@@ -20,7 +20,7 @@ import * as path from "path";
 import * as https from "https";
 import * as http from "http";
 
-import { buildRows, OutputRow } from "../app/src/lib/catalog";
+import { buildRows, type OutputRow } from "../app/src/lib/catalog";
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
