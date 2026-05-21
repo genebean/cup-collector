@@ -3,7 +3,7 @@
 // MUST be run inside the Nix dev shell: enter with `nix develop` first.
 //
 // Usage:
-//   create-household --name "Our Collection" --slug our-collection
+//   create-household --name "Our Collection" --slug our_collection
 //
 // Credentials are read from app/.env.local (POCKETBASE_URL,
 // POCKETBASE_ADMIN_EMAIL, POCKETBASE_ADMIN_PASSWORD).
@@ -12,7 +12,7 @@
 //   POCKETBASE_URL=http://localhost:8090 \
 //   POCKETBASE_ADMIN_EMAIL=admin@example.com \
 //   POCKETBASE_ADMIN_PASSWORD=secret \
-//   create-household --name "Our Collection" --slug our-collection
+//   create-household --name "Our Collection" --slug our_collection
 
 import PocketBase from "pocketbase";
 
@@ -29,8 +29,8 @@ const slug = getArg("--slug");
 if (!name || !slug) {
   console.error("Usage: create-household --name <display name> --slug <group-slug>");
   console.error("  --name   Display name shown in the app, e.g. \"Our Collection\"");
-  console.error("  --slug   PocketID group slug, e.g. our-collection");
-  console.error("           Groups must be named <slug>-owner and/or <slug>-viewer in PocketID.");
+  console.error("  --slug   PocketID group slug, e.g. our_collection");
+  console.error("           Groups must be named <slug>_owner and/or <slug>_viewer in PocketID.");
   process.exit(1);
 }
 
@@ -73,7 +73,7 @@ async function run() {
   console.log(`  name:       ${h["name"]}`);
   console.log(`  group_slug: ${h["group_slug"]}`);
   console.log(``);
-  console.log(`Next: create PocketID groups named "${slug}-owner" and/or "${slug}-viewer"`)
+  console.log(`Next: create PocketID groups named "${slug}_owner" and/or "${slug}_viewer"`)
   console.log(`and add users to them. They will resolve to this household at sign-in.`);
 }
 
