@@ -1,9 +1,5 @@
 # Cup Collector
 
-> **Work in progress.** Core functionality is under active development.
-> See [`docs/reference/spec.html`](docs/reference/spec.html) for the full
-> design spec and what remains to be built.
-
 A self-hosted Progressive Web App for tracking a shared Starbucks location cup
 collection. Two people collect location-specific mugs from the *You Are Here*,
 *Been There*, and related series. This app answers the question "do we already
@@ -18,7 +14,7 @@ a store abroad.
 
 ## Prerequisites
 
-- NixOS server with nginx already configured
+- NixOS server with Nginx already configured
 - PocketID running and accessible (self-hosted OIDC provider)
 - Domain name with DNS pointing to your server
 - Google Places API key (for nearby Starbucks discovery)
@@ -76,9 +72,10 @@ in the error output — copy that value into `flake.nix` and rebuild.
    imports = [ inputs.cup-collector.nixosModules.default ];
 
    services.cupCollector = {
-     enable  = true;
-     domain  = "cups.yourdomain.com";
-     envFile = config.sops.secrets."cup-collector-env".path;
+     enable        = true;
+     domain        = "cups.yourdomain.com";
+     migrationsDir = inputs.cup-collector.packages.${pkgs.system}.migrations;
+     envFile       = config.sops.secrets."cup-collector-env".path;
    };
    ```
 3. Run `sudo nixos-rebuild switch`.

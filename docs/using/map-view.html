@@ -3,60 +3,68 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Understand the Cup Collector map — pin colors, zooming, tapping pins, location permission, nearby Starbucks search, and the Search Here feature.">
 <link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
 <title>Map View — Cup Collector</title>
-<style>
-  body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0f1a14; max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; line-height: 1.7; }
-  nav { font-size: 0.85rem; margin-bottom: 1.5rem; } nav a { color: #00704A; text-decoration: none; } nav a:hover { text-decoration: underline; }
-  h1 { font-size: 1.75rem; font-weight: 700; color: #1E3932; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.1rem; font-weight: 700; color: #1E3932; margin: 2rem 0 0.5rem; border-top: 1px solid #d8d0c4; padding-top: 1.5rem; }
-  h2:first-of-type { border-top: none; }
-  p { color: #333; margin-bottom: 0.8rem; }
-  .pin-legend { display: flex; flex-direction: column; gap: 0.65rem; margin: 1rem 0 1.5rem; }
-  .pin-row { display: flex; align-items: center; gap: 0.85rem; font-size: 0.9rem; }
-  .pin { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(0,0,0,0.15); }
-  .pin-green { background: #00704A; }
-  .pin-orange { background: #f97316; }
-  .pin-blue { background: #3b82f6; }
-  .pin-you { background: #3b82f6; box-shadow: 0 0 0 5px rgba(59,130,246,0.25); }
-  ul { padding-left: 1.25rem; }
-  li { margin-bottom: 0.35rem; font-size: 0.92rem; }
-  .callout { border-left: 3px solid #CBA258; background: #f5edd8; border-radius: 0 8px 8px 0; padding: 0.85rem 1rem; margin: 1.25rem 0; font-size: 0.9rem; }
-  .page-nav { display: flex; justify-content: space-between; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4; font-size: 0.88rem; }
-  .page-nav a { color: #00704A; text-decoration: none; }
-  .page-nav a:hover { text-decoration: underline; }
-  .page-nav .prev::before { content: '← '; }
-  .page-nav .next::after { content: ' →'; }
-</style>
 </head>
 <body>
 
-<nav><a href="../index.html">← Docs home</a></nav>
+<div class="topbar">
+  <a href="../index.html" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">/</span>
+  <span>User Guides</span>
+  <span class="sep">/</span>
+  Map View
+  <span class="guide-badge badge-user">User Guide</span>
+</nav>
 
 <h1>🗺️ Map View</h1>
 <p>The map is the default home screen. It gives you a visual overview of the entire collection and nearby Starbucks stores.</p>
 
-<h2>Pin colors</h2>
+<h2 class="no-rule">Pin colors</h2>
 <div class="pin-legend">
-  <div class="pin-row"><div class="pin pin-green"></div><span><strong>Green</strong> — a cup you own</span></div>
-  <div class="pin-row"><div class="pin pin-orange"></div><span><strong>Orange</strong> — a cup you still need</span></div>
-  <div class="pin-row"><div class="pin pin-blue"></div><span><strong>Blue</strong> — a nearby Starbucks store</span></div>
-  <div class="pin-row"><div class="pin pin-you"></div><span><strong>Pulsing blue dot</strong> — your current location</span></div>
+  <div class="pin-row"><div class="pin-cell"><div class="pin pin-green"></div></div><span><strong>Green</strong> — a cup you own</span></div>
+  <div class="pin-row"><div class="pin-cell"><div class="pin pin-orange"></div></div><span><strong>Orange</strong> — a cup you still need</span></div>
+  <div class="pin-row"><div class="pin-cell"><div class="pin pin-blue"></div></div><span><strong>Blue</strong> — a nearby Starbucks store</span></div>
+  <div class="pin-row"><div class="pin-cell"><div class="pin-you"></div></div><span><strong>Pulsing blue dot</strong> — your current location</span></div>
+</div>
+
+<div class="screenshot-placeholder">
+  <span class="ph-icon">🗺️</span>
+  <span class="ph-label">Screenshot: map showing green pins (owned), orange pins (needed), and blue store pins</span>
 </div>
 
 <h2>Zooming and navigating</h2>
 <ul>
   <li>Pinch to zoom in and out, or use the + / − buttons.</li>
-  <li>Drag to pan around the map.</li>
-  <li>Tap the <strong>🌍 globe button</strong> (top-right of the header) to zoom out to a world view showing your entire collection.</li>
-  <li>When you first open the app, the map automatically zooms to your current location if you've allowed location access.</li>
+  <li>Drag to pan the map.</li>
+  <li>Tap the <strong>globe button</strong> (top-right of the header) to zoom out to a world view of your entire collection.</li>
+  <li>When the app first opens, the map automatically zooms to your current location if you've allowed location access.</li>
 </ul>
 
 <h2>Tapping pins</h2>
 <ul>
-  <li><strong>Tap a cup pin</strong> (green or orange) — opens the Cup Detail screen for that cup, showing its image, metadata, and ownership controls.</li>
-  <li><strong>Tap a Starbucks pin</strong> (blue) — shows the store name and address, with a "Get directions" link that opens Apple Maps.</li>
+  <li><strong>Tap a cup pin</strong> (green or orange) — opens a popup with the cup name, series, and year. Tap <strong>"View details"</strong> to go to the full Cup Detail screen. City cup popups also list any themed cups associated with that location.</li>
+  <li><strong>Tap a Starbucks pin</strong> (blue) — opens a popup with the store name and address, a list of cups you still need that might be sold there, and a "Get directions" link that opens Apple Maps.</li>
 </ul>
+
+<div class="callout tip">
+  <strong>Themed cups have no map pin</strong>
+  Themed cups (Star Wars, Discovery Series, etc.) are not tied to a specific location, so they don't appear as their own pins. They show up inside the popup of the nearest city cup instead.
+</div>
+
+<h2>Cups in view</h2>
+<p>A collapsible <strong>bottom sheet</strong> is always present at the bottom of the map screen. It shows a handle labeled <em>"X cups in view"</em> — the number of cup pins visible in the current map viewport.</p>
+<p>Tap the handle to expand the panel. It lists every cup currently visible on the map — both owned (green) and still needed (orange) — including a <strong>Needs Replacing</strong> badge for any owned cups flagged with condition issues. Tap any row to open that cup's detail screen.</p>
+<p>The count and list update automatically as you pan or zoom.</p>
 
 <h2>Location permission</h2>
 <p>The app asks for your location when it first opens. If you allow it:</p>
@@ -64,17 +72,23 @@
   <li>The map centers on where you are.</li>
   <li>A pulsing blue dot marks your position.</li>
   <li>Nearby Starbucks stores appear as blue pins.</li>
-  <li>The Browse screen sorts unowned nearby cups to the top.</li>
+  <li>The Browse screen sorts unowned cups near you to the top.</li>
 </ul>
-<p>If you deny location permission, the app falls back to a world map view. No broken screens or error messages — the app just works without the location features.</p>
+<p>If you deny location permission, the app falls back to a world map view. There are no broken screens or error messages — the app works normally, just without the location features.</p>
 
-<div class="callout">
-  <strong>Changed your mind about location?</strong><br>
-  Go to iPhone Settings → Privacy &amp; Security → Location Services → Safari → set to "While Using". Then reload the app.
+<div class="callout tip">
+  <strong>Changed your mind about location?</strong>
+  On iPhone, go to <strong>Settings → Privacy &amp; Security → Location Services</strong>. If you installed Cup Collector as a PWA (home screen app), look for its entry directly in the list. If you haven't installed it yet, find <strong>Safari</strong> and set it to "While Using", then reload the app.
 </div>
 
 <h2>Nearby Starbucks</h2>
-<p>When location is active, the app automatically searches for Starbucks stores within 10 miles of your position (configurable with the radius chips in the header) using Google's Places service — server-side, so your location is never sent to Google directly. Blue store pins appear on the map. Tap any store pin to see its name, address, and a "Get directions" link that opens Apple Maps with turn-by-turn directions.</p>
+<p>When location is active, the app automatically finds Starbucks stores near your position using Google's Places service — all server-side, so your exact location is never sent directly to Google. Blue store pins appear on the map.</p>
+<p>Use the <strong>radius chips</strong> in the header (e.g. 5 mi, 10 mi, 25 mi) to control how far out to search. Changing the radius re-runs the search automatically.</p>
+<p>Tap any store pin to see its name, address, a list of cups you might find there (city cups within range, state cups matching the store's state, country cups matching its country), and a "Get directions" link.</p>
+
+<h2>Searching a different area</h2>
+<p>Pan or zoom the map to any area, then tap <strong>"Search here"</strong> (top-right of the header) to find Starbucks stores centered on the current map view. This overrides your GPS location for the store search — useful when planning a trip or exploring an unfamiliar city.</p>
+<p>Tapping a radius chip clears the manual search and returns to GPS-based results.</p>
 
 <nav class="page-nav">
   <a class="prev" href="traveling.html">Using While Traveling</a>

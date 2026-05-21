@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Generate and import the initial cup catalog before your first sign-in — run build-catalog to scrape starbucks-mugs.com, then import-cups to load the records.">
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
+<title>Catalog Setup — Cup Collector</title>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="../index.html" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">/</span>
+  <span>Setup</span>
+  <span class="sep">/</span>
+  Catalog Setup
+  <span class="guide-badge badge-operator">Operator Guide</span>
+</nav>
+
+<h1>Catalog Setup</h1>
+<p>The app needs a cup catalog before anyone can use it — the map, browse view, and owned/needed tracking are all driven by catalog records. This page covers the one-time initial import. For ongoing additions see <a href="../maintenance/adding-cups.html">Adding Cups</a>.</p>
+
+<div class="callout">
+  <strong>Run everything inside <code>nix develop</code></strong>
+  Both <code>build-catalog</code> and <code>import-cups</code> are dev shell commands. Enter the shell first with <code>nix develop</code>, or call them non-interactively with <code>nix develop -c &lt;command&gt;</code>.
+</div>
+
+<h2 class="no-rule">Step 1 — Generate the catalog CSV</h2>
+<p><code>build-catalog</code> scrapes <strong>starbucks-mugs.com</strong> to produce a CSV containing all known cups across every series — You Are Here, Been There, Discovery Series, Relief, Icon Mini, and special editions. It fetches each cup's page to populate image URLs and release years, then writes a CSV ready for import.</p>
+
+<pre>build-catalog --out cups.csv</pre>
+
+<p>This takes a few minutes because it fetches each cup's page individually (concurrency=5 to be polite). You'll see a progress counter as it runs. When it finishes it prints a per-series summary and the output path.</p>
+
+<p>To generate only one series — useful for testing or partial refreshes:</p>
+<pre>build-catalog --out cups.csv --series "You Are Here"</pre>
+
+<p>Valid series names: <code>You Are Here</code>, <code>Been There</code>, <code>Discovery Series</code>, <code>Relief</code>, <code>Icon Mini</code>.</p>
+
+<div class="callout tip">
+  <strong>hobbydb_url is left blank</strong>
+  The generated CSV has a <code>hobbydb_url</code> column that the scraper cannot populate automatically. If you have HobbyDB links, fill them in manually before importing. The import script preserves any <code>hobbydb_url</code> values already in the database — empty CSV cells won't overwrite hand-curated entries.
+</div>
+
+<h3>Skipped entries warning</h3>
+<p>At the end of its run, <code>build-catalog</code> may print a message like:</p>
+<pre>Skipped 4 entries with no coordinates (add to COORDS table to include):
+  Disney Epcot 1 (You Are Here)
+  Disney Epcot 2 (You Are Here)
+  Disney Epcot 3 (You Are Here)
+  Disney Parc Walt Disney Studios (You Are Here)</pre>
+
+<p>These are cups the scraper found on starbucks-mugs.com but could not place on the map because their city names don't match any entry in the coordinate lookup table. They are excluded from the CSV entirely — they won't appear on the map or in Browse until coordinates are added.</p>
+
+<p>To include them, add their coordinates to <code>app/src/lib/catalog-data.ts</code> in the <code>COORDS</code> table. The key must be <code>"CityName,CountryName"</code> exactly as shown in the warning, and the value is <code>[latitude, longitude]</code>:</p>
+<pre>// In app/src/lib/catalog-data.ts, inside the COORDS block:
+"Disney Epcot 1,France":                [48.8674, 2.7822],
+"Disney Epcot 2,France":                [48.8674, 2.7822],
+"Disney Epcot 3,France":                [48.8674, 2.7822],
+"Disney Parc Walt Disney Studios,France":[48.8674, 2.7822],</pre>
+
+<p>After editing the file, re-run <code>build-catalog</code> and then <code>import-cups</code> to pick up the new entries. It's fine to skip this for now — cups without coordinates are rare edge cases and you can add them later.</p>
+
+<h2>Step 2 — Connect to PocketBase</h2>
+<p><code>import-cups</code> reads <code>POCKETBASE_URL</code>, <code>POCKETBASE_ADMIN_EMAIL</code>, and <code>POCKETBASE_ADMIN_PASSWORD</code> from <code>app/.env.local</code> by default. Pass <code>--prod</code> to load <code>app/.env.prod</code> instead.</p>
+
+<p>Create <code>app/.env.prod</code> with your production PocketBase connection details (this file is gitignored):</p>
+<pre>POCKETBASE_URL=http://your-server-lan-ip:8090
+POCKETBASE_ADMIN_EMAIL=admin@example.com
+POCKETBASE_ADMIN_PASSWORD=your-pocketbase-admin-password</pre>
+
+<div class="callout tip">
+  <strong>PocketBase only listens on localhost by default.</strong>
+  To reach it from your laptop over LAN without a tunnel, set <code>pbBindIp</code> to your server's LAN IP in the NixOS module and rebuild:
+  <pre>pbBindIp = "192.168.1.10"; # your server's LAN IP</pre>
+  Then use that IP in <code>app/.env.prod</code>. If you haven't set <code>pbBindIp</code> (or prefer not to), open an SSH tunnel instead and omit <code>--prod</code>:
+  <pre>ssh -L 8090:localhost:8090 yourserver</pre>
+</div>
+
+<h2>Step 3 — Preview the import</h2>
+<p>Dry-run mode shows exactly what will be created, updated, or skipped without writing anything:</p>
+<pre>import-cups --prod --file cups.csv --dry-run</pre>
+<p>Review the output. If something looks wrong (unexpected errors, missing records), fix the CSV or check that PocketBase is reachable before proceeding.</p>
+
+<h2>Step 4 — Import</h2>
+<p>When the dry-run output looks right, apply it:</p>
+<pre>import-cups --prod --file cups.csv</pre>
+<p>The script upserts records matched on <code>name</code> + <code>series</code> + <code>year</code>, so it's safe to re-run — it will not duplicate records. It prints a summary of created, updated, unchanged, and errored records when done.</p>
+
+<h2>Step 5 — Verify</h2>
+<p>Open an SSH tunnel and check the PocketBase admin UI: <strong>Collections → cups</strong> should show your records. Once you sign in to the app, cups with coordinates will appear on the map and all cups will appear in Browse.</p>
+
+<nav class="page-nav">
+  <a class="prev" href="deployment.html">Deployment</a>
+  <a class="next" href="first-run.html">First Run Checklist</a>
+</nav>
+
+</body>
+</html>
