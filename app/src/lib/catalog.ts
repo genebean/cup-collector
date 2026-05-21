@@ -177,13 +177,15 @@ export function buildSeriesFromSitemap(
     } else if (AU_STATES.has(cityName)) {
       scope = "state"; region = cityName;
     } else if (WHOLE_COUNTRY_SLUGS.has(cityName)) {
-      scope = "country";
+      scope = "country"; country = cityName;
     } else if (COUNTRY_CODES[cityName]) {
       scope = "country";
       country = cityName;
-    } else if (scope === "city") {
+    } else if (scope === "city" && !CITY_TO_COUNTRY[cityName]) {
       // Progressive check: if stripping affixes reveals a known country code entry,
       // this is a country-level cup (e.g. "Christmas France", "Japan 5 Fall Edition").
+      // Guard: skip for cities in CITY_TO_COUNTRY — they are definitively cities, not countries
+      // (e.g. "Antigua Guatemala" would otherwise falsely match "Guatemala" → country scope).
       const words = cityName.split(" ");
       let found = false;
       for (let i = words.length - 1; i >= 1 && !found; i--) {
@@ -280,7 +282,7 @@ export function buildDiscoverySeriesFromSitemap(mugsIndex: Map<string, string>):
       scope = "state";
       region = cityName;
     } else if (WHOLE_COUNTRY_SLUGS.has(cityName)) {
-      scope = "country";
+      scope = "country"; country = cityName;
     } else if (COUNTRY_CODES[cityName]) {
       // Auto-detect: slug title-cases to a known country name not in WHOLE_COUNTRY_SLUGS
       scope = "country";
@@ -348,15 +350,15 @@ export function buildOrnamentsFromSitemap(
     cityName = cityName.replace(/\bD C\b/, "DC");
     if (cityName === "St Louis") cityName = "St. Louis";
 
-    const country = resolveCountry(cityName);
+    let country = resolveCountry(cityName);
     let scope = "city";
     let region = "";
 
     if (US_STATES.has(cityName))    { scope = "state"; region = cityName; }
     else if (CA_PROVINCES.has(cityName)) { scope = "state"; region = cityName; }
     else if (AU_STATES.has(cityName))    { scope = "state"; region = cityName; }
-    else if (WHOLE_COUNTRY_SLUGS.has(cityName)) { scope = "country"; }
-    else if (COUNTRY_CODES[cityName]) { scope = "country"; }
+    else if (WHOLE_COUNTRY_SLUGS.has(cityName)) { scope = "country"; country = cityName; }
+    else if (COUNTRY_CODES[cityName]) { scope = "country"; country = cityName; }
     else if (scope === "city") {
       const words = cityName.split(" ");
       let found = false;
@@ -445,12 +447,12 @@ export function buildIconMiniFromSitemap(mugsIndex: Map<string, string>): CupEnt
       .join(" ");
     cityName = cityName.replace(/\bD C\b/, "DC");
 
-    const country = resolveCountry(cityName);
+    let country = resolveCountry(cityName);
     const region = CITY_TO_REGION[cityName] ?? "";
 
     let scope = "city";
-    if (WHOLE_COUNTRY_SLUGS.has(cityName)) { scope = "country"; }
-    else if (COUNTRY_CODES[cityName]) { scope = "country"; }
+    if (WHOLE_COUNTRY_SLUGS.has(cityName)) { scope = "country"; country = cityName; }
+    else if (COUNTRY_CODES[cityName]) { scope = "country"; country = cityName; }
     else {
       const words = cityName.split(" ");
       let found = false;

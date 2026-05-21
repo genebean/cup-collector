@@ -105,6 +105,10 @@ describe("resolveCountry", () => {
     expect(resolveCountry("Nonexistent City")).toBe("United States");
   });
 
+  it("returns Guatemala for Antigua Guatemala (not the default)", () => {
+    expect(resolveCountry("Antigua Guatemala")).toBe("Guatemala");
+  });
+
   it("returns Canada for Vancouver", () => {
     expect(resolveCountry("Vancouver")).toBe("Canada");
   });
@@ -127,6 +131,12 @@ describe("resolveCoords", () => {
 
   it("returns [0, 0] when no match is found", () => {
     expect(resolveCoords("Nonexistent City", "Nonexistent Country")).toEqual([0, 0]);
+  });
+
+  it("returns Antigua Guatemala coordinates when country is Guatemala", () => {
+    const [lat, lng] = resolveCoords("Antigua Guatemala", "Guatemala");
+    expect(lat).toBeCloseTo(14.5586, 3);
+    expect(lng).toBeCloseTo(-90.7295, 3);
   });
 
   it("returns exact match for London, United Kingdom", () => {

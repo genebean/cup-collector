@@ -1092,7 +1092,8 @@ export const CITY_TO_COUNTRY: Record<string, string> = {
   // Missing Asian cities
   "Huizhou": "China", "Songkhla": "Thailand",
   // Missing Latin American cities
-  "Acapulco": "Mexico", "Brasilia": "Brazil", "Buenos Aires": "Argentina",
+  "Acapulco": "Mexico", "Antigua Guatemala": "Guatemala",
+  "Brasilia": "Brazil", "Buenos Aires": "Argentina",
   "Lima": "Peru", "Mazatlan": "Mexico",
   "San Juan": "Puerto Rico", "San Miguel": "Mexico",
   "Santa Cruz De La Sierra": "Bolivia", "Santiago": "Chile",
