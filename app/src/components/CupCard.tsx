@@ -11,13 +11,12 @@ interface CupCardProps {
 const seriesColors: Record<string, string> = {
   "You Are Here": "bg-green-starbucks",
   "Been There": "bg-blue-600",
-  "Ornament": "bg-red-600",
 };
 
 // Displays a single cup in a list — used on Browse and Search screens.
 // Tapping the card navigates to the Cup Detail screen.
 export function CupCard({ cup }: CupCardProps) {
-  const accentColor = seriesColors[cup.series] ?? "bg-gray-500";
+  const accentColor = seriesColors[cup.series] ?? (cup.item_type === "ornament" ? "bg-red-600" : "bg-gray-500");
 
   return (
     <Link
@@ -46,6 +45,11 @@ export function CupCard({ cup }: CupCardProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-gray-900 dark:text-gray-100 truncate">{cup.name}</span>
+          {cup.item_type === "ornament" && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 flex-shrink-0">
+              ornament
+            </span>
+          )}
           {(cup.scope === "state" || cup.scope === "country" || cup.scope === "themed") && (
             <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 flex-shrink-0 capitalize">
               {cup.scope}

@@ -55,6 +55,11 @@ export function MapBottomSheet({ cups }: Props) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium dark:text-gray-100 truncate">{cup.name}</span>
+                    {cup.item_type === "ornament" && (
+                      <span className="text-[10px] font-medium px-1 py-0.5 rounded bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 flex-shrink-0">
+                        ornament
+                      </span>
+                    )}
                     {(cup.scope === "state" || cup.scope === "country" || cup.scope === "themed") && (
                       <span className="text-[10px] font-medium px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 flex-shrink-0 capitalize">
                         {cup.scope}
