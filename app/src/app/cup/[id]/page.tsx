@@ -293,6 +293,7 @@ export default function CupDetailPage() {
         <div>
           <h1 className="font-bold text-lg leading-tight">{cup.name}</h1>
           <p className="text-xs text-white/60">
+            {cup.item_type === "ornament" && "Ornament · "}
             {cup.scope === "state" ? "State Cup · " : cup.scope === "country" ? "Country Cup · " : cup.scope === "themed" ? "Special Edition · " : null}
             {cup.series} · {cup.year}
           </p>
@@ -369,7 +370,7 @@ export default function CupDetailPage() {
             <Row label={cup.scope === "state" ? "State" : cup.scope === "country" ? "Country" : cup.scope === "themed" ? "Location" : "City"} value={cup.name} />
             {cup.region && <Row label="Region" value={cup.region} />}
             <Row label="Country" value={cup.country} />
-            <Row label="Series" value={cup.series} />
+            <Row label="Series" value={cup.item_type === "ornament" ? `${cup.series} Ornaments` : cup.series} />
             <Row label="Year" value={String(cup.year)} />
             {cup.notes && <Row label="Notes" value={cup.notes} />}
             {(cup.hobbydb_url || cup.more_info_url) && (

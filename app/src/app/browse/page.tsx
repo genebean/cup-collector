@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { haversineMi } from "@/lib/geo";
+import { buildSeriesOptions } from "@/lib/browse";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { CupCard } from "@/components/CupCard";
@@ -20,7 +21,7 @@ export default function BrowsePage() {
   const householdId = session?.user?.householdId ?? null;
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [seriesFilter, setSeriesFilter] = useState("");   // "" = no filter
+  const [seriesFilter, setSeriesFilter] = useState("");   // "" = no filter; "Series|ornament" for ornaments
   const [countryFilter, setCountryFilter] = useState(""); // "" = no filter
   const [scopeFilter, setScopeFilter] = useState<ScopeFilter>(""); // "" = no filter
   const [nearMe, setNearMe] = useState(false);
@@ -78,7 +79,7 @@ export default function BrowsePage() {
     return true;
   }), [cups, ownedCupIds, prefs]);
 
-  const seriesList = useMemo(() => [...new Set(displayableCups.map((c) => c.series))].sort(), [displayableCups]);
+  const seriesOptions = useMemo(() => buildSeriesOptions(displayableCups), [displayableCups]);
   const { pinnedCountries, otherCountries } = useMemo(() => {
     const all = [...new Set(displayableCups.map((c) => c.country).filter(Boolean))];
     const pinned = ["United States", "Canada", "Mexico"].filter((c) => all.includes(c));
@@ -104,7 +105,11 @@ export default function BrowsePage() {
 
     if (statusFilter === "needed") result = result.filter((c) => !c.isOwned);
     if (statusFilter === "owned")  result = result.filter((c) => c.isOwned);
-    if (seriesFilter)              result = result.filter((c) => c.series === seriesFilter);
+    if (seriesFilter) {
+      const [filterSeries, filterType] = seriesFilter.split("|");
+      result = result.filter((c) => c.series === filterSeries);
+      if (filterType) result = result.filter((c) => (c.item_type || "mug") === filterType);
+    }
     if (countryFilter)             result = result.filter((c) => c.country === countryFilter);
     if (scopeFilter)               result = result.filter((c) => (c.scope || "city") === scopeFilter);
 
@@ -172,7 +177,7 @@ export default function BrowsePage() {
               className={selectClass(!!seriesFilter)}
             >
               <option value="">Series…</option>
-              {seriesList.map((s) => <option key={s} value={s}>{s}</option>)}
+              {seriesOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] leading-none text-white/60">▾</span>
           </div>

@@ -314,7 +314,10 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                 const neededRow = (cup: CupWithOwnership, showName = false) => (
                   <div key={cup.id} className="mb-1">
                     {showName && <div className="font-medium text-purple-700">{cup.name}</div>}
-                    <div className="text-gray-500">{cup.series} · {cup.year}</div>
+                    <div className="text-gray-500">
+                      {cup.series} · {cup.year}
+                      {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
+                    </div>
                     <div className="text-orange-600">
                       {cup.ownedRecord?.needs_replacing ? "⚠ Needs replacing" : "Needed"}
                     </div>
@@ -366,6 +369,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                           return (
                             <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
                               ✓ {cup.name}{scopeSuffix} · {cup.series} · {cup.year}
+                              {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
                             </div>
                           );
                         })}
@@ -425,7 +429,10 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                           return (
                             <div key={cup.id} className="mb-1.5">
                               <div className="font-medium">{cup.name}{scopeLabel}</div>
-                              <div className="text-gray-500 text-xs">{cup.series} · {cup.year}</div>
+                              <div className="text-gray-500 text-xs">
+                                {cup.series} · {cup.year}
+                                {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
+                              </div>
                               <div className="text-orange-600 text-xs">{nr ? "⚠ Needs replacing" : "Needed"}</div>
                               <button
                                 onClick={() => router.push(`/cup/${cup.id}`)}
@@ -451,6 +458,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                           return (
                             <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
                               ✓ {cup.name}{scopeLabel} · {cup.series} · {cup.year}
+                              {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
                             </div>
                           );
                         })}
