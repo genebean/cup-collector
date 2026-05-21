@@ -48,8 +48,13 @@ export async function POST(req: NextRequest) {
       let existingId: string | null = null;
       let existingRecord: Record<string, unknown> | null = null;
       try {
+        // item_type is part of the upsert key: mug and ornament for the same
+        // name/series/year are separate catalog entries, not updates of each other.
+        const itemTypeClause = row.item_type === "ornament"
+          ? `item_type = "ornament"`
+          : `item_type != "ornament"`;
         const found = await pb.collection("cups").getFirstListItem(
-          `name="${row.name}" && series="${row.series}" && year=${row.year}`
+          `name="${row.name}" && series="${row.series}" && year=${row.year} && ${itemTypeClause}`
         );
         existingRecord = found;
         existingId = found.id as string;

@@ -10,7 +10,7 @@
 //   name (or city), scope, region, country, country_code, series, year, lat, lng, image_url, hobbydb_url, more_info_url, notes
 //   Old CSVs with "city" column and no "scope" column are still accepted — scope defaults to "city".
 //
-// Upsert logic: match on (name + series + year) — update if exists, create if not.
+// Upsert logic: match on (name + series + year + item_type) — update if exists, create if not.
 // Safe to re-run at any time — will not duplicate records.
 
 import * as fs from "fs";
@@ -98,12 +98,18 @@ async function main() {
   for (const row of rows) {
     const label = `${row.name} / ${row.series} / ${row.year}`;
     try {
-      // Check if a matching record already exists (upsert key: name + series + year)
+      // Check if a matching record already exists (upsert key: name + series + year + item_type)
+      // item_type is part of the key: mug and ornament for the same name/series/year are
+      // separate catalog entries. Using != "ornament" for mugs handles pre-migration
+      // records where item_type was stored as empty string.
       let existingId: string | null = null;
       let existingRecord: Record<string, unknown> | null = null;
       try {
+        const itemTypeClause = row.item_type === "ornament"
+          ? `item_type = "ornament"`
+          : `item_type != "ornament"`;
         existingRecord = await pb.collection("cups").getFirstListItem(
-          `name="${row.name}" && series="${row.series}" && year=${row.year}`
+          `name="${row.name}" && series="${row.series}" && year=${row.year} && ${itemTypeClause}`
         );
         existingId = existingRecord.id as string;
       } catch {
