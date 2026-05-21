@@ -101,8 +101,8 @@ describe("resolveCountry", () => {
     expect(resolveCountry("Mini Shanghai Gold")).toBe("China");
   });
 
-  it("defaults to United States for unknown cities", () => {
-    expect(resolveCountry("Nonexistent City")).toBe("United States");
+  it("returns empty string for unknown cities", () => {
+    expect(resolveCountry("Nonexistent City")).toBe("");
   });
 
   it("returns Guatemala for Antigua Guatemala (not the default)", () => {

@@ -87,7 +87,7 @@ export function resolveCountry(cityName: string): string {
       if (CITY_TO_COUNTRY[c]) return CITY_TO_COUNTRY[c];
     }
   }
-  return "United States";
+  return "";
 }
 
 export function resolveCoords(city: string, country: string): [number, number] {
@@ -572,7 +572,7 @@ export function buildRows(filterSeries: string | null, mugsIndex: Map<string, st
     // State/country/themed cups appear in city-pin popups — no standalone pin needed,
     // so 0,0 coords are fine. Only skip city-scope entries that are missing coords.
     const isNonPin = e.scope === "state" || e.scope === "country" || e.scope === "themed";
-    if (!isNonPin && lat === 0 && lng === 0 && e.country !== "") {
+    if (!isNonPin && lat === 0 && lng === 0) {
       noCoords.push(`${e.city} (${e.series})`);
       continue;
     }
