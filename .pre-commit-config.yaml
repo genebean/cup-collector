@@ -18,3 +18,18 @@ repos:
         entry: "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
         files: flake\.nix
         pass_filenames: false
+
+      - id: docs-link-check
+        name: Check internal docs links
+        language: python
+        entry: python3 scripts/check-docs-links.py
+        pass_filenames: false
+        files: ^docs/
+
+      - id: htmlhint
+        name: htmlhint
+        language: node
+        entry: htmlhint
+        args: ["--config", ".htmlhintrc"]
+        files: ^docs/.*\.html$
+        additional_dependencies: ["htmlhint@1.1.4"]

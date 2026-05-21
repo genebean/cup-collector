@@ -62,12 +62,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // with URL query params — check both so both paths work.
             const params = new URL(req.url).searchParams;
             const role = (credentials.role as string | undefined) ?? params.get("role") ?? "viewer";
-            const household = (credentials.household as string | undefined) ?? params.get("household") ?? "test-household";
+            const household = (credentials.household as string | undefined) ?? params.get("household") ?? "test_household";
             return {
               id: `dev-${household}-${role}`,
               name: `Dev ${role} (${household})`,
               email: `dev-${role}@playwright.local`,
-              groups: [`cup-collector-${household}-${role}`],
+              groups: [`cup_collector_${household}_${role}`],
             };
           },
         }),
