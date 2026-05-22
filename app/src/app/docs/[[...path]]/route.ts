@@ -15,6 +15,31 @@ const MIME: Record<string, string> = {
   ".svg":   "image/svg+xml",
 };
 
+// Styled 404 page using the docs' own CSS — consistent with the rest of /docs.
+// Route handlers in Next.js App Router pass through 404 response bodies directly;
+// notFound() from next/navigation is NOT used here because it throws a special
+// error that Next.js swallows when thrown from a route handler (produces 0-byte body).
+const NOT_FOUND_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 — Page Not Found</title>
+<link rel="stylesheet" href="/docs/shared.css">
+</head>
+<body>
+<div class="topbar">
+  <a href="/docs" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav"><a href="/docs">Docs home</a></nav>
+</div>
+<div class="hero" style="text-align:center;padding:4rem 1rem;">
+  <h1>404</h1>
+  <p class="tagline">This page could not be found.</p>
+  <p><a href="/docs">← Back to documentation</a></p>
+</div>
+</body>
+</html>`;
+
 // Build substitution pairs from env vars written by the Nix module.
 // Called per-request so it picks up the env at runtime, not build time.
 function substitutions(): [string, string][] {
@@ -43,7 +68,10 @@ export async function GET(
   const docsAbs = path.resolve(DOCS_DIR);
   const resolved = path.resolve(requested);
   if (resolved !== docsAbs && !resolved.startsWith(docsAbs + path.sep)) {
-    return new NextResponse("Not Found", { status: 404 });
+    return new NextResponse(NOT_FOUND_HTML, {
+      status: 404,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
   }
 
   let target = resolved;
@@ -55,7 +83,10 @@ export async function GET(
   }
 
   if (!fs.existsSync(target)) {
-    return new NextResponse("Not Found", { status: 404 });
+    return new NextResponse(NOT_FOUND_HTML, {
+      status: 404,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
   }
 
   const ext = path.extname(target).toLowerCase();
