@@ -65,8 +65,8 @@
 </table>
 
 <div class="callout tip">
-  <strong>Upsert key: name + series + year</strong>
-  The import script matches records on the combination of <code>name</code>, <code>series</code>, and <code>year</code>. If a matching record exists it's updated; if not, it's created. This means the script is safe to re-run at any time without duplicating records.
+  <strong>Upsert key: name + series + year + item_type</strong>
+  The import script matches records on the combination of <code>name</code>, <code>series</code>, <code>year</code>, and <code>item_type</code>. If a matching record exists it's updated; if not, it's created. This means the script is safe to re-run at any time without duplicating records — and that a mug and an ornament with the same name, series, and year are treated as separate records.
 </div>
 
 <h2>Step 2 (Curator) — Export as CSV</h2>
