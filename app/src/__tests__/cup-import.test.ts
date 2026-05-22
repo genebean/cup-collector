@@ -131,6 +131,15 @@ describe("rowMatchesExisting", () => {
     expect(rowMatchesExisting(base, { ...existing, notes: undefined })).toBe(true);
   });
 
+  it("empty CSV hobbydb_url does not overwrite an existing non-empty DB value", () => {
+    // CSV has no hobbydb_url; DB has a hand-curated link — should be treated as matching
+    // so the update path is never triggered and the DB value is preserved.
+    expect(rowMatchesExisting(
+      { ...base, hobbydb_url: "" },
+      { ...existing, hobbydb_url: "https://www.hobbydb.com/marketplaces/hobbydb/catalog_items/seattle" }
+    )).toBe(true);
+  });
+
   it("returns false when item_type differs", () => {
     expect(rowMatchesExisting({ ...base, item_type: "ornament" }, existing)).toBe(false);
   });
