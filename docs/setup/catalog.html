@@ -94,7 +94,7 @@ POCKETBASE_ADMIN_PASSWORD=your-pocketbase-admin-password</pre>
 <h2>Step 4 — Import</h2>
 <p>When the dry-run output looks right, apply it:</p>
 <pre>import-cups --prod --file cups.csv</pre>
-<p>The script upserts records matched on <code>name</code> + <code>series</code> + <code>year</code>, so it's safe to re-run — it will not duplicate records. It prints a summary of created, updated, unchanged, and errored records when done.</p>
+<p>The script upserts records matched on <code>name</code> + <code>series</code> + <code>year</code> + <code>item_type</code>, so it's safe to re-run — it will not duplicate records, and a mug and an ornament with the same name, series, and year are kept as separate entries. It prints a summary of created, updated, unchanged, and errored records when done.</p>
 
 <h2>Step 5 — Verify</h2>
 <p>Open an SSH tunnel and check the PocketBase admin UI: <strong>Collections → cups</strong> should show your records. Once you sign in to the app, cups with coordinates will appear on the map and all cups will appear in Browse.</p>
