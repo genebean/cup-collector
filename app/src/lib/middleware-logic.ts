@@ -1,4 +1,4 @@
-export const PUBLIC_PATHS = ["/sign-in", "/access-denied", "/auth-error"];
+export const PUBLIC_PATHS = ["/sign-in", "/access-denied", "/auth-error", "/docs"];
 
 export function knownGroups(): string[] {
   return [
