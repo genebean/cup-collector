@@ -62,6 +62,14 @@ describe("resolveMiddlewareAction — public paths", () => {
     expect(resolveMiddlewareAction("/auth-error", false, [])).toBe("allow");
   });
 
+  it("allows /docs without authentication", () => {
+    expect(resolveMiddlewareAction("/docs", false, [])).toBe("allow");
+  });
+
+  it("allows /docs subpaths without authentication", () => {
+    expect(resolveMiddlewareAction("/docs/setup/deployment.html", false, [])).toBe("allow");
+  });
+
   it("allows subpaths of public routes", () => {
     expect(resolveMiddlewareAction("/sign-in/callback", false, [])).toBe("allow");
   });

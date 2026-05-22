@@ -3,11 +3,13 @@ let
   cfg = config.services.cupCollector;
   ociBackend = config.virtualisation.oci-containers.backend;
   ociRuntimeBin = "${pkgs.${ociBackend}}/bin/${ociBackend}";
-  derivedEnv = pkgs.writeText "cup-collector-derived-env" ''
+  derivedEnv = pkgs.writeText "cup-collector-derived-env" (''
     NEXTAUTH_URL=https://${cfg.domain}
     POCKETBASE_URL=http://localhost:${toString cfg.pbPort}
     POCKETID_ISSUER_URL=${cfg.pocketidIssuerUrl}
-  '';
+  '' + lib.optionalString (cfg.pbDomain != null) ''
+    POCKETBASE_PUBLIC_URL=https://${cfg.pbDomain}
+  '');
   householdsJson = pkgs.writeText "cup-collector-households" (builtins.toJSON cfg.households);
   pbInitScript = pkgs.writeShellScript "cup-collector-pb-init" ''
     until ${pkgs.curl}/bin/curl -sf http://localhost:${toString cfg.pbPort}/api/health > /dev/null; do
@@ -233,6 +235,7 @@ in {
           "HOSTNAME=127.0.0.1"
           "NODE_ENV=production"
           "AUTH_TRUST_HOST=true"
+          "DOCS_DIR=${cfg.appPackage}/standalone/docs"
         ];
         DynamicUser = true;
         StateDirectory = "cup-collector";

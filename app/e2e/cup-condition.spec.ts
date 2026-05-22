@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { join } from "node:path";
+import { clearAllOwnedCups } from "../playwright/cleanup-helpers.ts";
 
 const authDir = join(import.meta.dirname, "../playwright/.auth");
 
@@ -11,26 +12,11 @@ async function goToSeattleCup(page: Page) {
   await expect(page).toHaveURL(/\/cup\//, { timeout: 10_000 });
 }
 
-// Remove ownership if it was set during a test so the database is clean for the next one.
-// Uses waitFor rather than count() because the owned-state query is async — count() returns
-// immediately and can see 0 before React has rendered the button, silently skipping cleanup.
-async function cleanupOwnership(page: Page) {
-  await goToSeattleCup(page);
-  const removeBtn = page.getByRole("button", { name: "Remove from Collection" });
-  const isOwned = await removeBtn.waitFor({ state: "visible", timeout: 5_000 }).then(() => true).catch(() => false);
-  if (isOwned) {
-    await removeBtn.click();
-    // Confirm the removal dialog
-    await page.getByRole("button", { name: "Remove", exact: true }).click();
-    await expect(page.getByRole("button", { name: /Mark as Owned/ })).toBeVisible({ timeout: 5_000 });
-  }
-}
-
 test.describe("cup condition — cup-owner", () => {
   test.use({ storageState: join(authDir, "owner.json") });
 
-  test.afterEach(async ({ page }) => {
-    await cleanupOwnership(page);
+  test.afterEach(async () => {
+    await clearAllOwnedCups();
   });
 
   test("condition card appears with good-condition status after marking owned", async ({ page }) => {

@@ -325,6 +325,7 @@ NGINXEOF
             cp -r .next/standalone $out/
             cp -r public $out/standalone/public
             cp -r .next/static $out/standalone/.next/static
+            cp -r ${./docs} $out/standalone/docs
           '';
         };
 

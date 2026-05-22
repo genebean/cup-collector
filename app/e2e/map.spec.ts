@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { join } from "node:path";
+import { clearAllOwnedCups } from "../playwright/cleanup-helpers.ts";
 
 const authDir = join(import.meta.dirname, "../playwright/.auth");
 
@@ -27,6 +28,13 @@ async function clickPin(page: Page) {
 
 test.describe("map — pin interactions", () => {
   test.use({ storageState: join(authDir, "owner.json") });
+
+  // Guard against state leakage from preceding spec files (cup-condition / cup-photo
+  // mark Seattle as owned; their API-based afterEach cleanup is reliable, but this
+  // beforeAll provides a safety net so map tests always start with a clean slate.
+  test.beforeAll(async () => {
+    await clearAllOwnedCups();
+  });
 
   test.afterEach(async ({ page }) => {
     // Reset collection prefs so excluded series don't bleed into later tests

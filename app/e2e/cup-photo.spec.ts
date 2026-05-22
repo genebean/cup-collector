@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { join } from "node:path";
+import { clearAllOwnedCups } from "../playwright/cleanup-helpers.ts";
 
 const authDir = join(import.meta.dirname, "../playwright/.auth");
 const FIXTURE_PHOTO = join(import.meta.dirname, "fixtures/test-photo.png");
@@ -19,23 +20,11 @@ async function markOwned(page: Page) {
   await expect(page.getByRole("button", { name: "Upload personal photo" })).toBeVisible({ timeout: 5_000 });
 }
 
-async function removeOwned(page: Page) {
-  await goToSeattleCup(page);
-  const removeBtn = page.getByRole("button", { name: "Remove from Collection" });
-  const isOwned = await removeBtn.waitFor({ state: "visible", timeout: 5_000 }).then(() => true).catch(() => false);
-  if (isOwned) {
-    await removeBtn.click();
-    // Confirm the removal dialog
-    await page.getByRole("button", { name: "Remove", exact: true }).click();
-    await expect(page.getByRole("button", { name: /Mark as Owned/ })).toBeVisible({ timeout: 5_000 });
-  }
-}
-
 test.describe("own photo — cup-owner", () => {
   test.use({ storageState: join(authDir, "owner.json") });
 
-  test.afterEach(async ({ page }) => {
-    await removeOwned(page);
+  test.afterEach(async () => {
+    await clearAllOwnedCups();
   });
 
   test("camera button appears on owned cup and is absent on unowned cup", async ({ page }) => {
