@@ -71,9 +71,10 @@ export default function BrowsePage() {
 
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
 
-  // Owned cups always show; only unowned cups from excluded series/types are hidden.
+  // Owned cups always show; unowned cups from excluded series/types or marked as duplicates are hidden.
   const displayableCups = useMemo(() => cups.filter((c) => {
     if (ownedCupIds.has(c.id)) return true;
+    if (c.is_duplicate) return false;
     if (prefs.excluded_series?.includes(c.series)) return false;
     if (prefs.excluded_types?.includes(c.item_type || "mug")) return false;
     return true;

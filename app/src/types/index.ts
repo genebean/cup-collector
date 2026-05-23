@@ -33,6 +33,8 @@ export interface Cup {
   hobbydb_url: string;   // Direct URL to this cup's hobbyDB record, if known
   more_info_url: string; // Fallback external reference (e.g. starbucks-mugs.com)
   venue_series: string;  // Themed cups only: series name of the venue cups they're sold at
+  is_duplicate: boolean; // When true, hidden from Browse/Map/Search unless the household owns it
+  duplicate_ok: boolean; // When true, excluded from auto-detected potential-duplicate groups
 }
 
 export interface OwnedCup {

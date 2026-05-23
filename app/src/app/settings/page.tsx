@@ -76,6 +76,13 @@ export default async function SettingsPage() {
               <span className="font-medium text-green-starbucks dark:text-green-400">Import Cups</span>
               <span className="text-green-starbucks dark:text-green-400">→</span>
             </Link>
+            <Link
+              href="/admin/duplicates"
+              className="flex justify-between px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-colors"
+            >
+              <span className="font-medium text-green-starbucks dark:text-green-400">Duplicate Cups</span>
+              <span className="text-green-starbucks dark:text-green-400">→</span>
+            </Link>
           </Section>
         )}
 
