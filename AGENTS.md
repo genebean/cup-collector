@@ -156,6 +156,7 @@ Each command has two forms:
 | `import-cups --file cups.csv --dry-run` | Preview import without writing |
 | `build-catalog --out cups.csv` | Build a starter catalog CSV from community-sourced data (see `scripts/scrape-catalog.ts`) |
 | `create-household --name "..." --slug "..."` | Create a household record in PocketBase |
+| `backfill-region [--dry-run]` | Backfill missing `region` from same-series sibling cups (fixes duplicate-detection bucketing) |
 | `gen-auth-secret` / `cc-gen-auth-secret` | Generate a new AUTH_SECRET value |
 | `docs-serve` / `cc-docs-serve` | Serve the docs site at localhost:4000 |
 | `check` / `cc-check` | Run pre-commit hooks, unit tests with coverage, and ESLint locally (fast CI check) |
