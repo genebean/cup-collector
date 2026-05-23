@@ -288,10 +288,36 @@ NGINXEOF
             "$@"
         '';
 
+        # Backfill missing `region` on cups where a same-series variant already has region set.
+        # Usage: backfill-region [--dry-run] [--prod]
+        # --prod loads app/.env.prod instead of app/.env.local (targets production PocketBase).
+        # Requires POCKETBASE_URL, POCKETBASE_ADMIN_EMAIL, and POCKETBASE_ADMIN_PASSWORD.
+        ccBackfillRegion = pkgs.writeShellScriptBin "cc-backfill-region" ''
+          PROJ_ROOT="$(git rev-parse --show-toplevel)"
+          ENV_FILE="$PROJ_ROOT/app/.env.local"
+          PASS_ARGS=()
+          for arg in "$@"; do
+            if [[ "$arg" == "--prod" ]]; then
+              ENV_FILE="$PROJ_ROOT/app/.env.prod"
+            else
+              PASS_ARGS+=("$arg")
+            fi
+          done
+          set -a
+          source "$ENV_FILE"
+          set +a
+          NODE_PATH="$PROJ_ROOT/app/node_modules" \
+            "$PROJ_ROOT/app/node_modules/.bin/ts-node" \
+            --transpile-only \
+            --project "$PROJ_ROOT/scripts/tsconfig.json" \
+            "$PROJ_ROOT/scripts/backfill-region.ts" \
+            "''${PASS_ARGS[@]}"
+        '';
+
         devScripts = [
           ccPbServe ccPocketidServe ccDevNext ccDevNextBypass ccDevNextNetwork ccDevNextHttps
           ccPlaywrightInstall ccPlayE2e ccGenAuthSecret
-          ccDocsServe ccCheck ccImportCups ccBuildCatalog ccCreateHousehold
+          ccDocsServe ccCheck ccImportCups ccBuildCatalog ccCreateHousehold ccBackfillRegion
         ];
 
       in {
@@ -360,6 +386,7 @@ NGINXEOF
             import-cups()        { cc-import-cups "$@"; }
             build-catalog()      { cc-build-catalog "$@"; }
             create-household()   { cc-create-household "$@"; }
+            backfill-region()    { cc-backfill-region "$@"; }
 
             if [[ $- == *i* ]]; then
               echo "Cup Collector dev shell"
@@ -374,6 +401,7 @@ NGINXEOF
               echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run])"
               echo "  build-catalog       generate starter catalog CSV (--out cups.csv [--series <name>])"
               echo "  create-household    create a household record in PocketBase (--name <name> --slug <slug>)"
+              echo "  backfill-region     backfill missing region from same-series siblings [--dry-run]"
               echo "  docs-serve          serve the HTML docs on http://localhost:4000"
               echo "  check               run pre-commit hooks, unit tests, and lint"
               echo "  playwright-install  install Playwright's Chrome (one-time setup)"
