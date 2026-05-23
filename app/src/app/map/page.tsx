@@ -106,6 +106,7 @@ export default function MapPage() {
         const owned = ownedCupIds.has(c.id);
         // Owned cups always show; only hide unowned cups from excluded series/types
         if (!owned) {
+          if (c.is_duplicate) return false;
           if (prefs.excluded_series?.includes(c.series)) return false;
           if (prefs.excluded_types?.includes(c.item_type || "mug")) return false;
         }

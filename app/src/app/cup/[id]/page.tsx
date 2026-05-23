@@ -37,6 +37,7 @@ export default function CupDetailPage() {
   } | null>(null);
 
   const [removeConfirm, setRemoveConfirm] = useState(false);
+  const [duplicateConfirm, setDuplicateConfirm] = useState(false);
 
   // Per-household cup notes — editable by owners, read-only for viewers
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
@@ -204,6 +205,19 @@ export default function CupDetailPage() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["owned_cup", id, householdId] });
       queryClient.invalidateQueries({ queryKey: ["owned_cups", householdId] });
+    },
+  });
+
+  // Toggle is_duplicate — owner-only admin action
+  const markDuplicate = useMutation({
+    mutationFn: (is_duplicate: boolean) =>
+      fetch("/api/admin/duplicates", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cup_id: id, is_duplicate }),
+      }).then((r) => { if (!r.ok) throw new Error("Failed"); return r.json(); }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["cup", id] });
     },
   });
 
@@ -613,6 +627,24 @@ export default function CupDetailPage() {
             </div>
           )}
 
+          {/* Admin — duplicate flag, visible to owners only */}
+          {canWrite && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4">
+              <h2 className="font-semibold text-sm text-gray-700 dark:text-gray-200 mb-2">Admin</h2>
+              <button
+                onClick={() => cup.is_duplicate ? markDuplicate.mutate(false) : setDuplicateConfirm(true)}
+                disabled={markDuplicate.isPending}
+                className={`w-full py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                  cup.is_duplicate
+                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                {markDuplicate.isPending ? "Saving…" : cup.is_duplicate ? "✓ Marked as duplicate — click to unmark" : "Mark as duplicate"}
+              </button>
+            </div>
+          )}
+
           {/* Nearby Starbucks.
               When the cup is owned, each store row includes an "Acquired here" button
               to record where the cup was obtained. */}
@@ -684,6 +716,32 @@ export default function CupDetailPage() {
           )}
         </div>
       </main>
+
+      {/* Mark-as-duplicate confirmation */}
+      {duplicateConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-sm shadow-xl">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">Mark as duplicate?</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+              This cup will be hidden from Browse, Map, and Search for all households that don&apos;t own it.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDuplicateConfirm(false)}
+                className="flex-1 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setDuplicateConfirm(false); markDuplicate.mutate(true); }}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold cursor-pointer hover:brightness-110"
+              >
+                Mark as duplicate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Overwrite-store confirmation modal */}
       {storeConfirm && (

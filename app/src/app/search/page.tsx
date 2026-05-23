@@ -37,10 +37,13 @@ export default function SearchPage() {
     return cups
       .filter(
         (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.country.toLowerCase().includes(q) ||
-          c.series.toLowerCase().includes(q) ||
-          c.region?.toLowerCase().includes(q)
+          (!c.is_duplicate || ownedCupIds.has(c.id)) &&
+          (
+            c.name.toLowerCase().includes(q) ||
+            c.country.toLowerCase().includes(q) ||
+            c.series.toLowerCase().includes(q) ||
+            c.region?.toLowerCase().includes(q)
+          )
       )
       .map((cup) => ({
         ...cup,
