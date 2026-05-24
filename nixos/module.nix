@@ -1,15 +1,23 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.services.cupCollector;
   ociBackend = config.virtualisation.oci-containers.backend;
   ociRuntimeBin = "${pkgs.${ociBackend}}/bin/${ociBackend}";
-  derivedEnv = pkgs.writeText "cup-collector-derived-env" (''
-    NEXTAUTH_URL=https://${cfg.domain}
-    POCKETBASE_URL=http://localhost:${toString cfg.pbPort}
-    POCKETID_ISSUER_URL=${cfg.pocketidIssuerUrl}
-  '' + lib.optionalString (cfg.pbDomain != null) ''
-    POCKETBASE_PUBLIC_URL=https://${cfg.pbDomain}
-  '');
+  derivedEnv = pkgs.writeText "cup-collector-derived-env" (
+    ''
+      NEXTAUTH_URL=https://${cfg.domain}
+      POCKETBASE_URL=http://localhost:${toString cfg.pbPort}
+      POCKETID_ISSUER_URL=${cfg.pocketidIssuerUrl}
+    ''
+    + lib.optionalString (cfg.pbDomain != null) ''
+      POCKETBASE_PUBLIC_URL=https://${cfg.pbDomain}
+    ''
+  );
   householdsJson = pkgs.writeText "cup-collector-households" (builtins.toJSON cfg.households);
   pbInitScript = pkgs.writeShellScript "cup-collector-pb-init" ''
     until ${pkgs.curl}/bin/curl -sf http://localhost:${toString cfg.pbPort}/api/health > /dev/null; do
@@ -51,7 +59,8 @@ let
       fi
     done
   '';
-in {
+in
+{
   options.services.cupCollector = {
     enable = lib.mkEnableOption "Cup Collector PWA";
 
@@ -150,21 +159,23 @@ in {
     };
 
     households = lib.mkOption {
-      type = lib.types.listOf (lib.types.submodule {
-        options = {
-          name = lib.mkOption {
-            type = lib.types.str;
-            example = "Our Collection";
-            description = "Display name shown in the app header on every screen.";
+      type = lib.types.listOf (
+        lib.types.submodule {
+          options = {
+            name = lib.mkOption {
+              type = lib.types.str;
+              example = "Our Collection";
+              description = "Display name shown in the app header on every screen.";
+            };
+            slug = lib.mkOption {
+              type = lib.types.str;
+              example = "our_collection";
+              description = "Slug matching PocketID group names: cup_collector_{slug}_owner / cup_collector_{slug}_viewer.";
+            };
           };
-          slug = lib.mkOption {
-            type = lib.types.str;
-            example = "our_collection";
-            description = "Slug matching PocketID group names: cup_collector_{slug}_owner / cup_collector_{slug}_viewer.";
-          };
-        };
-      });
-      default = [];
+        }
+      );
+      default = [ ];
       description = "Household records to create in PocketBase on first boot. Idempotent — existing records are not modified.";
     };
 
@@ -225,11 +236,17 @@ in {
     systemd.services.cup-collector = {
       description = "Cup Collector Next.js app";
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" "cup-collector-pb-init.service" ];
+      after = [
+        "network.target"
+        "cup-collector-pb-init.service"
+      ];
       requires = [ "cup-collector-pb-init.service" ];
       serviceConfig = {
         ExecStart = "${pkgs.nodejs_24}/bin/node ${cfg.appPackage}/standalone/server.js";
-        EnvironmentFile = [ derivedEnv cfg.envFile ];
+        EnvironmentFile = [
+          derivedEnv
+          cfg.envFile
+        ];
         Environment = [
           "PORT=${toString cfg.port}"
           "HOSTNAME=127.0.0.1"
@@ -258,7 +275,8 @@ in {
             # proxyWebsockets covers both WebSocket upgrades and SSE (realtime sync)
             proxyWebsockets = true;
           };
-        } // lib.optionalAttrs cfg.useDnsValidation { acmeRoot = null; };
+        }
+        // lib.optionalAttrs cfg.useDnsValidation { acmeRoot = null; };
       }
       # Optional: expose PocketBase admin UI publicly. Default is internal-only.
       # Access the admin UI without this via: ssh -L 8090:localhost:8090 yourserver
@@ -273,7 +291,8 @@ in {
             proxyPass = "http://127.0.0.1:${toString cfg.pbPort}";
             proxyWebsockets = true;
           };
-        } // lib.optionalAttrs cfg.useDnsValidation { acmeRoot = null; };
+        }
+        // lib.optionalAttrs cfg.useDnsValidation { acmeRoot = null; };
       })
     ];
 

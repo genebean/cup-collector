@@ -1,0 +1,21 @@
+{ pkgs }:
+[
+  (import ./pb-serve.nix { inherit pkgs; })
+  (import ./pocketid-serve.nix { inherit pkgs; })
+  (import ./dev-next.nix { inherit pkgs; })
+  (import ./dev-next-bypass.nix { inherit pkgs; })
+  (import ./dev-next-network.nix { inherit pkgs; })
+  (import ./dev-next-https.nix { inherit pkgs; })
+  (import ./docs-serve.nix { inherit pkgs; })
+  (import ./dev-stack-status.nix { inherit pkgs; })
+  (import ./dev-stack-kill.nix { inherit pkgs; })
+  (import ./dev-stack.nix { inherit pkgs; })
+  (import ./check.nix { inherit pkgs; })
+  (import ./playwright-install.nix { inherit pkgs; })
+  (import ./play-e2e.nix { inherit pkgs; })
+  (import ./import-cups.nix { inherit pkgs; })
+  (import ./build-catalog.nix { inherit pkgs; })
+  (import ./backfill-region.nix { inherit pkgs; })
+  (import ./gen-auth-secret.nix { inherit pkgs; })
+  (import ./create-household.nix { inherit pkgs; })
+]
