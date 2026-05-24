@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { signIn } from "@/app/auth";
 import { getAdminPocketBase } from "@/lib/pocketbase";
 
@@ -27,7 +28,7 @@ export default async function SignInPage() {
   return (
     <div className="min-h-screen bg-green-dark flex flex-col items-center justify-center px-6">
       <div className="text-center mb-8">
-        <div className="text-6xl mb-4">☕</div>
+        <Image src="/icons/icon-192.png" alt="Cup Collector" width={96} height={96} className="mb-4 mx-auto" />
         <h1 className="text-3xl font-bold text-white mb-2">Cup Collector</h1>
         <p className="text-white/60 text-sm">Track your Starbucks cup collection</p>
       </div>

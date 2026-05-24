@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Cup Collector brand guide — colors, typography, icon assets, imagery direction, and Canva setup for contributors.">
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
+<title>Cup Collector — Brand Guide</title>
+<style>
+/* ── Brand guide supplementary styles ──────────────────────────────────────── */
+
+/* Color swatch grid */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.85rem;
+  margin: 1.25rem 0;
+}
+
+.swatch {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--white);
+}
+
+.swatch-color {
+  height: 72px;
+}
+
+.swatch-body {
+  padding: 0.6rem 0.75rem 0.75rem;
+}
+
+.swatch-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text);
+  margin-bottom: 0.15rem;
+}
+
+.swatch-hex {
+  font-family: 'IBM Plex Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.swatch-usage {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+  line-height: 1.45;
+}
+
+/* Font specimen */
+.font-specimen {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.specimen-meta {
+  font-family: 'IBM Plex Mono', 'Menlo', monospace;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.specimen-display {
+  font-size: 1.5rem;
+  line-height: 1.3;
+  margin-bottom: 0.3rem;
+  color: var(--green-dark);
+}
+
+.specimen-body {
+  font-size: 0.92rem;
+  color: var(--text-body);
+  line-height: 1.6;
+  margin-top: 0.5rem;
+}
+
+.specimen-weights {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.specimen-weight-item {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+/* Icon asset row */
+.icon-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin: 1.25rem 0;
+}
+
+.icon-item {
+  text-align: center;
+}
+
+.icon-box {
+  margin: 0 auto 0.5rem;
+  display: block;
+  overflow: hidden;
+}
+
+.icon-box.sz-48  { width: 48px;  height: 48px;  border-radius: 10px; }
+.icon-box.sz-64  { width: 64px;  height: 64px;  border-radius: 12px; }
+.icon-box.sz-96  { width: 96px;  height: 96px;  border-radius: 16px; }
+.icon-box.sz-128 { width: 128px; height: 128px; border-radius: 20px; }
+
+.icon-box img { width: 100%; height: 100%; display: block; }
+
+.icon-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Color strip — full-width horizontal brand bar */
+.brand-strip {
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  margin: 1.25rem 0;
+}
+
+.brand-strip span { flex: 1; }
+
+/* Map pin sample */
+.pin-sample {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-right: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.pin-demo {
+  width: 18px;
+  height: 24px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 1px 1px 4px rgba(0,0,0,0.25);
+  flex-shrink: 0;
+}
+
+.pin-demo-green  { background: #00704A; }
+.pin-demo-orange { background: #f97316; }
+
+.pin-dot-starbucks {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2.5px solid #1d4ed8;
+  flex-shrink: 0;
+}
+
+.pin-dot-location {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  border: 2.5px solid #1d4ed8;
+  flex-shrink: 0;
+}
+
+/* Canva step blocks */
+.canva-step {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--green);
+  border-radius: 0 10px 10px 0;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.canva-step-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--green);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+
+.canva-step p { margin-bottom: 0; font-size: 0.93rem; }
+
+/* Usage example chips */
+.usage-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.chip {
+  font-size: 0.74rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  background: var(--white);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+@media (max-width: 520px) {
+  .swatch-grid { grid-template-columns: 1fr 1fr; }
+  .icon-row { justify-content: center; }
+  .specimen-display { font-size: 1.2rem; }
+  .toc-grid { grid-template-columns: 1fr; }
+}
+
+/* Table of contents */
+.toc { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem 1.4rem; margin-bottom: 2.5rem; }
+.toc-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem; }
+.toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2rem; }
+.toc ol { padding-left: 1.2rem; margin: 0; }
+.toc li { margin-bottom: 0.25rem; font-size: 0.88rem; }
+.toc a { color: var(--green); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-brand">☕ Cup Collector</span>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+    <a href="https://github.com/genebean/cup-collector">GitHub</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">›</span>
+  <span>Reference</span>
+  <span class="sep">›</span>
+  <span>Brand Guide</span>
+</nav>
+
+<h1>Brand Guide</h1>
+<p>Everything needed to design Cup Collector materials in Canva or any other tool — colors, typography, icons, imagery, and brand kit setup.</p>
+
+<!-- ── Brand strip ─────────────────────────────────────────────────────────── -->
+<div class="brand-strip" aria-hidden="true">
+  <span style="background:#1E3932; flex:2;"></span>
+  <span style="background:#00704A; flex:2;"></span>
+  <span style="background:#2D5A3D; flex:1;"></span>
+  <span style="background:#CBA258; flex:1;"></span>
+  <span style="background:#FAF7F2; flex:1;"></span>
+</div>
+
+<!-- ── Table of Contents ───────────────────────────────────────────────────── -->
+<div class="toc">
+  <div class="toc-title">Table of Contents</div>
+  <div class="toc-grid">
+    <div>
+      <ol>
+        <li><a href="#identity">Identity</a></li>
+        <li><a href="#colors">Color Palette</a></li>
+        <li><a href="#typography">Typography</a></li>
+      </ol>
+    </div>
+    <div>
+      <ol start="4">
+        <li><a href="#icons">App Icon &amp; PWA Assets</a></li>
+        <li><a href="#imagery">Imagery</a></li>
+        <li><a href="#canva">Canva Setup Guide</a></li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- ── Identity ────────────────────────────────────────────────────────────── -->
+<h2 id="identity" class="no-rule">Identity</h2>
+
+<table>
+  <thead><tr><th>Element</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Name</strong></td><td>Cup Collector</td></tr>
+    <tr><td><strong>Short name</strong> (app icon, small spaces)</td><td>Cups</td></tr>
+    <tr><td><strong>Tagline</strong></td><td>Track your Starbucks location cup collection — self-hosted, map-first, real-time sync.</td></tr>
+    <tr><td><strong>Icon glyph</strong></td><td>Custom SVG cup graphic — gold mug with steam on Deep Forest background. The ☕ emoji is used as a placeholder in design mockups where the SVG is unavailable.</td></tr>
+    <tr><td><strong>App header style</strong></td><td>Cup Collector — white on deep forest (<code>#1E3932</code>), system font bold. No emoji in the app header.</td></tr>
+    <tr><td><strong>Docs topbar style</strong></td><td>☕ Cup Collector — gold (<code>#CBA258</code>) on deep forest (<code>#1E3932</code>), DM Sans SemiBold</td></tr>
+    <tr><td><strong>Category</strong></td><td>Fan-made personal-use app; no Starbucks affiliation or trademark usage</td></tr>
+  </tbody>
+</table>
+
+<h3>Voice and tone</h3>
+<ul>
+  <li><strong>Friendly and direct.</strong> Skip the corporate language. "Tap a pin to see the cup" beats "Interact with a map marker to view product details."</li>
+  <li><strong>Collector-aware.</strong> Readers know what <em>series</em>, <em>variant</em>, <em>region</em>, and <em>You Are Here vs. Been There</em> mean — no need to over-explain.</li>
+  <li><strong>Action-oriented.</strong> Titles name what you do (<em>Using While Traveling</em>, <em>Adding Cups</em>), not what things are.</li>
+  <li><strong>Not a Starbucks brand.</strong> Avoid green sirens, official logos, registered marks, or anything that implies an official relationship.</li>
+</ul>
+
+<!-- ── Color Palette ───────────────────────────────────────────────────────── -->
+<h2 id="colors">Color Palette</h2>
+<p>Five primary colors carry the brand. The remaining colors are semantic or structural — use them for their stated purpose rather than as general design choices.</p>
+
+<h3>Primary palette</h3>
+<div class="swatch-grid">
+  <div class="swatch">
+    <div class="swatch-color" style="background:#1E3932;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Deep Forest</div>
+      <div class="swatch-hex">#1E3932</div>
+      <div class="swatch-usage">Nav bar, page headers, PWA theme color, step number circles. The primary brand color.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#00704A;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Starbucks Green</div>
+      <div class="swatch-hex">#00704A</div>
+      <div class="swatch-usage">Primary accent, interactive elements, "owned" map pins, callout borders, links on dark surfaces.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#2D5A3D;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Mid Green</div>
+      <div class="swatch-hex">#2D5A3D</div>
+      <div class="swatch-usage">Nav border-top, structural separators within green surfaces.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#CBA258;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Gold</div>
+      <div class="swatch-hex">#CBA258</div>
+      <div class="swatch-usage">Brand highlight. Active nav item, wordmark text on dark, step numbers on green-dark, tip callout borders.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#FAF7F2; border-bottom:1px solid #ece8e1;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Cream</div>
+      <div class="swatch-hex">#FAF7F2</div>
+      <div class="swatch-usage">Page background, light surface, card fill. The warm neutral base of every screen.</div>
+    </div>
+  </div>
+</div>
+
+<h3>Support colors</h3>
+<div class="swatch-grid">
+  <div class="swatch">
+    <div class="swatch-color" style="background:#F5EDD8;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Gold Light</div>
+      <div class="swatch-hex">#F5EDD8</div>
+      <div class="swatch-usage">Tip callout background, warm badge fill. Docs site only.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#E8F2EE;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Green Light</div>
+      <div class="swatch-hex">#E8F2EE</div>
+      <div class="swatch-usage">Info callout background, highlight spans in prose. Docs site only.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#E8833A;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Amber</div>
+      <div class="swatch-hex">#E8833A</div>
+      <div class="swatch-usage">Warning callout border. Docs site only.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#0f1a14;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Near Black</div>
+      <div class="swatch-hex">#0F1A14</div>
+      <div class="swatch-usage">Heading text, label text, strong emphasis. Docs site only.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#2C2C2C;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Dark Gray</div>
+      <div class="swatch-hex">#2C2C2C</div>
+      <div class="swatch-usage">Body copy, list items. Docs site only.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#6B6457;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Warm Gray</div>
+      <div class="swatch-hex">#6B6457</div>
+      <div class="swatch-usage">Captions, secondary labels, muted metadata. Docs site only.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#D8D0C4; border-bottom:1px solid #ece8e1;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">Border</div>
+      <div class="swatch-hex">#D8D0C4</div>
+      <div class="swatch-usage">Card borders, table borders, section rules. Docs site only.</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#ffffff; border-bottom:1px solid #ece8e1;"></div>
+    <div class="swatch-body">
+      <div class="swatch-name">White</div>
+      <div class="swatch-hex">#FFFFFF</div>
+      <div class="swatch-usage">Card backgrounds, table cells, modal surfaces.</div>
+    </div>
+  </div>
+</div>
+
+<h3>Map and status colors</h3>
+<p>These colors carry specific meaning in the app's map view and should not be repurposed in other contexts.</p>
+
+<div style="margin: 1rem 0 1.5rem; display:flex; flex-wrap:wrap; gap: 1rem 0;">
+  <div class="pin-sample">
+    <div class="pin-demo pin-demo-green"></div>
+    <div>
+      <div style="font-weight:600; font-size:.88rem;">Owned <code style="font-size:.75rem;">#00704A</code></div>
+      <div style="font-size:.78rem; color:var(--text-muted);">Cup is in the household's collection</div>
+    </div>
+  </div>
+  <div class="pin-sample">
+    <div class="pin-demo pin-demo-orange"></div>
+    <div>
+      <div style="font-weight:600; font-size:.88rem;">Not owned <code style="font-size:.75rem;">#F97316</code></div>
+      <div style="font-size:.78rem; color:var(--text-muted);">Cup is in the catalog but not collected</div>
+    </div>
+  </div>
+  <div class="pin-sample">
+    <div class="pin-dot-starbucks"></div>
+    <div>
+      <div style="font-weight:600; font-size:.88rem;">Nearby Starbucks <code style="font-size:.75rem;">#3B82F6</code></div>
+      <div style="font-size:.78rem; color:var(--text-muted);">Starbucks store pin on the map</div>
+    </div>
+  </div>
+  <div class="pin-sample">
+    <div class="pin-dot-location"></div>
+    <div>
+      <div style="font-weight:600; font-size:.88rem;">You are here <code style="font-size:.75rem;">#FFFFFF</code> / <code style="font-size:.75rem;">#1D4ED8</code></div>
+      <div style="font-size:.78rem; color:var(--text-muted);">User's current GPS location — white fill, blue ring</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Typography ─────────────────────────────────────────────────────────── -->
+<h2 id="typography">Typography</h2>
+
+<div class="callout">
+  <strong>Docs site and design materials — not the app</strong>
+  The three typefaces below are used in the docs site and Canva design work. The app itself uses only the system font stack (see <em>App fonts</em> below) — no web fonts are loaded by the PWA.
+</div>
+
+<div class="callout tip">
+  <strong>Canva note</strong>
+  All three typefaces are available in Canva's font library. Search by exact name. For Google Slides or Docs, use Google Fonts — all three are in the Google Fonts catalog.
+</div>
+
+<h3>Bitter — display headings</h3>
+<div class="font-specimen">
+  <div class="specimen-meta">Bitter · Serif · Google Fonts</div>
+  <div class="specimen-display" style="font-family:'Bitter',Georgia,serif; font-weight:700;">
+    Cup Collector
+  </div>
+  <div class="specimen-display" style="font-family:'Bitter',Georgia,serif; font-weight:700; font-size:1.1rem; color:var(--text-muted);">
+    You Are Here · Been There · Campus Collection
+  </div>
+  <div class="specimen-weights">
+    <div class="specimen-weight-item">
+      <span style="font-family:'Bitter',Georgia,serif; font-weight:700;">Bold</span> — page titles, section heads, doc titles
+    </div>
+  </div>
+</div>
+
+<h3>DM Sans — body and UI text</h3>
+<div class="font-specimen">
+  <div class="specimen-meta">DM Sans · Sans-serif · Google Fonts</div>
+  <div class="specimen-display" style="font-family:'DM Sans',system-ui,sans-serif; font-weight:400; font-size:1.1rem;">
+    Track your collection across every trip.
+  </div>
+  <div class="specimen-body" style="font-family:'DM Sans',system-ui,sans-serif;">
+    Cup Collector shows which cups you own on an interactive map and finds nearby Starbucks when you're traveling — so you always know whether that cup on the shelf is one you need.
+  </div>
+  <div class="specimen-weights">
+    <div class="specimen-weight-item">
+      <span style="font-family:'DM Sans',system-ui,sans-serif; font-weight:400;">Regular</span> — body copy
+    </div>
+    <div class="specimen-weight-item">
+      <span style="font-family:'DM Sans',system-ui,sans-serif; font-weight:600;">SemiBold</span> — labels, card titles, UI text
+    </div>
+  </div>
+</div>
+
+<h3>IBM Plex Mono — code and metadata</h3>
+<div class="font-specimen">
+  <div class="specimen-meta">IBM Plex Mono · Monospace · Google Fonts</div>
+  <div class="specimen-display" style="font-family:'IBM Plex Mono','Menlo','Consolas',monospace; font-weight:400; font-size:1rem; color:var(--text-muted);">
+    REFERENCE · v0.1.0 · #1E3932
+  </div>
+  <div class="specimen-weights">
+    <div class="specimen-weight-item">
+      <span style="font-family:'IBM Plex Mono','Menlo',monospace; font-weight:400;">Regular</span> — code, hex values, eyebrow labels
+    </div>
+    <div class="specimen-weight-item">
+      <span style="font-family:'IBM Plex Mono','Menlo',monospace; font-weight:500;">Medium</span> — code emphasis
+    </div>
+  </div>
+</div>
+
+<h3>App (PWA) — system fonts</h3>
+<p>The installed PWA uses the system font stack, not web fonts. This keeps the app fast and native-feeling on every platform. Do not add custom web fonts to the app.</p>
+<pre><code>-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif</code></pre>
+<p>This resolves to SF Pro on Apple devices and Roboto on Android — both render cleanly at the sizes the app uses.</p>
+
+<!-- ── App Icon & Assets ───────────────────────────────────────────────────── -->
+<h2 id="icons">App Icon &amp; PWA Assets</h2>
+
+<h3>Icon design</h3>
+<p>The app icon uses a custom SVG cup graphic — a gold mug with steam on a Deep Forest (<code>#1E3932</code>) background. The installed icon always appears as a squircle: iOS clips the apple-touch-icon to its squircle shape; Android applies its own adaptive mask to the maskable icon.</p>
+
+<div class="icon-row">
+  <div class="icon-item">
+    <div class="icon-box sz-128"><img src="../assets/icons/icon-512.png" alt="icon-512"></div>
+    <div class="icon-label">icon-512.png<br>512 × 512 px</div>
+  </div>
+  <div class="icon-item">
+    <div class="icon-box sz-128"><img src="../assets/icons/icon-512-maskable.png" alt="icon-512-maskable"></div>
+    <div class="icon-label">icon-512-maskable.png<br>512 × 512 px</div>
+  </div>
+  <div class="icon-item">
+    <div class="icon-box sz-64"><img src="../assets/icons/icon-192.png" alt="icon-192"></div>
+    <div class="icon-label">icon-192.png<br>192 × 192 px</div>
+  </div>
+  <div class="icon-item">
+    <div class="icon-box sz-64"><img src="../assets/icons/apple-touch-icon.png" alt="apple-touch-icon"></div>
+    <div class="icon-label">apple-touch-icon.png<br>180 × 180 px · iOS</div>
+  </div>
+  <div class="icon-item">
+    <div class="icon-box sz-48"><img src="../assets/icons/icon-192.png" alt="favicon"></div>
+    <div class="icon-label">favicon.ico<br>32 × 32 px</div>
+  </div>
+</div>
+
+<table>
+  <thead><tr><th>Asset</th><th>File</th><th>Size</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>PWA icon (large)</td><td><code>icon-512.png</code></td><td>512 × 512 px</td><td>Circular PNG — same design as icon-192 at higher resolution</td></tr>
+    <tr><td>Maskable icon</td><td><code>icon-512-maskable.png</code></td><td>512 × 512 px</td><td>Square full-bleed — Android applies adaptive shape mask; safe zone is center 80%</td></tr>
+    <tr><td>PWA icon</td><td><code>icon-192.png</code></td><td>192 × 192 px</td><td>Circular PNG with transparent corners — fallback for browsers that don't use the maskable icon</td></tr>
+    <tr><td>Apple touch icon</td><td><code>apple-touch-icon.png</code></td><td>180 × 180 px</td><td>Square full-bleed — iOS clips to squircle on the home screen; no padding needed</td></tr>
+    <tr><td>Favicon</td><td><code>favicon.ico</code></td><td>32 × 32 px</td><td>Browser tab icon</td></tr>
+    <tr><td>Splash screens</td><td><code>splash-WxH.png</code></td><td>Various</td><td>Solid Deep Forest background, no graphic; covers 15 iPhone and iPad sizes</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>Splash screen background</strong>
+  All splash screens are a solid <code>#1E3932</code> (Deep Forest) fill — no graphic or wordmark. Any replacement assets must maintain this background to avoid a white flash during app launch on iOS.
+</div>
+
+<!-- ── Imagery ─────────────────────────────────────────────────────────────── -->
+<h2 id="imagery">Imagery</h2>
+
+<h3>What fits</h3>
+<ul>
+  <li><strong>Cups close-up.</strong> Straight-on or slight 3/4 angle, good natural light, cup fills the frame. The location text on the cup should be legible.</li>
+  <li><strong>Travel moments.</strong> Airports, cityscapes, Starbucks storefronts seen while traveling — not staged product shots.</li>
+  <li><strong>Maps and pins.</strong> App screenshots, map views, and UI illustrations that reinforce the "find it on the map" concept.</li>
+  <li><strong>Warm, earthy palettes.</strong> Images that lean into cream, green, and brown tones work naturally with the brand colors.</li>
+</ul>
+
+<h3>What to avoid</h3>
+<ul>
+  <li>Official Starbucks siren logo, registered trademarks, or any imagery that implies an official affiliation.</li>
+  <li>Fluorescent lighting or harsh shadows — cups look flat and unappetizing.</li>
+  <li>Busy backgrounds that compete with the cup's location text.</li>
+  <li>Non-location cups (tumblers, mugs without location names) — the app is specifically for the <em>You Are Here</em>, <em>Been There</em>, and location-specific series.</li>
+  <li>Stock photos of generic coffee — they read as café branding, not collector branding.</li>
+</ul>
+
+<h3>Color treatment in images</h3>
+<p>When placing images alongside brand colors, prefer photos with naturally dark or muted backgrounds so the cream and green palette doesn't fight with the image. A subtle dark vignette or color overlay using Deep Forest at 20–30% opacity can tie photos into the palette when needed.</p>
+
+<!-- ── Canva Setup ─────────────────────────────────────────────────────────── -->
+<h2 id="canva">Canva Setup Guide</h2>
+
+<h3>Brand kit — colors</h3>
+<p>Add these colors to your Canva Brand Kit under <strong>Brand colors</strong>. Name them exactly as listed so teammates can find them by name.</p>
+
+<table>
+  <thead><tr><th>Canva name</th><th>Hex</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>Deep Forest</td><td><code>#1E3932</code></td><td>Primary — headers, nav, backgrounds</td></tr>
+    <tr><td>Starbucks Green</td><td><code>#00704A</code></td><td>Primary accent — buttons, links, icons</td></tr>
+    <tr><td>Gold</td><td><code>#CBA258</code></td><td>Highlight — active states, wordmark</td></tr>
+    <tr><td>Cream</td><td><code>#FAF7F2</code></td><td>Background — light page surfaces</td></tr>
+    <tr><td>Mid Green</td><td><code>#2D5A3D</code></td><td>Structural — borders within green areas</td></tr>
+    <tr><td>Gold Light</td><td><code>#F5EDD8</code></td><td>Fill — tip/callout backgrounds</td></tr>
+    <tr><td>Green Light</td><td><code>#E8F2EE</code></td><td>Fill — info/owned-state tints</td></tr>
+    <tr><td>Warm Gray</td><td><code>#6B6457</code></td><td>Text — captions, secondary labels</td></tr>
+    <tr><td>Near Black</td><td><code>#0F1A14</code></td><td>Text — headings, primary copy</td></tr>
+    <tr><td>Map Orange</td><td><code>#F97316</code></td><td>Status — map pin (not owned)</td></tr>
+    <tr><td>Map Blue</td><td><code>#3B82F6</code></td><td>Status — nearby Starbucks store pin</td></tr>
+    <tr><td>Map Blue Dark</td><td><code>#1D4ED8</code></td><td>Status — "you are here" ring / store pin border</td></tr>
+  </tbody>
+</table>
+
+<h3>Brand kit — fonts</h3>
+
+<p>These fonts match the docs site's visual identity. The app itself uses the system font stack — do not add these as web fonts to the app.</p>
+
+<div class="canva-step">
+  <div class="canva-step-num">Step 1 — Heading font</div>
+  <p>In Canva Brand Kit → Brand fonts, set <strong>Heading</strong> to <strong>Bitter</strong>, weight <strong>Bold (700)</strong>. Canva has Bitter in its library — search by name.</p>
+</div>
+
+<div class="canva-step">
+  <div class="canva-step-num">Step 2 — Body font</div>
+  <p>Set <strong>Body</strong> to <strong>DM Sans</strong>, weight <strong>Regular (400)</strong>. Use <strong>SemiBold (600)</strong> for labels and card titles via the font weight picker.</p>
+</div>
+
+<div class="canva-step">
+  <div class="canva-step-num">Step 3 — Accent / mono font</div>
+  <p>Add a third slot (if your Canva plan allows) for <strong>IBM Plex Mono</strong> at <strong>Regular (400)</strong>. Use this for hex codes, version strings, eyebrow labels, and any code-like text in designs.</p>
+</div>
+
+<div class="canva-step">
+  <div class="canva-step-num">Step 4 — Logo</div>
+  <p>The "logo" is a text treatment: <strong>☕ Cup Collector</strong> in DM Sans SemiBold, color Gold (<code>#CBA258</code>), on a Deep Forest (<code>#1E3932</code>) rectangle. Add this as a Brand Kit logo element or as a saved group. No SVG asset exists.</p>
+</div>
+
+<h3>Recommended Canva template layout</h3>
+<p>For social posts, slide decks, or announcement graphics:</p>
+<ul>
+  <li><strong>Header band:</strong> Deep Forest background, Gold wordmark text (DM Sans SemiBold), ☕ glyph left-aligned.</li>
+  <li><strong>Body area:</strong> Cream background, Near Black headings (Bitter Bold), Dark Gray body copy (DM Sans Regular).</li>
+  <li><strong>Accent elements:</strong> Starbucks Green for button shapes, Gold for icons or highlights, Green Light for soft background panels.</li>
+  <li><strong>Footer:</strong> Warm Gray text, Cream or White background, 1 px Border rule at the top.</li>
+</ul>
+
+<div class="callout tip">
+  <strong>Quick copy — hex codes for Canva color picker</strong>
+  <div style="margin-top:.5rem; display:flex; flex-wrap:wrap; gap:.4rem;">
+    <code>1E3932</code>
+    <code>00704A</code>
+    <code>2D5A3D</code>
+    <code>CBA258</code>
+    <code>FAF7F2</code>
+    <code>F5EDD8</code>
+    <code>E8F2EE</code>
+    <code>6B6457</code>
+    <code>0F1A14</code>
+    <code>2C2C2C</code>
+    <code>F97316</code>
+    <code>3B82F6</code>
+    <code>1D4ED8</code>
+  </div>
+</div>
+
+<footer>
+  <a href="https://github.com/genebean/cup-collector">github.com/genebean/cup-collector</a> · MIT License
+</footer>
+
+</body>
+</html>
