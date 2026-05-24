@@ -547,7 +547,7 @@ code { color: var(--code-text); }
           <div class="screen-note">Bottom sheet shows cups relevant to current viewport</div>
           <div class="screen-note">Radius chips (5/10/25 mi) control nearby store search distance</div>
           <div class="screen-note">"Search here" chip re-runs store search centered on current map view</div>
-          <div class="screen-note">Tap cup pin → popup with cup info + "View details" link → Cup Detail</div>
+          <div class="screen-note">Tap cup pin → popup showing one row per variant; tap cup name to navigate to Cup Detail</div>
           <div class="screen-note">Tap store pin → popup with store info, available cups, and directions link</div>
           <div class="screen-note">Collection preferences (excluded series/types) filter which cups appear</div>
         </div>
@@ -555,24 +555,28 @@ code { color: var(--code-text); }
       <div class="screen-card">
         <div class="screen-name">/browse</div>
         <div class="screen-title">📋 Browse</div>
-        <div class="screen-desc">Filterable list of all cups. "Still Need" cups float to the top when location is active.</div>
+        <div class="screen-desc">Filterable list of all cups. Variant cups (e.g. "Atlanta" and "Atlanta 2") are collapsed into a single card. "Still Need" cups float to the top when location is active.</div>
         <div class="screen-notes">
-          <div class="screen-note">Filter chips: All · Still Need · by Series · by Country</div>
+          <div class="screen-note">Filter chips: All · Still Need · by Series · by Country · by Scope (city/state/country)</div>
           <div class="screen-note">"Near Me" filter applies location-aware sort</div>
           <div class="screen-note">Header badge: "147 cups · 89 owned"</div>
           <div class="screen-note">Search bar — instant results by city name</div>
-          <div class="screen-note">Tap any row → Cup Detail</div>
+          <div class="screen-note">Variant groups show a "N versions" badge; group ownership badge: All owned / N/M owned / Needed</div>
+          <div class="screen-note">Tap any row → Cup Detail (for variant groups, navigates to the base cup)</div>
+          <div class="screen-note">Collection preferences (excluded series/types) filter at group level — a group is hidden only if all its members are excluded</div>
         </div>
       </div>
       <div class="screen-card">
         <div class="screen-name">/cup/[slug]</div>
         <div class="screen-title">☕ Cup Detail</div>
-        <div class="screen-desc">Full detail for one cup. Hero image, metadata, owned toggle (members only), nearby Starbucks list with directions. The slug is the cup's <span class="ic">slug</span> field (e.g. <span class="ic">seattle-been-there-2018</span>); bare PocketBase IDs are also accepted and redirect to the canonical slug URL.</div>
+        <div class="screen-desc">Full detail for one cup or variant group. Hero image (first personal photo across any group member, else catalog image), shared metadata, then one version card per variant. The slug is the cup's <span class="ic">slug</span> field (e.g. <span class="ic">seattle-been-there-2018</span>); bare PocketBase IDs are also accepted and redirect to the canonical slug URL.</div>
         <div class="screen-notes">
-          <div class="screen-note">"Mark as Owned" / "Remove" toggle — members only, hidden from viewers</div>
-          <div class="screen-note">Optimistic UI — updates instantly, rolls back on error</div>
-          <div class="screen-note">Syncs to all connected devices within ~2 seconds</div>
-          <div class="screen-note">Nearby Starbucks list — distance + Maps button per store</div>
+          <div class="screen-note">Version card (one per variant, or one for solo cups): 80×80 thumbnail, ownership badge, Mark as Owned / Remove, condition editing, personal photo upload</div>
+          <div class="screen-note">Tap thumbnail → full-size lightbox (Escape or tap to close)</div>
+          <div class="screen-note">Condition section (owned cups only): needs_replacing flag, optional note, acquisition store — editable by owners</div>
+          <div class="screen-note">Personal photo upload via camera button on version card; replaces catalog image in hero</div>
+          <div class="screen-note">Optimistic UI — ownership toggles update instantly, roll back on error</div>
+          <div class="screen-note">Nearby Starbucks "Acquired here" — solo cups only; for variant groups, record acquisition inside the version card</div>
           <div class="screen-note">Maps button opens maps.apple.com with store coordinates</div>
         </div>
       </div>
