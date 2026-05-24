@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { signOut } from "@/app/auth";
 
 export default function AccessDeniedPage() {
@@ -8,7 +9,7 @@ export default function AccessDeniedPage() {
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
-        <div className="text-5xl mb-4">☕</div>
+        <Image src="/icons/icon-192.png" alt="Cup Collector" width={80} height={80} className="mb-4 mx-auto" />
         <h2 className="text-xl font-bold text-green-dark dark:text-green-400 mb-2">Access Not Granted</h2>
         <p className="text-gray-600 dark:text-gray-300 text-sm max-w-xs mb-2">
           Your account is authenticated but hasn&apos;t been added to an access group yet.
