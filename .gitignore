@@ -36,3 +36,6 @@ cups.csv
 
 # Scraper cache (populated with --cache-dir; not for version control)
 .scrape-cache/
+
+# Dev stack log files (written by cc-dev-stack; read by agents and tail)
+.dev-logs/
