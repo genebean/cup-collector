@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import PocketBase from "pocketbase";
 import { PB_PORT, PB_URL, PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD, PB_CONTAINER } from "./test-pb.ts";
+import { toCupSlug } from "../src/lib/slug.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -101,17 +102,17 @@ async function seedTestData(pb: PocketBase): Promise<void> {
     group_slug: "test_household",
   });
 
-  const cups = [
-    { name: "Seattle",  scope: "city",    region: "WA",  country: "United States",  country_code: "US", series: "Been There", year: 2018, lat: 47.6062,  lng: -122.3321 },
-    { name: "Atlanta",  scope: "city",    region: "GA",  country: "United States",  country_code: "US", series: "Been There", year: 2019, lat: 33.749,   lng: -84.388 },
-    { name: "London",   scope: "city",    region: "",    country: "United Kingdom",  country_code: "GB", series: "Been There", year: 2019, lat: 51.5074,  lng: -0.1278 },
-    { name: "Tokyo",    scope: "city",    region: "",    country: "Japan",           country_code: "JP", series: "Been There", year: 2020, lat: 35.6762,  lng: 139.6503 },
-    { name: "Sydney",   scope: "city",    region: "NSW", country: "Australia",       country_code: "AU", series: "Been There", year: 2020, lat: -33.8688, lng: 151.2093 },
+  const cupDefs = [
+    { name: "Seattle",   scope: "city",    region: "WA",  country: "United States",  country_code: "US", series: "Been There", year: 2018, lat: 47.6062,  lng: -122.3321 },
+    { name: "Atlanta",   scope: "city",    region: "GA",  country: "United States",  country_code: "US", series: "Been There", year: 2019, lat: 33.749,   lng: -84.388 },
+    { name: "London",    scope: "city",    region: "",    country: "United Kingdom",  country_code: "GB", series: "Been There", year: 2019, lat: 51.5074,  lng: -0.1278 },
+    { name: "Tokyo",     scope: "city",    region: "",    country: "Japan",           country_code: "JP", series: "Been There", year: 2020, lat: 35.6762,  lng: 139.6503 },
+    { name: "Sydney",    scope: "city",    region: "NSW", country: "Australia",       country_code: "AU", series: "Been There", year: 2020, lat: -33.8688, lng: 151.2093 },
     // State and country cups — used to test scope grouping on map and browse
-    { name: "Georgia",  scope: "state",   region: "GA",  country: "United States",  country_code: "US", series: "Been There", year: 2022, lat: 32.1656,  lng: -82.9001 },
-    { name: "Australia",scope: "country", region: "",    country: "Australia",       country_code: "AU", series: "Been There", year: 2022, lat: -25.2744, lng: 133.7751 },
+    { name: "Georgia",   scope: "state",   region: "GA",  country: "United States",  country_code: "US", series: "Been There", year: 2022, lat: 32.1656,  lng: -82.9001 },
+    { name: "Australia", scope: "country", region: "",    country: "Australia",       country_code: "AU", series: "Been There", year: 2022, lat: -25.2744, lng: 133.7751 },
   ];
-  for (const cup of cups) {
-    await pb.collection("cups").create(cup);
+  for (const cup of cupDefs) {
+    await pb.collection("cups").create({ ...cup, slug: toCupSlug(cup) });
   }
 }

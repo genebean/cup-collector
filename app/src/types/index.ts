@@ -39,6 +39,7 @@ export interface Cup {
   is_unique: boolean;    // When true, never auto-grouped as a variant even if name implies it
   sub_collection: string; // e.g. "Campus Collection" — from starbucks-mugs.com /tag/ links
   variant_notes: string;  // Scraper-populated explanation of what makes this variant different
+  slug: string;          // URL slug for the detail page: /cup/{slug}; "" until import backfill
 }
 
 export interface OwnedCup {

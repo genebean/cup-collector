@@ -6,16 +6,21 @@ import { useSession } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { getPocketBase, getFileUrl } from "@/lib/pocketbase";
+import { looksLikeId } from "@/lib/slug";
 import { useNearbyRadius } from "@/hooks/useNearbyRadius";
 import { BottomNav } from "@/components/BottomNav";
 import type { Cup, OwnedCup, NearbyStore } from "@/types";
 
 export default function CupDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const { data: session } = useSession();
   const queryClient = useQueryClient();
   const router = useRouter();
   const householdId = session?.user?.householdId ?? null;
+
+  // Support the legacy /cup/{id} path: detect a bare PocketBase ID and redirect
+  // to the canonical slug URL once the cup has loaded.
+  const isId = looksLikeId(slug);
 
   // storeConfirm is used by the nearby Starbucks "Acquired here" flow (solo cups only).
   const [storeConfirm, setStoreConfirm] = useState<{
@@ -42,12 +47,22 @@ export default function CupDetailPage() {
   }, [lightboxOpen]);
 
   const { data: cup, isLoading } = useQuery<Cup>({
-    queryKey: ["cup", id],
-    queryFn: () => getPocketBase().collection("cups").getOne<Cup>(id),
+    queryKey: ["cup", slug],
+    queryFn: () =>
+      isId
+        ? getPocketBase().collection("cups").getOne<Cup>(slug)
+        : getPocketBase().collection("cups").getFirstListItem<Cup>(`slug="${slug}"`),
   });
+
+  // If we arrived via a bare PocketBase ID and the cup has a stored slug,
+  // redirect to the canonical slug URL.
+  useEffect(() => {
+    if (isId && cup?.slug) router.replace(`/cup/${cup.slug}`);
+  }, [isId, cup?.slug, router]);
 
   // ownedRecord for the URL cup — used by the Starbucks "Acquired here" section
   // (solo cups only) and to show own_photo in the hero for solo owned cups.
+  const id = cup?.id ?? slug; // cup.id is stable once loaded; slug is the fallback for ID paths
   const { data: ownedRecord } = useQuery<OwnedCup | null>({
     queryKey: ["owned_cup", id, householdId],
     queryFn: async () => {
@@ -60,7 +75,7 @@ export default function CupDetailPage() {
         return null;
       }
     },
-    enabled: !!householdId,
+    enabled: !!householdId && !!cup,
   });
 
   const isOwned = !!ownedRecord;
@@ -223,8 +238,15 @@ export default function CupDetailPage() {
 
   if (!cup) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-400">
-        Cup not found.
+      <div className="flex flex-col items-center justify-center h-screen gap-4 px-6 text-center">
+        <p className="text-lg font-semibold text-gray-800 dark:text-gray-100">Cup not found</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">This link may be outdated or the cup may have been removed.</p>
+        <button
+          onClick={() => router.back()}
+          className="px-4 py-2 bg-green-dark text-white rounded-lg text-sm font-medium cursor-pointer"
+        >
+          Go back
+        </button>
       </div>
     );
   }
@@ -692,6 +714,7 @@ function VariantMemberCard({
             onClick={() => { if (thumbUrl) setLightboxOpen(true); }}
           >
             {thumbUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={thumbUrl} alt={cup.name} loading="lazy" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 font-bold text-2xl">

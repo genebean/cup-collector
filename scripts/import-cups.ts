@@ -16,7 +16,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import PocketBase from "pocketbase";
-import { parseCSV, rowMatchesExisting, diffRow, type CsvRow } from "./cup-import";
+import { parseCSV, rowMatchesExisting, diffRow, toCupSlug, type CsvRow } from "./cup-import";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
@@ -168,6 +168,7 @@ async function main() {
         notes: row.notes,
         sub_collection: row.sub_collection,
         variant_notes: row.variant_notes,
+        slug: toCupSlug(row),
         // Only write variant_of when the CSV provides it — preserves admin-set values otherwise
         ...(variantOfId !== undefined ? { variant_of: variantOfId } : {}),
         // Only set is_unique when CSV explicitly says true — never reset an admin-set value

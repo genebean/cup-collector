@@ -25,6 +25,7 @@ function cup(overrides: Partial<Cup> & Pick<Cup, "id" | "name" | "series">): Cup
     is_unique: false,
     sub_collection: "",
     variant_notes: "",
+    slug: "",
     ...overrides,
   };
 }
