@@ -84,7 +84,7 @@ test.describe("map — pin interactions", () => {
     await expect(popup).toContainText("Needed");
   });
 
-  test("View details button navigates to cup detail", async ({ page }) => {
+  test("cup name link in popup navigates to cup detail", async ({ page }) => {
     await page.goto("/map");
     await setMapPosition(page, SEATTLE);
     await page.reload();
@@ -94,7 +94,7 @@ test.describe("map — pin interactions", () => {
     await clickPin(page);
 
     await expect(page.locator(".leaflet-popup")).toBeVisible({ timeout: 5_000 });
-    await page.getByRole("button", { name: "View details →" }).first().click();
+    await page.getByRole("button", { name: "Seattle" }).first().click();
     await expect(page).toHaveURL(/\/cup\//, { timeout: 10_000 });
   });
 
