@@ -319,7 +319,9 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                   const anyNeedsReplacing = members.some((c) => c.ownedRecord?.needs_replacing);
                   return (
                     <div key={base.id} className="mb-1">
-                      <div className="font-medium">{base.name}{versionSuffix}</div>
+                      <button onClick={() => router.push(`/cup/${base.id}`)} className="font-medium text-green-700 underline text-left cursor-pointer">
+                        {base.name}{versionSuffix}
+                      </button>
                       <div className="text-gray-500">
                         {base.series} · {base.year}
                         {base.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
@@ -327,16 +329,15 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                       <div className="text-orange-600">
                         {anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}
                       </div>
-                      <button onClick={() => router.push(`/cup/${base.id}`)} className="text-green-700 underline text-xs cursor-pointer">
-                        View details →
-                      </button>
                     </div>
                   );
                 };
 
                 const neededRow = (cup: CupWithOwnership, showName = false) => (
                   <div key={cup.id} className="mb-1">
-                    {showName && <div className="font-medium text-purple-700">{cup.name}</div>}
+                    <button onClick={() => router.push(`/cup/${cup.id}`)} className={`font-medium underline text-left cursor-pointer ${showName ? "text-purple-700" : "text-green-700"}`}>
+                      {cup.name}
+                    </button>
                     <div className="text-gray-500">
                       {cup.series} · {cup.year}
                       {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
@@ -344,9 +345,6 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                     <div className="text-orange-600">
                       {cup.ownedRecord?.needs_replacing ? "⚠ Needs replacing" : "Needed"}
                     </div>
-                    <button onClick={() => router.push(`/cup/${cup.id}`)} className="text-green-700 underline text-xs cursor-pointer">
-                      View details →
-                    </button>
                   </div>
                 );
 
@@ -390,7 +388,11 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                           const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
                           return (
                             <div key={base.id} className="text-xs text-gray-500 mb-0.5">
-                              ✓ {base.name}{versionSuffix} · {base.series} · {base.year}
+                              ✓{" "}
+                              <button onClick={() => router.push(`/cup/${base.id}`)} className="underline cursor-pointer">
+                                {base.name}{versionSuffix}
+                              </button>
+                              {" "}· {base.series} · {base.year}
                               {base.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
                             </div>
                           );
@@ -400,7 +402,11 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                             ? ` (${cup.scope})` : "";
                           return (
                             <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
-                              ✓ {cup.name}{scopeSuffix} · {cup.series} · {cup.year}
+                              ✓{" "}
+                              <button onClick={() => router.push(`/cup/${cup.id}`)} className="underline cursor-pointer">
+                                {cup.name}{scopeSuffix}
+                              </button>
+                              {" "}· {cup.series} · {cup.year}
                               {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
                             </div>
                           );
@@ -460,18 +466,14 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                             : null;
                           return (
                             <div key={cup.id} className="mb-1.5">
-                              <div className="font-medium">{cup.name}{scopeLabel}</div>
+                              <button onClick={() => router.push(`/cup/${cup.id}`)} className="font-medium text-green-700 underline text-left cursor-pointer">
+                                {cup.name}{scopeLabel}
+                              </button>
                               <div className="text-gray-500 text-xs">
                                 {cup.series} · {cup.year}
                                 {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
                               </div>
                               <div className="text-orange-600 text-xs">{nr ? "⚠ Needs replacing" : "Needed"}</div>
-                              <button
-                                onClick={() => router.push(`/cup/${cup.id}`)}
-                                className="text-green-700 underline text-xs cursor-pointer"
-                              >
-                                View details →
-                              </button>
                             </div>
                           );
                         })}
@@ -489,7 +491,11 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                             : "";
                           return (
                             <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
-                              ✓ {cup.name}{scopeLabel} · {cup.series} · {cup.year}
+                              ✓{" "}
+                              <button onClick={() => router.push(`/cup/${cup.id}`)} className="underline cursor-pointer">
+                                {cup.name}{scopeLabel}
+                              </button>
+                              {" "}· {cup.series} · {cup.year}
                               {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
                             </div>
                           );
