@@ -46,7 +46,7 @@ export function MapBottomSheet({ cups }: Props) {
                 key={cup.id}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600"
                 aria-label={`View ${cup.name} cup`}
-                onClick={() => router.push(`/cup/${cup.id}`)}
+                onClick={() => router.push(`/cup/${cup.slug || cup.id}`)}
               >
                 <span
                   className="w-3 h-3 rounded-full flex-shrink-0"

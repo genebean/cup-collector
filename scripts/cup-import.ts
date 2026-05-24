@@ -1,6 +1,33 @@
 // Shared types and pure utilities for the import scripts.
 // Kept in sync with app/src/lib/cup-import.ts — the app's ESM package
 // boundary prevents the scripts (CJS) from importing directly from there.
+//
+// Slug logic is duplicated from app/src/lib/slug.ts for the same reason.
+
+// ── Slug generation (mirrors app/src/lib/slug.ts) ─────────────────────────────
+
+export function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .replace(/['''"`.,;:!?()[\]{}@#$%^*+=|\\<>~]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function toCupSlug(cup: {
+  name: string;
+  series: string;
+  year: number;
+  item_type?: string;
+}): string {
+  const parts = [slugify(cup.name), slugify(cup.series), String(cup.year)];
+  if ((cup.item_type ?? "mug") === "ornament") parts.push("ornament");
+  return parts.join("-");
+}
+
+// ── CSV row type ──────────────────────────────────────────────────────────────
 
 export interface CsvRow {
   name: string;         // was "city" — now holds city, state, country, or themed location name
@@ -108,6 +135,8 @@ export function rowMatchesExisting(row: CsvRow, existing: Record<string, unknown
   // hobbydb_url is filled manually after export — only compare when the CSV has a value,
   // so a hand-curated DB entry is never overwritten by an empty CSV column.
   const hobbydbMatch = !row.hobbydb_url || row.hobbydb_url === s(existing.hobbydb_url);
+  // slug is always generated — if it's missing or stale in the DB, force an update.
+  const expectedSlug = toCupSlug(row);
   return (
     row.item_type      === s(existing.item_type) &&
     row.scope          === (s(existing.scope) || "city") &&
@@ -122,7 +151,8 @@ export function rowMatchesExisting(row: CsvRow, existing: Record<string, unknown
     row.more_info_url  === s(existing.more_info_url) &&
     row.notes          === s(existing.notes) &&
     row.sub_collection === s(existing.sub_collection) &&
-    row.variant_notes  === s(existing.variant_notes)
+    row.variant_notes  === s(existing.variant_notes) &&
+    expectedSlug       === s(existing.slug)
     // variant_of is resolved to an ID in the import script and compared there.
     // is_unique is admin-only and never overwritten by a CSV import.
   );
@@ -146,5 +176,7 @@ export function diffRow(row: CsvRow, existing: Record<string, unknown>): string[
   if (row.notes          !== s(existing.notes))               diffs.push(`notes: csv="${row.notes}" db="${s(existing.notes)}"`);
   if (row.sub_collection !== s(existing.sub_collection))      diffs.push(`sub_collection: csv="${row.sub_collection}" db="${s(existing.sub_collection)}"`);
   if (row.variant_notes  !== s(existing.variant_notes))       diffs.push(`variant_notes: csv="${row.variant_notes}" db="${s(existing.variant_notes)}"`);
+  const expectedSlug = toCupSlug(row);
+  if (expectedSlug       !== s(existing.slug))                diffs.push(`slug: expected="${expectedSlug}" db="${s(existing.slug)}"`);
   return diffs;
 }

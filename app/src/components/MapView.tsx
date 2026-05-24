@@ -319,7 +319,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                   const anyNeedsReplacing = members.some((c) => c.ownedRecord?.needs_replacing);
                   return (
                     <div key={base.id} className="mb-1">
-                      <button onClick={() => router.push(`/cup/${base.id}`)} className="font-medium text-green-700 underline text-left cursor-pointer">
+                      <button onClick={() => router.push(`/cup/${base.slug || base.id}`)} className="font-medium text-green-700 underline text-left cursor-pointer">
                         {base.name}{versionSuffix}
                       </button>
                       <div className="text-gray-500">
@@ -335,7 +335,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
 
                 const neededRow = (cup: CupWithOwnership, showName = false) => (
                   <div key={cup.id} className="mb-1">
-                    <button onClick={() => router.push(`/cup/${cup.id}`)} className={`font-medium underline text-left cursor-pointer ${showName ? "text-purple-700" : "text-green-700"}`}>
+                    <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className={`font-medium underline text-left cursor-pointer ${showName ? "text-purple-700" : "text-green-700"}`}>
                       {cup.name}
                     </button>
                     <div className="text-gray-500">
@@ -389,7 +389,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                           return (
                             <div key={base.id} className="text-xs text-gray-500 mb-0.5">
                               ✓{" "}
-                              <button onClick={() => router.push(`/cup/${base.id}`)} className="underline cursor-pointer">
+                              <button onClick={() => router.push(`/cup/${base.slug || base.id}`)} className="underline cursor-pointer">
                                 {base.name}{versionSuffix}
                               </button>
                               {" "}· {base.series} · {base.year}
@@ -403,7 +403,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                           return (
                             <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
                               ✓{" "}
-                              <button onClick={() => router.push(`/cup/${cup.id}`)} className="underline cursor-pointer">
+                              <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="underline cursor-pointer">
                                 {cup.name}{scopeSuffix}
                               </button>
                               {" "}· {cup.series} · {cup.year}
@@ -466,7 +466,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                             : null;
                           return (
                             <div key={cup.id} className="mb-1.5">
-                              <button onClick={() => router.push(`/cup/${cup.id}`)} className="font-medium text-green-700 underline text-left cursor-pointer">
+                              <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="font-medium text-green-700 underline text-left cursor-pointer">
                                 {cup.name}{scopeLabel}
                               </button>
                               <div className="text-gray-500 text-xs">
@@ -492,7 +492,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                           return (
                             <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
                               ✓{" "}
-                              <button onClick={() => router.push(`/cup/${cup.id}`)} className="underline cursor-pointer">
+                              <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="underline cursor-pointer">
                                 {cup.name}{scopeLabel}
                               </button>
                               {" "}· {cup.series} · {cup.year}

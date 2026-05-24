@@ -23,12 +23,13 @@ export function CupCard({ cup, variantCount, ownedVariants }: CupCardProps) {
 
   return (
     <Link
-      href={`/cup/${cup.id}`}
+      href={`/cup/${cup.slug || cup.id}`}
       className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 hover:bg-cream dark:hover:bg-gray-700 active:bg-gray-50 dark:active:bg-gray-600 transition-colors"
     >
       {/* Cup image or placeholder */}
       <div className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden">
         {cup.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={getFileUrl(cup.collectionId, cup.id, cup.image)}
             alt={cup.name}
