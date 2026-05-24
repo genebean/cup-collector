@@ -258,6 +258,18 @@ export default function CupDetailPage() {
     : [cup, ...groupChildren];
   const isSolo = groupMembers.length === 1;
 
+  const hasCityPin =
+    (effectiveBase.scope === "city" || !effectiveBase.scope) &&
+    !!effectiveBase.lat && !!effectiveBase.lng;
+
+  function handleViewOnMap() {
+    sessionStorage.setItem(
+      "map_position",
+      JSON.stringify({ lat: effectiveBase.lat, lng: effectiveBase.lng, zoom: 12 })
+    );
+    router.push("/map");
+  }
+
   // Hero: show the first personal photo found across any group member, falling
   // back to the base catalog image. Photo upload lives in each version card.
   const firstOwnedWithPhoto = groupOwnedRecords.find((r) => r.own_photo);
@@ -306,6 +318,20 @@ export default function CupDetailPage() {
             <Row label="Country" value={effectiveBase.country} />
             <Row label="Series" value={effectiveBase.item_type === "ornament" ? `${effectiveBase.series} Ornaments` : effectiveBase.series} />
             <Row label="Year" value={String(effectiveBase.year)} />
+            <div className="pt-1 border-t border-gray-100 dark:border-gray-700">
+              {hasCityPin ? (
+                <button
+                  onClick={handleViewOnMap}
+                  className="text-green-starbucks font-medium hover:underline cursor-pointer"
+                >
+                  📍 View on map
+                </button>
+              ) : (
+                <span className="text-gray-400 dark:text-gray-500">
+                  📍 No map pin for this cup type
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Version cards — always rendered for every cup, solo or grouped.

@@ -226,7 +226,14 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
   const { isDark } = useUiTheme();
   const tiles = isDark ? TILES.dark : TILES.light;
   const [visibleCups, setVisibleCups] = useState<CupWithOwnership[]>([]);
-  const handleVisibleCupsChange = useCallback((c: CupWithOwnership[]) => setVisibleCups(c), []);
+  const visibleCupIdsRef = useRef<Set<string>>(new Set());
+  const handleVisibleCupsChange = useCallback((c: CupWithOwnership[]) => {
+    const newIds = new Set(c.map((cup) => cup.id));
+    const prev = visibleCupIdsRef.current;
+    if (newIds.size === prev.size && [...newIds].every((id) => prev.has(id))) return;
+    visibleCupIdsRef.current = newIds;
+    setVisibleCups(c);
+  }, []);
 
   // Restore saved map position (set when user previously panned/zoomed); fall back to world view.
   const savedPos = (() => {
@@ -292,7 +299,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
             center={[group.lat, group.lng]}
             radius={12}
             pathOptions={{
-              color: isGreen ? "#00704A" : "#ea580c",
+              color: isGreen ? "#00704A" : "#f97316",
               fillColor: isGreen ? "#00704A" : "#f97316",
               fillOpacity: 0.85,
               weight: 2,
@@ -302,10 +309,11 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
               {(() => {
                 const isNeeded = (c: CupWithOwnership) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false);
 
-                // Collapse city cups into variant groups; a group is "needed" if any member is
+                // Collapse city cups into variant groups.
+                // "Already owned" wins if ANY member is owned — owning one version covers the group.
                 const cityGroups = groupByVariant(group.cityCups);
-                const neededCityGroups = cityGroups.filter(({ members }) => members.some(isNeeded));
-                const ownedCityGroups  = cityGroups.filter(({ members }) => members.every((c) => !isNeeded(c)));
+                const neededCityGroups = cityGroups.filter(({ members }) => members.every((c) => !c.isOwned));
+                const ownedCityGroups  = cityGroups.filter(({ members }) => members.some((c) => c.isOwned));
 
                 const neededState   = group.stateCups.filter(isNeeded);
                 const neededCountry = group.countryCups.filter(isNeeded);
@@ -319,69 +327,76 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                   const anyNeedsReplacing = members.some((c) => c.ownedRecord?.needs_replacing);
                   return (
                     <div key={base.id} className="mb-1">
-                      <button onClick={() => router.push(`/cup/${base.slug || base.id}`)} className="font-medium text-green-700 underline text-left cursor-pointer">
+                      <button onClick={() => router.push(`/cup/${base.slug || base.id}`)} className="font-medium text-green-starbucks underline text-left cursor-pointer">
                         {base.name}{versionSuffix}
                       </button>
                       <div className="text-gray-500">
                         {base.series} · {base.year}
-                        {base.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
+                        {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
                       </div>
-                      <div className="text-orange-600">
+                      <div className="text-map-orange">
                         {anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}
                       </div>
                     </div>
                   );
                 };
 
-                const neededRow = (cup: CupWithOwnership, showName = false) => (
+                const neededRow = (cup: CupWithOwnership) => (
                   <div key={cup.id} className="mb-1">
-                    <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className={`font-medium underline text-left cursor-pointer ${showName ? "text-purple-700" : "text-green-700"}`}>
+                    <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="font-medium text-green-starbucks underline text-left cursor-pointer">
                       {cup.name}
                     </button>
                     <div className="text-gray-500">
                       {cup.series} · {cup.year}
-                      {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
+                      {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
                     </div>
-                    <div className="text-orange-600">
+                    <div className="text-map-orange">
                       {cup.ownedRecord?.needs_replacing ? "⚠ Needs replacing" : "Needed"}
                     </div>
                   </div>
                 );
 
+                const hasNeeded = neededCityGroups.length > 0 || neededState.length > 0 || neededCountry.length > 0 || neededThemed.length > 0;
+                const hasOwned  = ownedCityGroups.length > 0 || ownedState.length > 0 || ownedCountry.length > 0 || ownedThemed.length > 0;
+
                 return (
                   <div className="text-sm min-w-[160px] max-h-[60vh] overflow-y-auto pr-1">
-                    <div className="font-semibold mb-1">{locationName}</div>
+                    <div className="font-semibold">📍 {locationName}</div>
 
-                    {neededCityGroups.map((g) => cityGroupRow(g))}
+                    {hasNeeded && (
+                      <div className="border-t border-gray-200 mt-2 pt-2">
+                        {neededCityGroups.map((g) => cityGroupRow(g))}
 
-                    {neededState.length > 0 && (
-                      <>
-                        <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2">
-                          {neededState[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span>
-                        </div>
-                        {neededState.map((cup) => neededRow(cup))}
-                      </>
+                        {neededState.length > 0 && (
+                          <>
+                            <div className="font-semibold mt-2 mb-1">
+                              {neededState[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span>
+                            </div>
+                            {neededState.map((cup) => neededRow(cup))}
+                          </>
+                        )}
+
+                        {neededCountry.length > 0 && (
+                          <>
+                            <div className="font-semibold mt-2 mb-1">
+                              {neededCountry[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span>
+                            </div>
+                            {neededCountry.map((cup) => neededRow(cup))}
+                          </>
+                        )}
+
+                        {neededThemed.length > 0 && (
+                          <>
+                            <div className="font-semibold mt-2 mb-1 text-green-dark">Special Edition</div>
+                            {neededThemed.map((cup) => neededRow(cup))}
+                          </>
+                        )}
+                      </div>
                     )}
 
-                    {neededCountry.length > 0 && (
+                    {hasOwned && (
                       <>
-                        <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2">
-                          {neededCountry[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span>
-                        </div>
-                        {neededCountry.map((cup) => neededRow(cup))}
-                      </>
-                    )}
-
-                    {neededThemed.length > 0 && (
-                      <>
-                        <div className="font-semibold mt-2 mb-1 border-t border-gray-200 pt-2 text-purple-700">Special Edition</div>
-                        {neededThemed.map((cup) => neededRow(cup, true))}
-                      </>
-                    )}
-
-                    {(ownedCityGroups.length > 0 || ownedState.length > 0 || ownedCountry.length > 0 || ownedThemed.length > 0) && (
-                      <>
-                        <div className="text-xs font-semibold text-green-700 mt-2 mb-1 border-t border-gray-200 pt-2">
+                        <div className="text-xs font-semibold text-green-starbucks mt-2 mb-1 border-t border-gray-200 pt-2">
                           Already owned
                         </div>
                         {ownedCityGroups.map(({ base, members }) => {
@@ -393,7 +408,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {base.name}{versionSuffix}
                               </button>
                               {" "}· {base.series} · {base.year}
-                              {base.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
                             </div>
                           );
                         })}
@@ -407,7 +422,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {cup.name}{scopeSuffix}
                               </button>
                               {" "}· {cup.series} · {cup.year}
-                              {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
+                              {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
                             </div>
                           );
                         })}
@@ -425,9 +440,28 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
       {stores.map((store) => {
         const { neededCity, neededState, neededCountry, ownedCity, ownedState, ownedCountry } =
           getCupsForStore(store, cups);
-        const allNeeded = [...neededCity, ...neededState, ...neededCountry];
-        const allOwned  = [...ownedCity,  ...ownedState,  ...ownedCountry];
-        const hasCups = allNeeded.length > 0 || allOwned.length > 0;
+        // Group city cups by lat/lng so each city location gets its own sub-header.
+        // Variant grouping runs across the full set (needed + owned) per location so
+        // a base in one bucket and its variant in the other still collapse correctly.
+        // "Already owned" wins if ANY member is owned.
+        const cityByLatLng = new Map<string, CupWithOwnership[]>();
+        for (const cup of [...neededCity, ...ownedCity]) {
+          const key = `${cup.lat},${cup.lng}`;
+          cityByLatLng.set(key, [...(cityByLatLng.get(key) ?? []), cup]);
+        }
+        const cityLocations = Array.from(cityByLatLng.values()).map((locationCups) => {
+          const byYearDesc = (a: CupWithOwnership, b: CupWithOwnership) => b.year - a.year;
+          const locationName = [...locationCups].sort(byYearDesc)[0].name;
+          const groups = groupByVariant(locationCups);
+          return {
+            locationName,
+            neededGroups: groups.filter(({ members }) => members.every((c) => !c.isOwned)),
+            ownedGroups:  groups.filter(({ members }) => members.some((c) => c.isOwned)),
+          };
+        });
+        const hasNeeded = cityLocations.some((l) => l.neededGroups.length > 0) || neededState.length > 0 || neededCountry.length > 0;
+        const hasOwned  = cityLocations.some((l) => l.ownedGroups.length > 0)  || ownedState.length > 0  || ownedCountry.length > 0;
+        const hasCups = hasNeeded || hasOwned;
 
         return (
           <CircleMarker
@@ -456,39 +490,90 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
 
                 {hasCups && (
                   <div className="border-t border-gray-200 mt-2 pt-2">
-                    {allNeeded.length > 0 && (
+                    {hasNeeded && (
                       <>
-                        <div className="text-xs font-semibold text-orange-600 mb-1">Needed here</div>
-                        {allNeeded.map((cup) => {
-                          const nr = cup.ownedRecord?.needs_replacing;
-                          const scopeLabel = cup.scope === "state" || cup.scope === "country"
-                            ? <span className="text-gray-400 font-normal"> ({cup.scope})</span>
-                            : null;
-                          return (
-                            <div key={cup.id} className="mb-1.5">
-                              <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="font-medium text-green-700 underline text-left cursor-pointer">
-                                {cup.name}{scopeLabel}
-                              </button>
-                              <div className="text-gray-500 text-xs">
-                                {cup.series} · {cup.year}
-                                {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
-                              </div>
-                              <div className="text-orange-600 text-xs">{nr ? "⚠ Needs replacing" : "Needed"}</div>
+                        {cityLocations.map(({ locationName, neededGroups }) => neededGroups.length === 0 ? null : (
+                          <div key={locationName}>
+                            <div className="font-semibold mt-1 mb-1">{locationName}</div>
+                            {neededGroups.map(({ base, members }) => {
+                              const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
+                              const anyNeedsReplacing = members.some((c) => c.ownedRecord?.needs_replacing);
+                              return (
+                                <div key={base.id} className="mb-1.5">
+                                  <button onClick={() => router.push(`/cup/${base.slug || base.id}`)} className="font-medium text-green-starbucks underline text-left cursor-pointer">
+                                    {base.name}{versionSuffix}
+                                  </button>
+                                  <div className="text-gray-500 text-xs">
+                                    {base.series} · {base.year}
+                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                                  </div>
+                                  <div className="text-map-orange text-xs">{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                        {neededState.length > 0 && (
+                          <>
+                            <div className="font-semibold mt-2 mb-1">
+                              {neededState[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span>
                             </div>
-                          );
-                        })}
+                            {neededState.map((cup) => (
+                              <div key={cup.id} className="mb-1.5">
+                                <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="font-medium text-green-starbucks underline text-left cursor-pointer">
+                                  {cup.name}
+                                </button>
+                                <div className="text-gray-500 text-xs">
+                                  {cup.series} · {cup.year}
+                                  {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                                </div>
+                                <div className="text-map-orange text-xs">{cup.ownedRecord?.needs_replacing ? "⚠ Needs replacing" : "Needed"}</div>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                        {neededCountry.length > 0 && (
+                          <>
+                            <div className="font-semibold mt-2 mb-1">
+                              {neededCountry[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span>
+                            </div>
+                            {neededCountry.map((cup) => (
+                              <div key={cup.id} className="mb-1.5">
+                                <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="font-medium text-green-starbucks underline text-left cursor-pointer">
+                                  {cup.name}
+                                </button>
+                                <div className="text-gray-500 text-xs">
+                                  {cup.series} · {cup.year}
+                                  {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                                </div>
+                                <div className="text-map-orange text-xs">{cup.ownedRecord?.needs_replacing ? "⚠ Needs replacing" : "Needed"}</div>
+                              </div>
+                            ))}
+                          </>
+                        )}
                       </>
                     )}
 
-                    {allOwned.length > 0 && (
+                    {hasOwned && (
                       <>
-                        <div className={`text-xs font-semibold text-green-700 mb-1 ${allNeeded.length > 0 ? "mt-2" : ""}`}>
+                        <div className={`text-xs font-semibold text-green-starbucks mb-1 ${hasNeeded ? "mt-2" : ""}`}>
                           Already owned
                         </div>
-                        {allOwned.map((cup) => {
-                          const scopeLabel = cup.scope === "state" || cup.scope === "country"
-                            ? ` (${cup.scope})`
-                            : "";
+                        {cityLocations.flatMap(({ ownedGroups }) => ownedGroups).map(({ base, members }) => {
+                          const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
+                          return (
+                            <div key={base.id} className="text-xs text-gray-500 mb-0.5">
+                              ✓{" "}
+                              <button onClick={() => router.push(`/cup/${base.slug || base.id}`)} className="underline cursor-pointer">
+                                {base.name}{versionSuffix}
+                              </button>
+                              {" "}· {base.series} · {base.year}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                            </div>
+                          );
+                        })}
+                        {[...ownedState, ...ownedCountry].map((cup) => {
+                          const scopeLabel = ` (${cup.scope})`;
                           return (
                             <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
                               ✓{" "}
@@ -496,7 +581,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {cup.name}{scopeLabel}
                               </button>
                               {" "}· {cup.series} · {cup.year}
-                              {cup.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
+                              {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
                             </div>
                           );
                         })}

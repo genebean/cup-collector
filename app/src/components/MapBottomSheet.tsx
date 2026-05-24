@@ -56,7 +56,7 @@ export function MapBottomSheet({ cups }: Props) {
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium dark:text-gray-100 truncate">{cup.name}</span>
                     {cup.item_type === "ornament" && (
-                      <span className="text-[10px] font-medium px-1 py-0.5 rounded bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 flex-shrink-0">
+                      <span className="text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark flex-shrink-0">
                         ornament
                       </span>
                     )}
@@ -72,7 +72,7 @@ export function MapBottomSheet({ cups }: Props) {
                 </div>
                 <span
                   className={`text-xs font-medium flex-shrink-0 ${
-                    isGreen ? "text-green-700 dark:text-green-400" : "text-orange-600 dark:text-orange-400"
+                    isGreen ? "text-green-starbucks dark:text-green-400" : "text-map-orange dark:text-orange-400"
                   }`}
                 >
                   {needsReplacing ? "Needs Replacing" : cup.isOwned ? "Owned" : "Needed"}
