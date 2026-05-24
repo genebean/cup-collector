@@ -22,7 +22,7 @@ repos:
 
       - id: deadnix
         name: deadnix
-        entry: deadnix
+        entry: nix run nixpkgs#deadnix --
         language: system
         types: [nix]
         pass_filenames: true
