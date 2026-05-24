@@ -218,7 +218,7 @@ NGINXEOF
         '';
 
         # Run the fast CI checks locally — useful before pushing.
-        # Covers: pre-commit hooks, unit tests with coverage, and ESLint.
+        # Covers: pre-commit hooks, unit tests with coverage, ESLint, and TypeScript (app + scripts).
         # (nix build, npm audit, and container checks are skipped — run those separately if needed.)
         ccCheck = pkgs.writeShellScriptBin "cc-check" ''
           PROJ_ROOT="$(git rev-parse --show-toplevel)"
@@ -231,12 +231,19 @@ NGINXEOF
           echo "==> next lint"
           (cd "$PROJ_ROOT/app" && npm run lint) || exit 1
           echo ""
+          echo "==> tsc (app)"
+          (cd "$PROJ_ROOT/app" && node_modules/.bin/tsc --noEmit) || exit 1
+          echo ""
+          echo "==> tsc (scripts)"
+          (cd "$PROJ_ROOT" && app/node_modules/.bin/tsc --project scripts/tsconfig.json --noEmit) || exit 1
+          echo ""
           echo "All checks passed."
         '';
 
         # Import cups from a CSV file into PocketBase.
-        # Usage: import-cups --file cups.csv [--dry-run] [--prod]
+        # Usage: import-cups --file cups.csv [--dry-run] [--prod] [--debug]
         # --prod loads app/.env.prod instead of app/.env.local (targets production PocketBase).
+        # --debug prints [NO CHANGE] lines in addition to creates/updates.
         # Requires POCKETBASE_ADMIN_EMAIL and POCKETBASE_ADMIN_PASSWORD in the env file.
         ccImportCups = pkgs.writeShellScriptBin "cc-import-cups" ''
           PROJ_ROOT="$(git rev-parse --show-toplevel)"
@@ -261,8 +268,9 @@ NGINXEOF
         '';
 
         # Build a starter cup catalog CSV from the verified community-sourced data table.
-        # Usage: build-catalog --out cups.csv [--series "You Are Here"]
-        # Produces a CSV ready for import-cups. Fill in image_url / hobbydb_url manually after.
+        # Usage: build-catalog --out cups.csv [--series "You Are Here"] [--cache-dir .scrape-cache]
+        # --cache-dir saves fetched pages to disk and reuses them on subsequent runs (kind to the source site).
+        # Produces a CSV ready for import-cups. Fill in hobbydb_url manually after.
         ccBuildCatalog = pkgs.writeShellScriptBin "cc-build-catalog" ''
           PROJ_ROOT="$(git rev-parse --show-toplevel)"
           NODE_PATH="$PROJ_ROOT/app/node_modules" \
@@ -398,8 +406,8 @@ NGINXEOF
               echo "  dev-next-network    start Next.js on <address>:3000 with auth bypass (phone/Tailscale testing)"
               echo "  dev-next-https      start Next.js with local HTTPS proxy on :8443 (mobile/geolocation testing over Tailscale)"
               echo "  gen-auth-secret     generate a new AUTH_SECRET value"
-              echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run])"
-              echo "  build-catalog       generate starter catalog CSV (--out cups.csv [--series <name>])"
+              echo "  import-cups         import cup catalog from CSV (--file cups.csv [--dry-run] [--debug])"
+              echo "  build-catalog       generate starter catalog CSV (--out cups.csv [--series <name>] [--cache-dir <dir>])"
               echo "  create-household    create a household record in PocketBase (--name <name> --slug <slug>)"
               echo "  backfill-region     backfill missing region from same-series siblings [--dry-run]"
               echo "  docs-serve          serve the HTML docs on http://localhost:4000"

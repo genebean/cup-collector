@@ -23,9 +23,10 @@ import { parseCSV, rowMatchesExisting, diffRow, type CsvRow } from "./cup-import
 const args = process.argv.slice(2);
 const fileIndex = args.indexOf("--file");
 const isDryRun = args.includes("--dry-run");
+const isDebug = args.includes("--debug");
 
 if (fileIndex === -1 || !args[fileIndex + 1]) {
-  console.error("Usage: npx ts-node scripts/import-cups.ts --file cups.csv [--dry-run]");
+  console.error("Usage: npx ts-node scripts/import-cups.ts --file cups.csv [--dry-run] [--debug]");
   process.exit(1);
 }
 
@@ -96,7 +97,7 @@ async function main() {
   let errors = 0;
 
   for (const row of rows) {
-    const label = `${row.name} / ${row.series} / ${row.year}`;
+    const label = `${row.name} / ${row.series} / ${row.year}${row.item_type === "ornament" ? " [ornament]" : ""}`;
     try {
       // Check if a matching record already exists (upsert key: name + series + year + item_type)
       // item_type is part of the key: mug and ornament for the same name/series/year are
@@ -111,7 +112,7 @@ async function main() {
         existingRecord = await pb.collection("cups").getFirstListItem(
           `name="${row.name}" && series="${row.series}" && year=${row.year} && ${itemTypeClause}`
         );
-        existingId = existingRecord.id as string;
+        existingId = existingRecord!.id as string;
       } catch {
         // No match — will create
       }
@@ -131,6 +132,24 @@ async function main() {
         }
       }
 
+      // Resolve variant_of name → PocketBase ID.
+      // The CSV stores the base cup's name (same series); we look it up by name+series+item_type.
+      // Only resolved when the CSV has a value — admin-set variant_of is never cleared by import.
+      let variantOfId: string | undefined;
+      if (row.variant_of) {
+        try {
+          const itemTypeClause = row.item_type === "ornament"
+            ? `item_type = "ornament"`
+            : `item_type != "ornament"`;
+          const baseRecord = await pb.collection("cups").getFirstListItem(
+            `name="${row.variant_of}" && series="${row.series}" && ${itemTypeClause}`
+          );
+          variantOfId = baseRecord.id as string;
+        } catch {
+          console.warn(`  [WARN] ${label}: could not resolve variant_of="${row.variant_of}" — skipping variant link`);
+        }
+      }
+
       const data: Record<string, unknown> = {
         name: row.name,
         scope: row.scope || "city",
@@ -147,25 +166,38 @@ async function main() {
         hobbydb_url: row.hobbydb_url || existingRecord?.hobbydb_url || undefined,
         more_info_url: row.more_info_url || undefined,
         notes: row.notes,
+        sub_collection: row.sub_collection,
+        variant_notes: row.variant_notes,
+        // Only write variant_of when the CSV provides it — preserves admin-set values otherwise
+        ...(variantOfId !== undefined ? { variant_of: variantOfId } : {}),
+        // Only set is_unique when CSV explicitly says true — never reset an admin-set value
+        ...(row.is_unique ? { is_unique: true } : {}),
       };
 
       if (imageFile) {
         data.image = imageFile;
       }
 
+      // variant_of is excluded from rowMatchesExisting (it's an ID, not a name).
+      // Check it separately so records are updated when a new variant link is resolved.
+      const variantOfChanged = variantOfId !== undefined &&
+        variantOfId !== String(existingRecord?.variant_of ?? "");
+
       if (existingId) {
-        if (existingRecord && rowMatchesExisting(row, existingRecord) && !imageFile) {
-          if (isDryRun) console.log(`  [NO CHANGE] ${label}`);
+        if (existingRecord && rowMatchesExisting(row, existingRecord) && !imageFile && !variantOfChanged) {
+          if (isDryRun && isDebug) console.log(`  [NO CHANGE] ${label}`);
           skipped++;
         } else if (isDryRun) {
           console.log(`  [UPDATE] ${label}`);
           if (existingRecord) diffRow(row, existingRecord).forEach(d => console.log(`    ~ ${d}`));
+          if (variantOfChanged) console.log(`    ~ variant_of: csv="${row.variant_of}" (resolved to id=${variantOfId})`);
           updated++;
         } else {
           if (existingRecord) {
             const diffs = diffRow(row, existingRecord);
             if (diffs.length > 0) diffs.forEach(d => console.log(`    ~ ${d}`));
-            else console.log(`    ~ image changed`);
+            if (variantOfChanged) console.log(`    ~ variant_of → ${row.variant_of}`);
+            else if (!variantOfChanged && diffs.length === 0) console.log(`    ~ image changed`);
           }
           await pb.collection("cups").update(existingId, data);
           console.log(`  Updated: ${label}`);

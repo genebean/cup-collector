@@ -73,7 +73,11 @@ test.describe("collection prefs — cup-owner", () => {
     await page.goto("/settings/collection");
     await expect(page.getByRole("switch", { name: "Been There" })).not.toBeChecked({ timeout: 10_000 });
 
+    const savePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/api/household-prefs") && resp.request().method() === "POST",
+    );
     await page.getByRole("switch", { name: "Been There" }).click();
+    await savePromise;
     await expect(page.getByRole("switch", { name: "Been There" })).toBeChecked({ timeout: 5_000 });
 
     await page.goto("/settings/collection");

@@ -485,6 +485,12 @@ code { color: var(--code-text); }
         <div class="schema-field"><div class="field-name">venue_series</div><div class="field-type">string</div><div class="field-desc">Themed cups only: series name of the venue whose stores sell them (e.g. "You Are Here" for themed Disney cups sold at YAH stores)</div></div>
         <div class="schema-field"><div class="field-name">hobbydb_url</div><div class="field-type">string</div><div class="field-desc">Optional. Direct URL to this cup's hobbyDB record for collector reference</div></div>
         <div class="schema-field"><div class="field-name">more_info_url</div><div class="field-type">string</div><div class="field-desc">Optional. Fallback external reference URL (e.g. starbucks-mugs.com) when hobbydb_url is absent</div></div>
+        <div class="schema-field"><div class="field-name">is_duplicate</div><div class="field-type">boolean</div><div class="field-desc">When true, hidden from Browse, Map, and Search unless the household owns it. Set via /admin/duplicates.</div></div>
+        <div class="schema-field"><div class="field-name">duplicate_ok</div><div class="field-type">boolean</div><div class="field-desc">When true, excluded from auto-detected potential-duplicate groups on /admin/duplicates.</div></div>
+        <div class="schema-field"><div class="field-name">variant_of</div><div class="field-type">relation → cups</div><div class="field-desc">Optional. Points to the canonical base cup when this cup is a manufacturing variant (e.g. "Atlanta 2" → "Atlanta"). Base cups have no value. Used to collapse variant groups in Browse, Map popup, and /admin/duplicates.</div></div>
+        <div class="schema-field"><div class="field-name">is_unique</div><div class="field-type">boolean</div><div class="field-desc">Admin override: this cup looks like a variant by name but is genuinely standalone. Prevents auto-grouping in all views.</div></div>
+        <div class="schema-field"><div class="field-name">sub_collection</div><div class="field-type">string</div><div class="field-desc">Optional. Sub-collection tag from starbucks-mugs.com /tag/ pages, e.g. "Campus Collection", "Holiday". Populated by the scraper.</div></div>
+        <div class="schema-field"><div class="field-name">variant_notes</div><div class="field-type">text</div><div class="field-desc">Optional. Scraper-populated explanation of what makes this variant different from the base (e.g. "V2 corrects the misspelling of Chattahoochee"). Kept separate from hand-written notes.</div></div>
       </div>
     </div>
 

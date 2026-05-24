@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useUiTheme } from "@/hooks/useUiTheme";
 import { MapBottomSheet } from "@/components/MapBottomSheet";
 import { haversineMi, parseAddressComponents } from "@/lib/geo";
+import { groupByVariant } from "@/lib/variants";
 
 const MAP_POSITION_KEY = "map_position";
 
@@ -300,16 +301,38 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
             <Popup>
               {(() => {
                 const isNeeded = (c: CupWithOwnership) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false);
-                const neededCity    = group.cityCups.filter(isNeeded);
+
+                // Collapse city cups into variant groups; a group is "needed" if any member is
+                const cityGroups = groupByVariant(group.cityCups);
+                const neededCityGroups = cityGroups.filter(({ members }) => members.some(isNeeded));
+                const ownedCityGroups  = cityGroups.filter(({ members }) => members.every((c) => !isNeeded(c)));
+
                 const neededState   = group.stateCups.filter(isNeeded);
                 const neededCountry = group.countryCups.filter(isNeeded);
                 const neededThemed  = group.themedCups.filter(isNeeded);
-                const ownedAll = [
-                  ...group.cityCups.filter((c) => !isNeeded(c)),
-                  ...group.stateCups.filter((c) => !isNeeded(c)),
-                  ...group.countryCups.filter((c) => !isNeeded(c)),
-                  ...group.themedCups.filter((c) => !isNeeded(c)),
-                ];
+                const ownedState    = group.stateCups.filter((c) => !isNeeded(c));
+                const ownedCountry  = group.countryCups.filter((c) => !isNeeded(c));
+                const ownedThemed   = group.themedCups.filter((c) => !isNeeded(c));
+
+                const cityGroupRow = ({ base, members }: { base: CupWithOwnership; members: CupWithOwnership[] }) => {
+                  const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
+                  const anyNeedsReplacing = members.some((c) => c.ownedRecord?.needs_replacing);
+                  return (
+                    <div key={base.id} className="mb-1">
+                      <div className="font-medium">{base.name}{versionSuffix}</div>
+                      <div className="text-gray-500">
+                        {base.series} · {base.year}
+                        {base.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
+                      </div>
+                      <div className="text-orange-600">
+                        {anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}
+                      </div>
+                      <button onClick={() => router.push(`/cup/${base.id}`)} className="text-green-700 underline text-xs cursor-pointer">
+                        View details →
+                      </button>
+                    </div>
+                  );
+                };
 
                 const neededRow = (cup: CupWithOwnership, showName = false) => (
                   <div key={cup.id} className="mb-1">
@@ -331,7 +354,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                   <div className="text-sm min-w-[160px] max-h-[60vh] overflow-y-auto pr-1">
                     <div className="font-semibold mb-1">{locationName}</div>
 
-                    {neededCity.map((cup) => neededRow(cup))}
+                    {neededCityGroups.map((g) => cityGroupRow(g))}
 
                     {neededState.length > 0 && (
                       <>
@@ -358,12 +381,21 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                       </>
                     )}
 
-                    {ownedAll.length > 0 && (
+                    {(ownedCityGroups.length > 0 || ownedState.length > 0 || ownedCountry.length > 0 || ownedThemed.length > 0) && (
                       <>
                         <div className="text-xs font-semibold text-green-700 mt-2 mb-1 border-t border-gray-200 pt-2">
                           Already owned
                         </div>
-                        {ownedAll.map((cup) => {
+                        {ownedCityGroups.map(({ base, members }) => {
+                          const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
+                          return (
+                            <div key={base.id} className="text-xs text-gray-500 mb-0.5">
+                              ✓ {base.name}{versionSuffix} · {base.series} · {base.year}
+                              {base.item_type === "ornament" && <span className="text-red-600"> · ornament</span>}
+                            </div>
+                          );
+                        })}
+                        {[...ownedState, ...ownedCountry, ...ownedThemed].map((cup) => {
                           const scopeSuffix = cup.scope === "state" || cup.scope === "country"
                             ? ` (${cup.scope})` : "";
                           return (

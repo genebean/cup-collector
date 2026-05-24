@@ -33,3 +33,6 @@ test-cups.csv
 # Nix
 result
 cups.csv
+
+# Scraper cache (populated with --cache-dir; not for version control)
+.scrape-cache/

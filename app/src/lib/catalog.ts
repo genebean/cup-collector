@@ -501,6 +501,9 @@ export interface OutputRow {
   image_url: string;
   more_info_url: string;
   notes: string;
+  sub_collection: string; // populated by scraper from starbucks-mugs.com /tag/ links
+  variant_of: string;     // name of the base cup; set by scraper post-processing for numbered cups
+  variant_notes: string;  // scraped explanation of what makes this variant different
 }
 
 export function buildRows(filterSeries: string | null, mugsIndex: Map<string, string>): OutputRow[] {
@@ -595,6 +598,9 @@ export function buildRows(filterSeries: string | null, mugsIndex: Map<string, st
       image_url: "",
       more_info_url,
       notes: e.notes,
+      sub_collection: "",
+      variant_of: "",
+      variant_notes: "",
     });
   }
 
