@@ -16,7 +16,12 @@
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        devScripts = import ./dev-scripts.nix { inherit pkgs; };
+        packages' = import ./pkgs {
+          inherit pkgs;
+          migrationsDir = ./pocketbase/migrations;
+          appSrc = ./app;
+          docsDir = ./docs;
+        };
 
       in
       {
@@ -24,37 +29,11 @@
         # `nix fmt` — format all Nix files in the tree using nixfmt
         formatter = pkgs.nixfmt-tree;
 
-        # `nix build .#migrations` — produces the PocketBase migrations as a store path
-        # Reference in the NixOS module: migrationsDir = inputs.cup-collector.packages.${system}.migrations;
-        packages.migrations = pkgs.runCommand "cup-collector-migrations" { } ''
-          cp -r ${./pocketbase/migrations} $out
-        '';
-
-        # `nix build` — produces the Next.js app as a Nix package
-        # Uses standalone output mode so it can run as a plain Node process.
-        packages.default = pkgs.buildNpmPackage {
-          pname = "cup-collector";
-          version = "0.1.0";
-          src = ./app;
-          nodejs = pkgs.nodejs_24;
-
-          # Recompute this hash after any package-lock.json change:
-          #   1. Set npmDepsHash = pkgs.lib.fakeHash;
-          #   2. Run `nix build` — it fails with "got: sha256-..."
-          #   3. Copy that hash here and run `nix build` again.
-          npmDepsHash = "sha256-nUxu/48XCVjsEX41ZccmYnVQKLnjztfxN1m9/O7IMYk=";
-
-          buildPhase = "npm run build";
-
-          # Copy the standalone server output and required static directories.
-          # Next.js standalone mode produces a self-contained node server.
-          installPhase = ''
-            mkdir -p $out
-            cp -r .next/standalone $out/
-            cp -r public $out/standalone/public
-            cp -r .next/static $out/standalone/.next/static
-            cp -r ${./docs} $out/standalone/docs
-          '';
+        # `nix build .#migrations` — PocketBase migrations store path
+        # `nix build`              — Next.js app (standalone Node server)
+        packages = {
+          inherit (packages') migrations;
+          default = packages'.app;
         };
 
         # `nix develop` — dev shell with all required tooling
@@ -74,7 +53,7 @@
               # typescript and ts-node are installed as npm devDependencies in app/
               # and invoked via `npx` — this avoids node-version mismatches in nixpkgs.
             ]
-            ++ devScripts;
+            ++ packages'.scripts;
 
           shellHook = ''
             # Short unprefixed aliases — each delegates to the cc-* binary so
