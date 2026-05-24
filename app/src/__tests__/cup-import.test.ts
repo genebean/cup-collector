@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { parseCSV, rowMatchesExisting } from "@/lib/cup-import";
 
-const HEADER_NEW = "name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes";
+const HEADER_NEW = "name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes,sub_collection,variant_of,variant_notes";
 const HEADER_OLD = "city,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes";
 
 describe("parseCSV", () => {
   it("parses a single data row (new name/scope columns)", () => {
-    const csv = [HEADER_NEW, "Seattle,city,,mug,Washington,United States,US,Been There,2018,47.6062,-122.3321,,,https://starbucks-mugs.com/mug/been-there-seattle/,"].join("\n");
+    const csv = [HEADER_NEW, "Seattle,city,,mug,Washington,United States,US,Been There,2018,47.6062,-122.3321,,,https://starbucks-mugs.com/mug/been-there-seattle/,,,"].join("\n");
     const rows = parseCSV(csv);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
@@ -25,7 +25,37 @@ describe("parseCSV", () => {
       hobbydb_url: "",
       more_info_url: "https://starbucks-mugs.com/mug/been-there-seattle/",
       notes: "",
+      sub_collection: "",
+      variant_of: "",
+      variant_notes: "",
+      is_unique: false,
     });
+  });
+
+  it("parses variant fields when present", () => {
+    // 18 columns: fields 12-16 empty, field 17=variant_of, field 18=variant_notes (quoted, has comma)
+    const csv = [HEADER_NEW, `Atlanta 2,city,,mug,Georgia,United States,US,Been There,2018,33.749,-84.388,,,,,,"Atlanta","V2 corrects the misspelling of Chattahoochee, which appeared in the original"`].join("\n");
+    const [row] = parseCSV(csv);
+    expect(row.sub_collection).toBe("");
+    expect(row.variant_of).toBe("Atlanta");
+    expect(row.variant_notes).toBe("V2 corrects the misspelling of Chattahoochee, which appeared in the original");
+    expect(row.is_unique).toBe(false);
+  });
+
+  it("parses quoted fields containing commas", () => {
+    // 18 columns: fields 12-15 empty, field 16=sub_collection, fields 17-18 empty
+    const csv = [HEADER_NEW, `Memphis,city,,mug,Tennessee,United States,US,You Are Here,2019,35.1495,-90.049,,,,,Campus Collection,,`].join("\n");
+    const [row] = parseCSV(csv);
+    expect(row.sub_collection).toBe("Campus Collection");
+  });
+
+  it("parses is_unique=true from CSV", () => {
+    // 19 columns: standard 18 + is_unique; fields 12-18 empty, field 19=true
+    const csv = ["name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes,sub_collection,variant_of,variant_notes,is_unique",
+      "Atlanta 2,city,,mug,Georgia,United States,US,Been There,2018,33.749,-84.388,,,,,,,,true",
+    ].join("\n");
+    const [row] = parseCSV(csv);
+    expect(row.is_unique).toBe(true);
   });
 
   it("parses old-style CSVs with 'city' column (backward compatibility)", () => {
@@ -93,6 +123,7 @@ describe("rowMatchesExisting", () => {
     region: "Washington", country: "United States",
     country_code: "US", series: "Been There", year: 2018,
     lat: 47.6062, lng: -122.3321, image_url: "", hobbydb_url: "", more_info_url: "", notes: "",
+    sub_collection: "", variant_of: "", variant_notes: "", is_unique: false,
   };
   const existing = {
     id: "abc123",
@@ -100,6 +131,7 @@ describe("rowMatchesExisting", () => {
     region: "Washington", country: "United States", country_code: "US",
     lat: 47.6062, lng: -122.3321,
     image_credit: "", hobbydb_url: "", more_info_url: "", notes: "",
+    sub_collection: "", variant_notes: "",
   };
 
   it("returns true when all fields match", () => {

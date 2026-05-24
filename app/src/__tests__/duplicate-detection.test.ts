@@ -22,6 +22,10 @@ function cup(overrides: Partial<Cup> & Pick<Cup, "name" | "series">): Cup {
     venue_series: "",
     is_duplicate: false,
     duplicate_ok: false,
+    variant_of: "",
+    is_unique: false,
+    sub_collection: "",
+    variant_notes: "",
     ...overrides,
   };
 }

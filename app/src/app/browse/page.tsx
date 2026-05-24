@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { haversineMi } from "@/lib/geo";
 import { buildSeriesOptions } from "@/lib/browse";
+import { groupByVariant } from "@/lib/variants";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { CupCard } from "@/components/CupCard";
@@ -87,42 +88,56 @@ export default function BrowsePage() {
     return { pinnedCountries: pinned, otherCountries: all.filter((c) => !pinned.includes(c)).sort() };
   }, [displayableCups]);
 
-  const displayedCups: CupWithOwnership[] = useMemo(() => {
-    let result: CupWithOwnership[] = displayableCups.map((cup) => ({
+  const displayedGroups = useMemo(() => {
+    const withOwnership: CupWithOwnership[] = displayableCups.map((cup) => ({
       ...cup,
       isOwned: ownedCupIds.has(cup.id),
       ownedRecord: ownedCups.find((o) => o.cup_id === cup.id),
     }));
 
+    let groups = groupByVariant(withOwnership);
+
     if (search.trim()) {
       const q = search.toLowerCase();
-      result = result.filter(
-        (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.country.toLowerCase().includes(q) ||
-          c.series.toLowerCase().includes(q)
+      groups = groups.filter(({ members }) =>
+        members.some(
+          (c) =>
+            c.name.toLowerCase().includes(q) ||
+            c.country.toLowerCase().includes(q) ||
+            c.series.toLowerCase().includes(q)
+        )
       );
     }
 
-    if (statusFilter === "needed") result = result.filter((c) => !c.isOwned);
-    if (statusFilter === "owned")  result = result.filter((c) => c.isOwned);
+    // Status filter operates at group level: "needed" = any member unowned/needs-replacing
+    if (statusFilter === "needed") {
+      groups = groups.filter(({ members }) =>
+        members.some((c) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false))
+      );
+    }
+    if (statusFilter === "owned") {
+      groups = groups.filter(({ members }) => members.some((c) => c.isOwned));
+    }
+
     if (seriesFilter) {
       const [filterSeries, filterType] = seriesFilter.split("|");
-      result = result.filter((c) => c.series === filterSeries);
-      if (filterType) result = result.filter((c) => (c.item_type || "mug") === filterType);
+      groups = groups.filter(({ base }) => base.series === filterSeries);
+      if (filterType) groups = groups.filter(({ base }) => (base.item_type || "mug") === filterType);
     }
-    if (countryFilter)             result = result.filter((c) => c.country === countryFilter);
-    if (scopeFilter)               result = result.filter((c) => (c.scope || "city") === scopeFilter);
+    if (countryFilter) groups = groups.filter(({ base }) => base.country === countryFilter);
+    if (scopeFilter)   groups = groups.filter(({ base }) => (base.scope || "city") === scopeFilter);
 
-    // Near Me — explicit opt-in sort toggle
+    // Near Me — explicit opt-in sort toggle; use base cup coordinates
     if (nearMe && userLocation) {
-      result.sort((a, b) => {
-        if (a.isOwned !== b.isOwned) return a.isOwned ? 1 : -1;
-        return haversineMi(userLocation, a) - haversineMi(userLocation, b);
+      groups.sort((a, b) => {
+        const aAllOwned = a.members.every((c) => c.isOwned);
+        const bAllOwned = b.members.every((c) => c.isOwned);
+        if (aAllOwned !== bAllOwned) return aAllOwned ? 1 : -1;
+        return haversineMi(userLocation, a.base) - haversineMi(userLocation, b.base);
       });
     }
 
-    return result;
+    return groups;
   }, [displayableCups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, scopeFilter, nearMe, search, userLocation]);
 
   const ownedCount = useMemo(() => displayableCups.filter((c) => ownedCupIds.has(c.id)).length, [displayableCups, ownedCupIds]);
@@ -234,10 +249,17 @@ export default function BrowsePage() {
       </header>
 
       <main className="flex-1 overflow-y-auto pb-20">
-        {displayedCups.length === 0 ? (
+        {displayedGroups.length === 0 ? (
           <div className="text-center text-gray-400 dark:text-gray-500 py-16">No cups match your search.</div>
         ) : (
-          displayedCups.map((cup) => <CupCard key={cup.id} cup={cup} />)
+          displayedGroups.map(({ base, members }) => (
+            <CupCard
+              key={base.id}
+              cup={base}
+              variantCount={members.length > 1 ? members.length : undefined}
+              ownedVariants={members.length > 1 ? members.filter((c) => c.isOwned).length : undefined}
+            />
+          ))
         )}
       </main>
 

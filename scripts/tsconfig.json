@@ -5,6 +5,13 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
+    "strict": true,
+    "types": ["node"],
+    "typeRoots": ["../app/node_modules/@types"],
+    "baseUrl": "..",
+    "paths": {
+      "pocketbase": ["app/node_modules/pocketbase/dist/pocketbase.cjs.d.ts"]
+    }
   }
 }

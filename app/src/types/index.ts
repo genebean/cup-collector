@@ -35,6 +35,10 @@ export interface Cup {
   venue_series: string;  // Themed cups only: series name of the venue cups they're sold at
   is_duplicate: boolean; // When true, hidden from Browse/Map/Search unless the household owns it
   duplicate_ok: boolean; // When true, excluded from auto-detected potential-duplicate groups
+  variant_of: string;    // ID of the canonical base cup; "" means this cup IS the base
+  is_unique: boolean;    // When true, never auto-grouped as a variant even if name implies it
+  sub_collection: string; // e.g. "Campus Collection" — from starbucks-mugs.com /tag/ links
+  variant_notes: string;  // Scraper-populated explanation of what makes this variant different
 }
 
 export interface OwnedCup {
