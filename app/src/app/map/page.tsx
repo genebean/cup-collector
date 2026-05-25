@@ -23,6 +23,7 @@ export default function MapPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const { radiusMeters, setRadius } = useNearbyRadius();
   const [worldViewTick, setWorldViewTick] = useState(0);
+  const [flyTick, setFlyTick] = useState(0);
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [mapZoom, setMapZoom] = useState<number | null>(null);
   // Radius used for a manual "Search here" — captured from the zoom-based chip
@@ -170,7 +171,7 @@ export default function MapPage() {
                 {RADIUS_OPTIONS.map((opt) => (
                   <button
                     key={opt.meters}
-                    onClick={() => { setRadius(opt.meters); setSearchCenter(null); }}
+                    onClick={() => { setRadius(opt.meters); setSearchCenter(null); setFlyTick((t) => t + 1); }}
                     className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
                       activeChipMeters === opt.meters
                         ? "bg-gold text-green-dark border-gold font-semibold"
@@ -207,6 +208,7 @@ export default function MapPage() {
           userLocation={userLocation}
           targetZoom={targetZoom}
           worldViewTick={worldViewTick}
+          flyTick={flyTick}
           onZoomChange={setMapZoom}
         />
       </div>

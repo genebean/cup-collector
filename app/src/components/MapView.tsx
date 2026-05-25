@@ -34,6 +34,7 @@ interface MapViewProps {
   userLocation: { lat: number; lng: number } | null;
   targetZoom: number;
   worldViewTick?: number;
+  flyTick?: number;
   onZoomChange?: (zoom: number) => void;
 }
 
@@ -113,21 +114,19 @@ function BoundsTracker({
 }
 
 // Adjusts zoom when the radius chip changes (only when a location is active)
-function ZoomUpdater({ location, zoom }: { location: { lat: number; lng: number } | null; zoom: number }) {
+// flyTick increments on every chip click so the fly always triggers, even
+// when targetZoom didn't change (e.g. clicking the already-selected chip).
+function ZoomUpdater({ location, zoom, flyTick }: { location: { lat: number; lng: number } | null; zoom: number; flyTick: number }) {
   const map = useMap();
-  const prevZoom = useRef<number | null>(null);
+  const prevTick = useRef(0);
 
   useEffect(() => {
-    if (!location) return;
-    if (prevZoom.current === null) {
-      prevZoom.current = zoom;
-      return;
-    }
-    if (zoom !== prevZoom.current) {
-      prevZoom.current = zoom;
+    if (!location || flyTick === 0) return;
+    if (flyTick !== prevTick.current) {
+      prevTick.current = flyTick;
       map.flyTo([location.lat, location.lng], zoom, { duration: 1 });
     }
-  }, [zoom, location, map]);
+  }, [flyTick, zoom, location, map]);
 
   return null;
 }
@@ -231,7 +230,7 @@ function buildLocationGroups(cups: CupWithOwnership[]): LocationGroup[] {
   });
 }
 
-export default function MapView({ cups, stores, userLocation, targetZoom, worldViewTick = 0, onZoomChange }: MapViewProps) {
+export default function MapView({ cups, stores, userLocation, targetZoom, worldViewTick = 0, flyTick = 0, onZoomChange }: MapViewProps) {
   const router = useRouter();
   const { isDark } = useUiTheme();
   const tiles = isDark ? TILES.dark : TILES.light;
@@ -269,7 +268,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
 
       <MapPositionSaver />
       <LocationUpdater location={userLocation} zoom={targetZoom} />
-      <ZoomUpdater location={userLocation} zoom={targetZoom} />
+      <ZoomUpdater location={userLocation} zoom={targetZoom} flyTick={flyTick} />
       <WorldViewResetter tick={worldViewTick} />
       <ZoomTracker onZoomChange={onZoomChange} />
       {/* Exclude themed cups — their lat/lng is a placeholder, not a real location */}
@@ -456,25 +455,29 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
       {stores.map((store) => {
         const { neededCity, neededState, neededCountry, ownedCity, ownedState, ownedCountry } =
           getCupsForStore(store, cups);
-        // Group city cups by lat/lng so each city location gets its own sub-header.
-        // Variant grouping runs across the full set (needed + owned) per location so
-        // a base in one bucket and its variant in the other still collapse correctly.
-        // "Already owned" wins if ANY member is owned.
-        const cityByLatLng = new Map<string, CupWithOwnership[]>();
-        for (const cup of [...neededCity, ...ownedCity]) {
-          const key = `${cup.lat},${cup.lng}`;
-          cityByLatLng.set(key, [...(cityByLatLng.get(key) ?? []), cup]);
+        // Variant grouping runs across ALL nearby city cups so that a variant and
+        // its base collapse even when they have different lat/lng coordinates.
+        // Each group is then bucketed by its most recent member's location so the
+        // location sub-headers reflect where the user should actually go.
+        // "Already owned" wins if ANY member of the group is owned.
+        const byYearDesc = (a: CupWithOwnership, b: CupWithOwnership) => b.year - a.year;
+        const allCityGroups = groupByVariant([...neededCity, ...ownedCity]);
+        const locationBuckets = new Map<string, {
+          locationName: string;
+          neededGroups: ReturnType<typeof groupByVariant<CupWithOwnership>>;
+          ownedGroups:  ReturnType<typeof groupByVariant<CupWithOwnership>>;
+        }>();
+        for (const group of allCityGroups) {
+          const anchor = [...group.members].sort(byYearDesc)[0];
+          const key = `${anchor.lat},${anchor.lng}`;
+          if (!locationBuckets.has(key)) {
+            locationBuckets.set(key, { locationName: anchor.name, neededGroups: [], ownedGroups: [] });
+          }
+          const bucket = locationBuckets.get(key)!;
+          if (group.members.every((c) => !c.isOwned)) bucket.neededGroups.push(group);
+          if (group.members.some((c) => c.isOwned))   bucket.ownedGroups.push(group);
         }
-        const cityLocations = Array.from(cityByLatLng.values()).map((locationCups) => {
-          const byYearDesc = (a: CupWithOwnership, b: CupWithOwnership) => b.year - a.year;
-          const locationName = [...locationCups].sort(byYearDesc)[0].name;
-          const groups = groupByVariant(locationCups);
-          return {
-            locationName,
-            neededGroups: groups.filter(({ members }) => members.every((c) => !c.isOwned)),
-            ownedGroups:  groups.filter(({ members }) => members.some((c) => c.isOwned)),
-          };
-        });
+        const cityLocations = Array.from(locationBuckets.values());
         const hasNeeded = cityLocations.some((l) => l.neededGroups.length > 0) || neededState.length > 0 || neededCountry.length > 0;
         const hasOwned  = cityLocations.some((l) => l.ownedGroups.length > 0)  || ownedState.length > 0  || ownedCountry.length > 0;
         const hasCups = hasNeeded || hasOwned;
