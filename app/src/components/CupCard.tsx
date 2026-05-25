@@ -48,17 +48,17 @@ export function CupCard({ cup, variantCount, ownedVariants }: CupCardProps) {
         <div className="flex items-center gap-2">
           <span className="font-semibold text-gray-900 dark:text-gray-100 truncate">{cup.name}</span>
           {cup.item_type === "ornament" && (
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 flex-shrink-0">
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300 flex-shrink-0">
               ornament
             </span>
           )}
           {(cup.scope === "state" || cup.scope === "country" || cup.scope === "themed") && (
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 flex-shrink-0 capitalize">
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 flex-shrink-0 capitalize">
               {cup.scope}
             </span>
           )}
           {isGroup && (
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 flex-shrink-0">
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 flex-shrink-0">
               {variantCount} versions
             </span>
           )}
