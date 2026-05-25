@@ -57,12 +57,12 @@ body {
 /* Page headers clear the iPhone notch/dynamic island in PWA mode.
    Overrides the padding-top set by Tailwind's py-3 on every green header. */
 .header-safe-top {
-  padding-top: calc(0.75rem + var(--safe-top));
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
 }
 
 /* Bottom nav clears the iPhone home indicator */
 .bottom-nav {
-  padding-bottom: calc(0.5rem + var(--safe-bottom));
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* In PWA mode the nav items' own py-2 already provides enough visual breathing
@@ -73,7 +73,7 @@ body {
     --bottom-nav-height: calc(3.5rem - 4px + var(--safe-bottom));
   }
   .bottom-nav {
-    padding-bottom: var(--safe-bottom);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 

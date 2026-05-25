@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Browse and search the cup catalog, filter by series, country, or scope, mark cups owned, track condition, add notes, and upload photos.">
+<meta name="description" content="Browse the cup catalog, filter by series, country, or scope, search by name, mark cups owned, track condition, add notes, and upload photos.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../shared.css">
-<title>Browsing &amp; Searching — Cup Collector</title>
+<title>Browsing — Cup Collector</title>
 </head>
 <body>
 
@@ -22,17 +22,36 @@
   <span class="sep">/</span>
   <span>User Guides</span>
   <span class="sep">/</span>
-  Browsing &amp; Searching
+  Browsing
   <span class="guide-badge badge-user">User Guide</span>
 </nav>
 
-<h1>🔍 Browsing &amp; Searching</h1>
-<p>The Browse and Search screens let you explore the full cup catalog, filter by series, country, or scope, and manage your collection.</p>
+<h1>🔍 Browsing</h1>
+<p>The Browse screen is your main window into the cup catalog — filter by series, country, or scope, search by name, and manage your collection.</p>
 
-<h2 class="no-rule">Browse screen</h2>
+<nav class="toc">
+  <div class="toc-title">On this page</div>
+  <ol>
+    <li><a href="#browse">Browse screen</a>
+      <ol>
+        <li><a href="#filters">Filters</a></li>
+        <li><a href="#collection-prefs">Collection preferences and what's shown</a></li>
+      </ol>
+    </li>
+    <li><a href="#cup-types">Cup types: mugs, ornaments, and themed cups</a></li>
+    <li><a href="#cup-detail">Cup detail</a></li>
+    <li><a href="#notes">My Notes</a></li>
+    <li><a href="#marking-owned">Marking a cup as owned</a></li>
+    <li><a href="#condition">Condition tracking</a></li>
+    <li><a href="#provenance">Recording where you got it</a></li>
+    <li><a href="#photo">Uploading your own photo</a></li>
+  </ol>
+</nav>
+
+<h2 id="browse" class="no-rule">Browse screen</h2>
 <p>Tap <strong>Browse</strong> in the bottom navigation. The full catalog appears as a scrollable list, with a count in the header showing how many cups you own out of the total displayable cups.</p>
 
-<h3>Filters</h3>
+<h3 id="filters">Filters</h3>
 <p>The header contains three <strong>dropdown filters</strong> and a row of <strong>status chips</strong>, all working together:</p>
 <ul>
   <li><strong>Series</strong> — filter to a single series (You Are Here, Been There, Discovery Series, etc.). Series that include both mugs and ornaments appear as two separate entries — for example, <em>Been There</em> for mugs and <em>Been There Ornaments</em> for ornaments.</li>
@@ -53,10 +72,10 @@
   Tapping Near Me reorders the list with unowned cups closest to your position shown first. All cups still appear; nothing is hidden. Useful when you're in a city and want to know which needed cups are nearby.
 </div>
 
-<h3>Collection preferences and what's shown</h3>
+<h3 id="collection-prefs">Collection preferences and what's shown</h3>
 <p>Browse only shows cups from the series and item types your household has chosen to track (set in <a href="settings.html">Settings → What I Collect</a>). Unowned cups from excluded series or types are hidden. Owned cups always appear regardless of preferences.</p>
 
-<h2>Cup types: mugs, ornaments, and themed cups</h2>
+<h2 id="cup-types">Cup types: mugs, ornaments, and themed cups</h2>
 <p>The catalog contains several kinds of cups:</p>
 <ul>
   <li><strong>City mugs</strong> — the standard location cup, placed as a map pin at its city</li>
@@ -66,12 +85,8 @@
 </ul>
 <p>In the Browse list, themed cups show a small <strong>"themed"</strong> badge next to their name. On the cup detail screen, the subtitle identifies the scope: <em>State Cup</em>, <em>Country Cup</em>, or <em>Special Edition</em>. City cups and ornaments have no scope prefix.</p>
 
-<h2>Search screen</h2>
-<p>Tap <strong>Search</strong> in the bottom navigation. Type a city name, country, or series — results appear instantly. Each result shows whether the cup is owned or still needed.</p>
-<p>Search always shows the <em>full catalog</em>, including cups from series your household doesn't normally track. This lets you look up any cup even if it's excluded from Browse.</p>
-
-<h2>Cup detail</h2>
-<p>Tap any cup in the Browse or Search list to open the <strong>Cup Detail screen</strong>. This shows:</p>
+<h2 id="cup-detail">Cup detail</h2>
+<p>Tap any cup in the Browse list to open the <strong>Cup Detail screen</strong>. This shows:</p>
 <ul>
   <li>The cup's image (or a letter placeholder if no image is available)</li>
   <li>City, country, series, year, and scope label</li>
@@ -88,7 +103,7 @@
   <span class="ph-label">Screenshot: Cup Detail screen showing image, series info, external links, My Notes, and ownership card</span>
 </div>
 
-<h2>My Notes</h2>
+<h2 id="notes">My Notes</h2>
 <p>Each cup has a <strong>My Notes</strong> section on its detail screen — a free-text area for your household's personal notes about that cup (separate from the catalog notes that come from the import). For example: where you saw it in the wild, a note about a specific variant, or a reminder to look for it in a particular city.</p>
 <ul>
   <li>All household members can read the notes</li>
@@ -96,7 +111,7 @@
   <li>Notes are per-household — if you belong to multiple households, each has its own note for each cup</li>
 </ul>
 
-<h2>Marking a cup as owned</h2>
+<h2 id="marking-owned">Marking a cup as owned</h2>
 <div class="callout warn">
   <strong>Viewers cannot mark cups as owned</strong>
   The ownership button is only visible to household owners. If you don't see it, your account has Viewer access — ask the household owner to update your role in PocketID.
@@ -104,7 +119,7 @@
 <p>On the Cup Detail screen, tap <strong>"✓ Mark as Owned"</strong>. The button changes immediately and all other household members' apps update within a second or two — no manual syncing needed.</p>
 <p>To remove a cup from your collection, tap <strong>"Remove from Collection"</strong> on a cup that's already owned.</p>
 
-<h2>Condition tracking</h2>
+<h2 id="condition">Condition tracking</h2>
 <p>Once a cup is marked as owned, a <strong>Condition card</strong> appears on its detail screen. By default the status shows <em>In good condition</em>.</p>
 <p>Tap <strong>Edit</strong> to update:</p>
 <ul>
@@ -114,16 +129,16 @@
 </ul>
 <p>Cups flagged as needing replacement show a <strong>Needs Replacing</strong> badge in the Browse list so they're easy to spot.</p>
 
-<h2>Recording where you got it</h2>
+<h2 id="provenance">Recording where you got it</h2>
 <p>When you mark a cup as owned, the Condition card shows a list of nearby Starbucks locations. Tap <strong>Acquired here</strong> next to the store where you found the cup. The store name and address are saved to the cup's record and shown on the detail screen for future reference.</p>
 
-<h2>Uploading your own photo</h2>
+<h2 id="photo">Uploading your own photo</h2>
 <p>Once a cup is owned, a <strong>camera button</strong> appears on the hero image. Tap it to choose or take a photo — your photo replaces the catalog image for that cup in your household's view.</p>
 <p>To remove your personal photo and revert to the catalog image, tap the <strong>trash button</strong> that appears alongside the camera button. Both buttons are owner-only.</p>
 
 <nav class="page-nav">
   <a class="prev" href="map-view.html">Map View</a>
-  <a class="next" href="settings.html">Settings</a>
+  <a class="next" href="stores.html">Find Stores</a>
 </nav>
 
 </body>
