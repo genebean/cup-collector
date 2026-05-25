@@ -41,7 +41,8 @@ interface MapViewProps {
 // Stores a ref to the underlying Leaflet map so event handlers outside
 // MapContainer's component tree can call map methods imperatively.
 function MapRefSetter({ mapRef }: { mapRef: React.MutableRefObject<ReturnType<typeof useMap> | null> }) {
-  mapRef.current = useMap();
+  const map = useMap();
+  useEffect(() => { mapRef.current = map; }, [map, mapRef]);
   return null;
 }
 
