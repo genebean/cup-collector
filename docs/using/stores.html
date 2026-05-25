@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Use the Stores tab to find Starbucks locations in a city you're visiting — search by city name, see what's nearby, and check which cups might be there.">
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
+<title>Find Stores — Cup Collector</title>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="../index.html" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">/</span>
+  <span>User Guides</span>
+  <span class="sep">/</span>
+  Find Stores
+  <span class="guide-badge badge-user">User Guide</span>
+</nav>
+
+<h1>🏪 Find Stores</h1>
+<p>The <strong>Stores</strong> tab is built for trip planning. Search any city and see which Starbucks locations are there — along with what cups might be available at each one.</p>
+
+<nav class="toc">
+  <div class="toc-title">On this page</div>
+  <ol>
+    <li><a href="#search">Searching for a city</a></li>
+    <li><a href="#results">Reading the results</a></li>
+    <li><a href="#cups">Cups at each store</a></li>
+    <li><a href="#directions">Getting directions</a></li>
+  </ol>
+</nav>
+
+<h2 id="search" class="no-rule">Searching for a city</h2>
+<p>Tap <strong>Stores</strong> in the bottom navigation. Type a city name or address in the search bar and tap <strong>Search</strong>. The app looks up Starbucks locations in or near that area and shows them as a list.</p>
+
+<div class="callout tip">
+  <strong>Be as specific or as broad as you like</strong>
+  "Nashville, TN", "Paris, France", and "downtown Austin" all work. If results look wrong or sparse, try adding the country or state for a more precise match.
+</div>
+
+<p>Unlike the map, which centers on your current GPS position, the Stores tab is entirely address-based — no location permission needed and no relation to where you physically are right now. It's designed for planning ahead.</p>
+
+<h2 id="results">Reading the results</h2>
+<p>Each store card shows:</p>
+<ul>
+  <li><strong>Store name</strong> — typically "Starbucks" with a location identifier</li>
+  <li><strong>Address</strong> — full street address</li>
+  <li><strong>Directions →</strong> link — opens Apple Maps with turn-by-turn directions to that store</li>
+  <li><strong>Cup summary</strong> — a count of needed and owned cups at that location (e.g., "3 needed · 2 owned"). Tap it to expand the full cup list.</li>
+</ul>
+<p>If the catalog has no cups associated with a store's area, the card reads "No catalog cups here".</p>
+
+<h2 id="cups">Cups at each store</h2>
+<p>Tap the cup summary to expand the cups available at that store. Cups are grouped by scope:</p>
+<ul>
+  <li><strong>City cups</strong> — any cup whose city centroid is within ~50 miles of the store. Grouped by city name when multiple nearby cities have cups.</li>
+  <li><strong>State cups</strong> — any state-scope cup matching the store's state or province</li>
+  <li><strong>Country cups</strong> — any country-scope cup matching the store's country</li>
+</ul>
+<p>Within each group, <strong>needed cups</strong> appear first (cups you don't own yet), followed by <strong>already owned</strong> cups. Tap any cup name to go directly to its detail screen.</p>
+
+<div class="callout">
+  <strong>Cups follow your collection preferences</strong>
+  The Stores tab respects your <a href="settings.html#what-i-collect">What I Collect</a> preferences. If you've excluded ornaments or a particular series, they won't appear in store results.
+</div>
+
+<h2 id="directions">Getting directions</h2>
+<p>Tap <strong>Directions →</strong> on any store card to open Apple Maps with walking/driving directions to that Starbucks. This works from anywhere — before the trip, from home, or en route.</p>
+<p>If you want to see the store on the map in the context of the surrounding cups, switch to the <strong>Map</strong> tab and navigate to that city — the store will appear as a blue pin once you zoom into the area and your location is active.</p>
+
+<nav class="page-nav">
+  <a class="prev" href="browsing.html">Browsing</a>
+  <a class="next" href="settings.html">Settings</a>
+</nav>
+
+</body>
+</html>

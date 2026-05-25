@@ -10,8 +10,8 @@ import type { CupWithOwnership, NearbyStore } from "@/types";
 import { useRouter } from "next/navigation";
 import { useUiTheme } from "@/hooks/useUiTheme";
 import { MapBottomSheet } from "@/components/MapBottomSheet";
-import { haversineMi, parseAddressComponents } from "@/lib/geo";
 import { groupByVariant } from "@/lib/variants";
+import { getCupsForStore } from "@/lib/store-cups";
 
 const MAP_POSITION_KEY = "map_position";
 
@@ -129,50 +129,6 @@ function ZoomUpdater({ location, zoom, flyTick }: { location: { lat: number; lng
   }, [flyTick, zoom, location, map]);
 
   return null;
-}
-
-// City cups whose centroid is within this radius are considered "available" at a store.
-// 50 miles covers suburban/exurban stores — e.g. Villa Rica GA is ~35 miles from
-// the Atlanta cup centroid, just past a 30-mile cutoff.
-const STORE_CUP_RADIUS_MI = 50;
-
-interface StoreCupGroups {
-  neededCity: CupWithOwnership[];
-  neededState: CupWithOwnership[];
-  neededCountry: CupWithOwnership[];
-  ownedCity: CupWithOwnership[];
-  ownedState: CupWithOwnership[];
-  ownedCountry: CupWithOwnership[];
-}
-
-function getCupsForStore(store: NearbyStore, cups: CupWithOwnership[]): StoreCupGroups {
-  const byYearDesc = (a: CupWithOwnership, b: CupWithOwnership) => b.year - a.year;
-  const isNeeded = (c: CupWithOwnership) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false);
-
-  // City cups: proximity-based — any city cup whose centroid is within range.
-  const nearbyCityCups = cups.filter(
-    (c) =>
-      (c.scope === "city" || !c.scope) &&
-      haversineMi({ lat: store.lat, lng: store.lng }, { lat: c.lat, lng: c.lng }) <= STORE_CUP_RADIUS_MI
-  );
-
-  // State & country cups: address-based — every store in a state/country shows its cups.
-  const { region, countryCode } = parseAddressComponents(store.address);
-  const stateCups = region
-    ? cups.filter((c) => c.scope === "state" && c.region === region && c.country_code === countryCode)
-    : [];
-  const countryCups = countryCode
-    ? cups.filter((c) => c.scope === "country" && c.country_code === countryCode)
-    : [];
-
-  return {
-    neededCity:    nearbyCityCups.filter(isNeeded).sort(byYearDesc),
-    neededState:   stateCups.filter(isNeeded).sort(byYearDesc),
-    neededCountry: countryCups.filter(isNeeded).sort(byYearDesc),
-    ownedCity:     nearbyCityCups.filter((c) => !isNeeded(c)).sort(byYearDesc),
-    ownedState:    stateCups.filter((c) => !isNeeded(c)).sort(byYearDesc),
-    ownedCountry:  countryCups.filter((c) => !isNeeded(c)).sort(byYearDesc),
-  };
 }
 
 // Groups all cups into pins for city-scope cups.
@@ -315,7 +271,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
               weight: 2,
             }}
           >
-            <Popup autoPan={false}>
+            <Popup autoPanPaddingBottomRight={[5, 72]}>
               {(() => {
                 const isNeeded = (c: CupWithOwnership) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false);
 
@@ -513,7 +469,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
               weight: 2,
             }}
           >
-            <Popup autoPan={false}>
+            <Popup autoPanPaddingBottomRight={[5, 72]}>
               <div className="text-sm min-w-[180px] max-h-[60vh] overflow-y-auto pr-1">
                 <div className="font-semibold flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 flex-shrink-0 text-green-starbucks">

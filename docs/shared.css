@@ -551,6 +551,48 @@ tbody tr:nth-child(even) { background: rgba(0,0,0,0.018); }
   font-style: italic;
 }
 
+/* ── Table of contents ─────────────────────────────────────────────────────── */
+.toc {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 2.5rem;
+}
+
+.toc-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.toc ol {
+  padding-left: 1.2rem;
+  margin: 0;
+}
+
+.toc li {
+  margin-bottom: 0.25rem;
+  font-size: 0.88rem;
+  color: var(--text-body);
+  line-height: 1.5;
+}
+
+.toc a {
+  color: var(--green-link);
+  text-decoration: none;
+}
+
+.toc a:hover { text-decoration: underline; }
+
+.toc ol ol {
+  margin-top: 0.2rem;
+  padding-left: 1rem;
+}
+
 /* ── Page navigation (prev / next) ────────────────────────────────────────── */
 .page-nav {
   display: flex;

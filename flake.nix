@@ -91,7 +91,7 @@
               echo ""
               echo "  Mobile / network testing:"
               echo "    dev-next-bypass       start Next.js with auth bypass"
-              echo "    dev-next-network      Next.js on <addr>:3000 over Tailscale"
+              echo "    dev-next-network      Next.js on Tailscale IP:3000 (auto-detects IP; pass addr to override)"
               echo "    dev-next-https        Next.js with HTTPS proxy on :8443 (geolocation)"
               echo ""
               echo "  Testing & quality:"

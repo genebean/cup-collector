@@ -33,10 +33,15 @@ const nextConfig = {
   // Node server that doesn't need node_modules at runtime.
   output: "standalone",
 
-  // Allow Playwright's 127.0.0.1 origin and any extra dev origin (e.g. Tailscale
-  // IP for mobile testing) to access Next.js dev resources. Set NEXT_DEV_ORIGIN in
-  // the shell when running dev-next-https or dev-next-network.
-  allowedDevOrigins: ["127.0.0.1", ...(process.env.NEXT_DEV_ORIGIN ? [process.env.NEXT_DEV_ORIGIN] : [])],
+  // Allow Playwright's 127.0.0.1 origin and any extra dev origins to access
+  // Next.js dev resources (HMR, etc.).
+  // NEXT_DEV_ORIGIN  — single origin (e.g. a Tailscale IP)
+  // NEXT_DEV_ORIGINS — comma-separated list (set by dev-next-network from tailscale peers)
+  allowedDevOrigins: [
+    "127.0.0.1",
+    ...(process.env.NEXT_DEV_ORIGIN ? [process.env.NEXT_DEV_ORIGIN] : []),
+    ...(process.env.NEXT_DEV_ORIGINS ? process.env.NEXT_DEV_ORIGINS.split(",").filter(Boolean) : []),
+  ],
 
   images: {
     // Allow Next.js Image component to load cup photos from PocketBase.
