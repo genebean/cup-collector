@@ -62,6 +62,52 @@ function parseCSVLine(line: string): string[] {
   return values;
 }
 
+// Strips trailing " N" suffix — used for grouping variants during region backfill.
+export function baseName(name: string): string {
+  return name.replace(/\s+\d+$/, "").trim();
+}
+
+// Fixes cups whose scope is "city" but whose coordinates and name match a
+// non-city (state/country) cup in the same series. Scrapers sometimes tag
+// state/country variants (e.g. "Alabama 2", "Christmas Florida") as "city"
+// because they use the same centroid coordinates as the base cup.
+// Running this as a post-parse step means the CSV does not need to be
+// hand-edited every time a new variant is scraped.
+export function normalizeScope(rows: CsvRow[]): CsvRow[] {
+  // Build: (series|lat|lng) → region cup fields for every non-city row with real coords
+  const regionAt = new Map<string, { scope: string; name: string; region: string; country: string; country_code: string }>();
+  for (const row of rows) {
+    if (row.scope === "city" || row.lat === 0 || row.lng === 0) continue;
+    const key = `${row.series}|${row.lat}|${row.lng}`;
+    if (!regionAt.has(key)) regionAt.set(key, {
+      scope: row.scope, name: row.name,
+      region: row.region, country: row.country, country_code: row.country_code,
+    });
+  }
+
+  return rows.map((row): CsvRow => {
+    if (row.scope !== "city" || row.lat === 0 || row.lng === 0) return row;
+    const key = `${row.series}|${row.lat}|${row.lng}`;
+    const info = regionAt.get(key);
+    if (!info) return row;
+
+    // Name must be a recognisable variant of the region: "RegionName N" or "Christmas RegionName"
+    const stripped = row.name.replace(/\s+\d+$/, "").trim();
+    const xmasStripped = row.name.replace(/^Christmas\s+/, "").trim();
+    if (stripped === info.name || xmasStripped === info.name || row.name === info.name) {
+      return {
+        ...row,
+        scope: info.scope,
+        // Inherit region/country fields from the base cup when the variant row has them empty
+        region:       row.region       || info.region,
+        country:      row.country      || info.country,
+        country_code: row.country_code || info.country_code,
+      };
+    }
+    return row;
+  });
+}
+
 export function parseCSV(text: string): CsvRow[] {
   const lines = text.split("\n").filter((l) => l.trim());
   const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
@@ -98,7 +144,7 @@ export function parseCSV(text: string): CsvRow[] {
       is_unique: row.is_unique === "true",
     });
   }
-  return rows;
+  return normalizeScope(rows);
 }
 
 export function rowMatchesExisting(row: CsvRow, existing: Record<string, unknown>): boolean {
