@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCSV, rowMatchesExisting } from "@/lib/cup-import";
+import { parseCSV, normalizeScope, rowMatchesExisting } from "@/lib/cup-import";
 
 const HEADER_NEW = "name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes,sub_collection,variant_of,variant_notes";
 const HEADER_OLD = "city,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes";
@@ -114,6 +114,55 @@ describe("parseCSV", () => {
     expect(row.hobbydb_url).toBe("https://hobbydb.com/x");
     expect(row.more_info_url).toBe("https://starbucks-mugs.com/mug/y/");
     expect(row.notes).toBe("A note");
+  });
+});
+
+describe("normalizeScope", () => {
+  const BASE_HEADER = "name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes,sub_collection,variant_of,variant_notes";
+  const row = (name: string, scope: string, lat: number, lng: number, series = "Been There") =>
+    ({ name, scope, venue_series: "", item_type: "mug", region: "Alabama", country: "", country_code: "", series, year: 2019, lat, lng, image_url: "", hobbydb_url: "", more_info_url: "", notes: "", sub_collection: "", variant_of: "", variant_notes: "", is_unique: false });
+
+  it("promotes 'Alabama 2' from city to state when it shares coords with 'Alabama' state cup", () => {
+    const rows = [row("Alabama", "state", 32.3617, -86.2792), row("Alabama 2", "city", 32.3617, -86.2792)];
+    const result = normalizeScope(rows);
+    expect(result[1].scope).toBe("state");
+  });
+
+  it("promotes 'Christmas Florida' from city to state and inherits region from base cup", () => {
+    const base = { ...row("Florida", "state", 27.6648, -81.5158), region: "Florida" };
+    const xmas = { ...row("Christmas Florida", "city", 27.6648, -81.5158), region: "" };
+    const result = normalizeScope([base, xmas]);
+    expect(result[1].scope).toBe("state");
+    expect(result[1].region).toBe("Florida");
+  });
+
+  it("does NOT change 'New York City' even when it shares coords with 'New York' state cup", () => {
+    const rows = [row("New York", "state", 40.7128, -74.006), row("New York City", "city", 40.7128, -74.006)];
+    const result = normalizeScope(rows);
+    expect(result[1].scope).toBe("city");
+  });
+
+  it("does NOT change scope for a cup with no matching region at its coordinates", () => {
+    const rows = [row("Seattle", "city", 47.6062, -122.3321)];
+    const result = normalizeScope(rows);
+    expect(result[0].scope).toBe("city");
+  });
+
+  it("does NOT change scope when the cup has lat/lng of 0 (no real coordinates)", () => {
+    const rows = [row("France", "state", 0, 0), row("France 2", "city", 0, 0)];
+    const result = normalizeScope(rows);
+    expect(result[1].scope).toBe("city");
+  });
+
+  it("parseCSV normalises scope automatically — state variants parsed from CSV get correct scope", () => {
+    const csv = [
+      BASE_HEADER,
+      "Alabama,state,,mug,Alabama,United States,US,Been There,2019,32.3617,-86.2792,,,,,,Alabama 2,",
+      "Alabama 2,city,,mug,Alabama,United States,US,Been There,2019,32.3617,-86.2792,,,,,,,",
+    ].join("\n");
+    const rows = parseCSV(csv);
+    const alabama2 = rows.find((r) => r.name === "Alabama 2");
+    expect(alabama2?.scope).toBe("state");
   });
 });
 

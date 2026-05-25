@@ -73,7 +73,6 @@
             play-e2e()           { cc-play-e2e "$@"; }
             import-cups()        { cc-import-cups "$@"; }
             build-catalog()      { cc-build-catalog "$@"; }
-            backfill-region()    { cc-backfill-region "$@"; }
             gen-auth-secret()    { cc-gen-auth-secret "$@"; }
             create-household()   { cc-create-household "$@"; }
 
@@ -102,8 +101,7 @@
               echo ""
               echo "  Catalog:"
               echo "    build-catalog         scrape catalog to CSV"
-              echo "    import-cups           import CSV into PocketBase"
-              echo "    backfill-region       fix missing region from same-series siblings"
+              echo "    import-cups           import CSV into PocketBase (includes region backfill)"
               echo ""
               echo "  Setup:"
               echo "    gen-auth-secret       generate AUTH_SECRET value"

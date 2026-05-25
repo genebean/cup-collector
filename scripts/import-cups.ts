@@ -16,7 +16,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import PocketBase from "pocketbase";
-import { parseCSV, rowMatchesExisting, diffRow, toCupSlug, type CsvRow } from "./cup-import";
+import { parseCSV, rowMatchesExisting, diffRow, baseName, type CsvRow } from "../app/src/lib/cup-import";
+import { toCupSlug } from "../app/src/lib/slug";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
@@ -219,12 +220,11 @@ async function main() {
     }
   }
 
-  console.log("\n── Summary ──");
+  console.log("\n── Import Summary ──");
   if (isDryRun) {
     console.log(`  Would create:    ${created}`);
     console.log(`  Would update:    ${updated}`);
     console.log(`  No change:       ${skipped}`);
-    console.log("\nDry run complete. Run without --dry-run to apply changes.");
   } else {
     console.log(`  Created:   ${created}`);
     console.log(`  Updated:   ${updated}`);
@@ -233,9 +233,66 @@ async function main() {
     if (errors > 0) {
       console.log("\nImport completed with errors. Check output above for details.");
       process.exit(1);
-    } else {
-      console.log("\nImport complete.");
     }
+  }
+
+  // ── Region backfill ─────────────────────────────────────────────────────────
+  // Fills missing `region` on cups where a same-series sibling already has one.
+  // Example: "Santa Barbara" (region="") when "Santa Barbara" in another series
+  // or "Atlanta 2" (region="") next to "Atlanta" (region="Georgia").
+  console.log("\n── Region Backfill ──");
+  interface CupRecord { id: string; name: string; series: string; country_code: string; scope: string; region: string; item_type: string; }
+  const allCups = await pb.collection("cups").getFullList<CupRecord>({
+    fields: "id,name,series,country_code,scope,region,item_type",
+  });
+
+  const buckets = new Map<string, CupRecord[]>();
+  for (const cup of allCups) {
+    const key = `${cup.series}|${cup.country_code}|${cup.scope || "city"}|${cup.item_type || "mug"}|${baseName(cup.name)}`;
+    const bucket = buckets.get(key) ?? [];
+    bucket.push(cup);
+    buckets.set(key, bucket);
+  }
+
+  const toBackfill: Array<{ cup: CupRecord; region: string }> = [];
+  for (const members of buckets.values()) {
+    const regions = [...new Set(members.map(c => c.region).filter(Boolean))];
+    if (regions.length === 0) continue;
+    if (regions.length > 1) {
+      console.warn(`  SKIP — ambiguous regions [${regions.map(r => `"${r}"`).join(", ")}] for "${members[0].name}" (${members[0].series})`);
+      continue;
+    }
+    for (const cup of members) {
+      if (!cup.region) toBackfill.push({ cup, region: regions[0] });
+    }
+  }
+
+  if (toBackfill.length === 0) {
+    console.log("  Nothing to backfill.");
+  } else if (isDryRun) {
+    console.log(`  Would backfill ${toBackfill.length} cup(s):`);
+    for (const { cup, region } of toBackfill) {
+      console.log(`    ${cup.name} (${cup.series}) → region="${region}"`);
+    }
+  } else {
+    let backfilled = 0;
+    for (const { cup, region } of toBackfill) {
+      try {
+        await pb.collection("cups").update(cup.id, { region });
+        console.log(`  Backfilled: ${cup.name} (${cup.series}) → region="${region}"`);
+        backfilled++;
+      } catch (err) {
+        console.error(`  ERROR backfilling ${cup.name} [${cup.id}]:`, err);
+        errors++;
+      }
+    }
+    console.log(`  Backfilled: ${backfilled}`);
+  }
+
+  if (isDryRun) {
+    console.log("\nDry run complete. Run without --dry-run to apply changes.");
+  } else {
+    console.log("\nImport complete.");
   }
 }
 

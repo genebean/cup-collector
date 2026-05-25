@@ -14,9 +14,7 @@ pkgs.writeShellScriptBin "cc-import-cups" ''
   source "$ENV_FILE"
   set +a
   NODE_PATH="$PROJ_ROOT/app/node_modules" \
-    "$PROJ_ROOT/app/node_modules/.bin/ts-node" \
-    --transpile-only \
-    --project "$PROJ_ROOT/scripts/tsconfig.json" \
+    "$PROJ_ROOT/app/node_modules/.bin/tsx" \
     "$PROJ_ROOT/scripts/import-cups.ts" \
     "''${PASS_ARGS[@]}"
 ''

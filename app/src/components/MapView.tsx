@@ -210,12 +210,12 @@ function buildLocationGroups(cups: CupWithOwnership[]): LocationGroup[] {
     const { lat, lng, region, country_code } = cityGroup[0];
     const seriesInGroup = new Set(cityGroup.map((c) => c.series));
 
-    const matchingState = stateCups.filter(
-      (s) => s.region === region && s.country_code === country_code
-    );
-    const matchingCountry = countryCups.filter(
-      (c) => c.country_code === country_code
-    );
+    const matchingState = region
+      ? stateCups.filter((s) => s.region === region && s.country_code === country_code)
+      : [];
+    const matchingCountry = country_code
+      ? countryCups.filter((c) => c.country_code === country_code)
+      : [];
     const matchingThemed = themedCups.filter(
       (t) => t.venue_series && seriesInGroup.has(t.venue_series)
     );
@@ -286,7 +286,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
             weight: 3,
           }}
         >
-          <Popup>You are here</Popup>
+          <Popup autoPan={false}>You are here</Popup>
         </CircleMarker>
       )}
 
@@ -315,7 +315,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
               weight: 2,
             }}
           >
-            <Popup>
+            <Popup autoPan={false}>
               {(() => {
                 const isNeeded = (c: CupWithOwnership) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false);
 
@@ -331,6 +331,11 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                 const ownedState    = group.stateCups.filter((c) => !isNeeded(c));
                 const ownedCountry  = group.countryCups.filter((c) => !isNeeded(c));
                 const ownedThemed   = group.themedCups.filter((c) => !isNeeded(c));
+
+                const neededStateGroups  = groupByVariant(neededState);
+                const neededCountryGroups = groupByVariant(neededCountry);
+                const ownedStateGroups   = groupByVariant(ownedState);
+                const ownedCountryGroups = groupByVariant(ownedCountry);
 
                 const cityGroupRow = ({ base, members }: { base: CupWithOwnership; members: CupWithOwnership[] }) => {
                   const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
@@ -366,8 +371,8 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                   </div>
                 );
 
-                const hasNeeded = neededCityGroups.length > 0 || neededState.length > 0 || neededCountry.length > 0 || neededThemed.length > 0;
-                const hasOwned  = ownedCityGroups.length > 0 || ownedState.length > 0 || ownedCountry.length > 0 || ownedThemed.length > 0;
+                const hasNeeded = neededCityGroups.length > 0 || neededStateGroups.length > 0 || neededCountryGroups.length > 0 || neededThemed.length > 0;
+                const hasOwned  = ownedCityGroups.length > 0 || ownedStateGroups.length > 0 || ownedCountryGroups.length > 0 || ownedThemed.length > 0;
 
                 return (
                   <div className="text-sm min-w-[160px] max-h-[60vh] overflow-y-auto pr-1">
@@ -382,21 +387,21 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                       <div className="border-t border-gray-200 mt-2 pt-2">
                         {neededCityGroups.map((g) => cityGroupRow(g))}
 
-                        {neededState.length > 0 && (
+                        {neededStateGroups.length > 0 && (
                           <>
                             <div className="font-semibold mt-2 mb-1">
-                              {neededState[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span>
+                              {neededState[0].region || neededState[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span>
                             </div>
-                            {neededState.map((cup) => neededRow(cup))}
+                            {neededStateGroups.map((g) => cityGroupRow(g))}
                           </>
                         )}
 
-                        {neededCountry.length > 0 && (
+                        {neededCountryGroups.length > 0 && (
                           <>
                             <div className="font-semibold mt-2 mb-1">
-                              {neededCountry[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span>
+                              {neededCountry[0].country || neededCountry[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span>
                             </div>
-                            {neededCountry.map((cup) => neededRow(cup))}
+                            {neededCountryGroups.map((g) => cityGroupRow(g))}
                           </>
                         )}
 
@@ -427,20 +432,30 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                             </div>
                           );
                         })}
-                        {[...ownedState, ...ownedCountry, ...ownedThemed].map((cup) => {
-                          const scopeSuffix = cup.scope === "state" || cup.scope === "country"
-                            ? ` (${cup.scope})` : "";
+                        {[...ownedStateGroups, ...ownedCountryGroups].map(({ base, members }) => {
+                          const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
+                          const scopeSuffix = base.scope === "state" || base.scope === "country" ? ` (${base.scope})` : "";
                           return (
-                            <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
+                            <div key={base.id} className="text-xs text-gray-500 mb-0.5">
                               ✓{" "}
-                              <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="underline cursor-pointer">
-                                {cup.name}{scopeSuffix}
+                              <button onClick={() => router.push(`/cup/${base.slug || base.id}`)} className="underline cursor-pointer">
+                                {base.name}{versionSuffix}{scopeSuffix}
                               </button>
-                              {" "}· {cup.series} · {cup.year}
-                              {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                              {" "}· {base.series} · {base.year}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
                             </div>
                           );
                         })}
+                        {ownedThemed.map((cup) => (
+                          <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
+                            ✓{" "}
+                            <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="underline cursor-pointer">
+                              {cup.name}
+                            </button>
+                            {" "}· {cup.series} · {cup.year}
+                            {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                          </div>
+                        ))}
                       </>
                     )}
                   </div>
@@ -478,8 +493,12 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
           if (group.members.some((c) => c.isOwned))   bucket.ownedGroups.push(group);
         }
         const cityLocations = Array.from(locationBuckets.values());
-        const hasNeeded = cityLocations.some((l) => l.neededGroups.length > 0) || neededState.length > 0 || neededCountry.length > 0;
-        const hasOwned  = cityLocations.some((l) => l.ownedGroups.length > 0)  || ownedState.length > 0  || ownedCountry.length > 0;
+        const neededStateGroups  = groupByVariant(neededState);
+        const neededCountryGroups = groupByVariant(neededCountry);
+        const ownedStateGroups   = groupByVariant(ownedState);
+        const ownedCountryGroups = groupByVariant(ownedCountry);
+        const hasNeeded = cityLocations.some((l) => l.neededGroups.length > 0) || neededStateGroups.length > 0 || neededCountryGroups.length > 0;
+        const hasOwned  = cityLocations.some((l) => l.ownedGroups.length > 0)  || ownedStateGroups.length > 0  || ownedCountryGroups.length > 0;
         const hasCups = hasNeeded || hasOwned;
 
         return (
@@ -494,7 +513,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
               weight: 2,
             }}
           >
-            <Popup>
+            <Popup autoPan={false}>
               <div className="text-sm min-w-[180px] max-h-[60vh] overflow-y-auto pr-1">
                 <div className="font-semibold flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 flex-shrink-0 text-green-starbucks">
@@ -537,42 +556,50 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                             })}
                           </div>
                         ))}
-                        {neededState.length > 0 && (
+                        {neededStateGroups.length > 0 && (
                           <>
                             <div className="font-semibold mt-2 mb-1">
-                              {neededState[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span>
+                              {neededState[0].region || neededState[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span>
                             </div>
-                            {neededState.map((cup) => (
-                              <div key={cup.id} className="mb-1.5">
-                                <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="font-medium text-green-starbucks underline text-left cursor-pointer">
-                                  {cup.name}
-                                </button>
-                                <div className="text-gray-500 text-xs">
-                                  {cup.series} · {cup.year}
-                                  {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                            {neededStateGroups.map(({ base, members }) => {
+                              const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
+                              const anyNeedsReplacing = members.some((c) => c.ownedRecord?.needs_replacing);
+                              return (
+                                <div key={base.id} className="mb-1.5">
+                                  <button onClick={() => router.push(`/cup/${base.slug || base.id}`)} className="font-medium text-green-starbucks underline text-left cursor-pointer">
+                                    {base.name}{versionSuffix}
+                                  </button>
+                                  <div className="text-gray-500 text-xs">
+                                    {base.series} · {base.year}
+                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                                  </div>
+                                  <div className="text-map-orange text-xs">{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
                                 </div>
-                                <div className="text-map-orange text-xs">{cup.ownedRecord?.needs_replacing ? "⚠ Needs replacing" : "Needed"}</div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </>
                         )}
-                        {neededCountry.length > 0 && (
+                        {neededCountryGroups.length > 0 && (
                           <>
                             <div className="font-semibold mt-2 mb-1">
-                              {neededCountry[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span>
+                              {neededCountry[0].country || neededCountry[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span>
                             </div>
-                            {neededCountry.map((cup) => (
-                              <div key={cup.id} className="mb-1.5">
-                                <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="font-medium text-green-starbucks underline text-left cursor-pointer">
-                                  {cup.name}
-                                </button>
-                                <div className="text-gray-500 text-xs">
-                                  {cup.series} · {cup.year}
-                                  {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                            {neededCountryGroups.map(({ base, members }) => {
+                              const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
+                              const anyNeedsReplacing = members.some((c) => c.ownedRecord?.needs_replacing);
+                              return (
+                                <div key={base.id} className="mb-1.5">
+                                  <button onClick={() => router.push(`/cup/${base.slug || base.id}`)} className="font-medium text-green-starbucks underline text-left cursor-pointer">
+                                    {base.name}{versionSuffix}
+                                  </button>
+                                  <div className="text-gray-500 text-xs">
+                                    {base.series} · {base.year}
+                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                                  </div>
+                                  <div className="text-map-orange text-xs">{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
                                 </div>
-                                <div className="text-map-orange text-xs">{cup.ownedRecord?.needs_replacing ? "⚠ Needs replacing" : "Needed"}</div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </>
                         )}
                       </>
@@ -596,16 +623,17 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                             </div>
                           );
                         })}
-                        {[...ownedState, ...ownedCountry].map((cup) => {
-                          const scopeLabel = ` (${cup.scope})`;
+                        {[...ownedStateGroups, ...ownedCountryGroups].map(({ base, members }) => {
+                          const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
+                          const scopeLabel = ` (${base.scope})`;
                           return (
-                            <div key={cup.id} className="text-xs text-gray-500 mb-0.5">
+                            <div key={base.id} className="text-xs text-gray-500 mb-0.5">
                               ✓{" "}
-                              <button onClick={() => router.push(`/cup/${cup.slug || cup.id}`)} className="underline cursor-pointer">
-                                {cup.name}{scopeLabel}
+                              <button onClick={() => router.push(`/cup/${base.slug || base.id}`)} className="underline cursor-pointer">
+                                {base.name}{versionSuffix}{scopeLabel}
                               </button>
-                              {" "}· {cup.series} · {cup.year}
-                              {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                              {" "}· {base.series} · {base.year}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
                             </div>
                           );
                         })}

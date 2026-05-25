@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { BottomNav } from "@/components/BottomNav";
 import { CupCard } from "@/components/CupCard";
+import { groupByVariant } from "@/lib/variants";
 import type { Cup, OwnedCup, CupWithOwnership } from "@/types";
 
 export default function SearchPage() {
@@ -31,10 +32,10 @@ export default function SearchPage() {
 
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
 
-  const results: CupWithOwnership[] = useMemo(() => {
+  const resultGroups = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return [];
-    return cups
+    const matched = cups
       .filter(
         (c) =>
           (!c.is_duplicate || ownedCupIds.has(c.id)) &&
@@ -45,11 +46,12 @@ export default function SearchPage() {
             c.region?.toLowerCase().includes(q)
           )
       )
-      .map((cup) => ({
+      .map((cup): CupWithOwnership => ({
         ...cup,
         isOwned: ownedCupIds.has(cup.id),
         ownedRecord: ownedCups.find((o) => o.cup_id === cup.id),
       }));
+    return groupByVariant(matched);
   }, [cups, ownedCups, ownedCupIds, search]);
 
   return (
@@ -74,10 +76,17 @@ export default function SearchPage() {
       <main className="flex-1 overflow-y-auto pb-20">
         {!search.trim() ? (
           <div className="text-center text-gray-400 dark:text-gray-500 py-16">Start typing to search cups.</div>
-        ) : results.length === 0 ? (
+        ) : resultGroups.length === 0 ? (
           <div className="text-center text-gray-400 dark:text-gray-500 py-16">No cups found for &ldquo;{search}&rdquo;.</div>
         ) : (
-          results.map((cup) => <CupCard key={cup.id} cup={cup} />)
+          resultGroups.map(({ base, members }) => (
+            <CupCard
+              key={base.id}
+              cup={base}
+              variantCount={members.length > 1 ? members.length : undefined}
+              ownedVariants={members.filter((c) => c.isOwned).length}
+            />
+          ))
         )}
       </main>
 
