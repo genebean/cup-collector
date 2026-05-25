@@ -1,26 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { RADIUS_OPTIONS, DEFAULT_RADIUS_METERS } from "@/lib/nearby-radius";
 
-export const RADIUS_OPTIONS = [
-  { label: "2 mi",  meters: 3219,  zoom: 13 },
-  { label: "5 mi",  meters: 8047,  zoom: 12 },
-  { label: "10 mi", meters: 16093, zoom: 11 },
-  { label: "25 mi", meters: 40234, zoom: 9  },
-] as const;
+export { RADIUS_OPTIONS } from "@/lib/nearby-radius";
 
 const STORAGE_KEY = "nearby_radius_meters";
-const DEFAULT_METERS = 16093; // 10 miles
 
 export function useNearbyRadius() {
   const [radiusMeters, setRadiusMeters] = useState(() => {
-    if (typeof window === "undefined") return DEFAULT_METERS;
+    if (typeof window === "undefined") return DEFAULT_RADIUS_METERS;
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const n = parseInt(stored, 10);
       if (RADIUS_OPTIONS.some((o) => o.meters === n)) return n;
     }
-    return DEFAULT_METERS;
+    return DEFAULT_RADIUS_METERS;
   });
 
   function setRadius(meters: number) {
