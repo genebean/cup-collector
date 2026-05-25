@@ -361,7 +361,12 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
 
                 return (
                   <div className="text-sm min-w-[160px] max-h-[60vh] overflow-y-auto pr-1">
-                    <div className="font-semibold">📍 {locationName}</div>
+                    <div className="font-semibold flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 flex-shrink-0 text-map-orange">
+                        <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-2.003 3.5-4.697 3.5-8.327a8 8 0 1 0-16 0c0 3.63 1.556 6.326 3.5 8.327a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.144.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
+                      </svg>
+                      {locationName}
+                    </div>
 
                     {hasNeeded && (
                       <div className="border-t border-gray-200 mt-2 pt-2">
@@ -477,7 +482,12 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
           >
             <Popup>
               <div className="text-sm min-w-[180px] max-h-[60vh] overflow-y-auto pr-1">
-                <div className="font-semibold">☕ {store.name}</div>
+                <div className="font-semibold flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 flex-shrink-0 text-green-starbucks">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 0 0 2.25 1.016 2.993 2.993 0 0 0 2.25-1.016 3.001 3.001 0 0 0 3.75.614m-16.5 0a3.004 3.004 0 0 1-.621-4.72l1.189-1.19A1.5 1.5 0 0 1 5.378 3h13.243a1.5 1.5 0 0 1 1.06.44l1.19 1.189a3 3 0 0 1-.621 4.72M6.75 18h3.75a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75H6.75a.75.75 0 0 0-.75.75v3.75c0 .414.336.75.75.75Z" />
+                  </svg>
+                  {store.name}
+                </div>
                 <div className="text-gray-500 text-xs">{store.address}</div>
                 <a
                   href={`https://maps.apple.com/?daddr=${store.lat},${store.lng}&dirflg=d`}

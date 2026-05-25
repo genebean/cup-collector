@@ -68,7 +68,7 @@ export default function MapPage() {
   const storeLat = searchCenter?.lat ?? userLocation?.lat;
   const storeLng = searchCenter?.lng ?? userLocation?.lng;
 
-  const { data: storesData } = useQuery<{ stores: NearbyStore[] }>({
+  const { data: storesData, isFetching: isFetchingStores } = useQuery<{ stores: NearbyStore[] }>({
     queryKey: ["nearby-stores", storeLat, storeLng, radiusMeters],
     queryFn: () =>
       fetch(`/api/nearby-starbucks?lat=${storeLat}&lng=${storeLng}&radius=${radiusMeters}`).then((r) =>
@@ -176,6 +176,12 @@ export default function MapPage() {
             Search here
           </button>
         </div>
+
+        {searchCenter && !isFetchingStores && stores.length === 0 && (
+          <p className="text-xs text-white/60 text-center pt-1">
+            No Starbucks found within {RADIUS_OPTIONS.find((o) => o.meters === radiusMeters)?.label ?? "range"} of the center of the map
+          </p>
+        )}
       </header>
 
       {/* z-0 creates a stacking context that isolates Leaflet's internal z-indices */}
