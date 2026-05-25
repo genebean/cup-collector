@@ -177,7 +177,7 @@ export function buildSeriesFromSitemap(
     } else if (AU_STATES.has(cityName)) {
       scope = "state"; region = cityName;
     } else if (WHOLE_COUNTRY_SLUGS.has(cityName)) {
-      scope = "country"; country = cityName;
+      scope = "country"; if (!country) country = cityName;
     } else if (COUNTRY_CODES[cityName]) {
       scope = "country";
       country = cityName;
@@ -282,7 +282,7 @@ export function buildDiscoverySeriesFromSitemap(mugsIndex: Map<string, string>):
       scope = "state";
       region = cityName;
     } else if (WHOLE_COUNTRY_SLUGS.has(cityName)) {
-      scope = "country"; country = cityName;
+      scope = "country"; if (!country) country = cityName;
     } else if (COUNTRY_CODES[cityName]) {
       // Auto-detect: slug title-cases to a known country name not in WHOLE_COUNTRY_SLUGS
       scope = "country";
@@ -357,7 +357,7 @@ export function buildOrnamentsFromSitemap(
     if (US_STATES.has(cityName))    { scope = "state"; region = cityName; }
     else if (CA_PROVINCES.has(cityName)) { scope = "state"; region = cityName; }
     else if (AU_STATES.has(cityName))    { scope = "state"; region = cityName; }
-    else if (WHOLE_COUNTRY_SLUGS.has(cityName)) { scope = "country"; country = cityName; }
+    else if (WHOLE_COUNTRY_SLUGS.has(cityName)) { scope = "country"; if (!country) country = cityName; }
     else if (COUNTRY_CODES[cityName]) { scope = "country"; country = cityName; }
     else if (scope === "city") {
       const words = cityName.split(" ");
@@ -414,13 +414,26 @@ export function buildReliefFromSitemap(mugsIndex: Map<string, string>): CupEntry
     const country = resolveCountry(cityName);
     const region = CITY_TO_REGION[cityName] ?? "";
 
+    // Detect country-scope Relief mugs: stripping suffix words reveals a country name
+    // (e.g. "Australia Green" → "Australia" → COUNTRY_CODES match → scope "country").
+    let scope = "city";
+    if (COUNTRY_CODES[cityName]) {
+      scope = "country";
+    } else {
+      const words = cityName.split(" ");
+      for (let i = words.length - 1; i >= 1; i--) {
+        const base = words.slice(0, i).join(" ");
+        if (COUNTRY_CODES[base]) { scope = "country"; break; }
+      }
+    }
+
     entries.push({
       city: cityName,
       region,
       country,
       series: "Relief",
       year: 2014,
-      scope: "city",
+      scope,
       notes: "",
       moreInfoUrl: url,
       item_type: "mug",
@@ -451,7 +464,7 @@ export function buildIconMiniFromSitemap(mugsIndex: Map<string, string>): CupEnt
     const region = CITY_TO_REGION[cityName] ?? "";
 
     let scope = "city";
-    if (WHOLE_COUNTRY_SLUGS.has(cityName)) { scope = "country"; country = cityName; }
+    if (WHOLE_COUNTRY_SLUGS.has(cityName)) { scope = "country"; if (!country) country = cityName; }
     else if (COUNTRY_CODES[cityName]) { scope = "country"; country = cityName; }
     else {
       const words = cityName.split(" ");

@@ -37,5 +37,8 @@ cups.csv
 # Scraper cache (populated with --cache-dir; not for version control)
 .scrape-cache/
 
+# Downloaded geo boundary data (fetched on first run by backfill-region)
+scripts/data/*.geojson
+
 # Dev stack log files (written by cc-dev-stack; read by agents and tail)
 .dev-logs/

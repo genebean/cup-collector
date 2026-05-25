@@ -100,7 +100,7 @@
               echo "    play-e2e              run Playwright e2e tests"
               echo ""
               echo "  Catalog:"
-              echo "    build-catalog         scrape catalog to CSV"
+              echo "    build-catalog         scrape catalog to CSV (cached by default; delete .scrape-cache/ to force fresh fetch)"
               echo "    import-cups           import CSV into PocketBase (includes region backfill)"
               echo ""
               echo "  Setup:"
