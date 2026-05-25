@@ -34,7 +34,19 @@
   Before creating any groups, decide on a short identifier for your household — for example <code>smith_family</code> or <code>our_collection</code>. This slug is used in PocketID group names and ties those groups to your household record in PocketBase. Lowercase letters, numbers, and underscores only.
 </div>
 
-<h2 class="no-rule">Step 1 — Create role groups</h2>
+<nav class="toc">
+  <div class="toc-title">On this page</div>
+  <ol>
+    <li><a href="#step-1">Step 1 — Create role groups</a></li>
+    <li><a href="#step-2">Step 2 — Register the application</a></li>
+    <li><a href="#step-3">Step 3 — Restrict access to your groups</a></li>
+    <li><a href="#step-4">Step 4 — Add users and assign groups</a></li>
+    <li><a href="#step-5">Step 5 — Verify the "My Apps" launch icon</a></li>
+    <li><a href="#dev">Dev instance (local development)</a></li>
+  </ol>
+</nav>
+
+<h2 id="step-1" class="no-rule">Step 1 — Create role groups</h2>
 <p>Cup Collector uses PocketID groups to determine what each user can do. In PocketID, go to <strong>User Groups → Create Group</strong>. Type the <strong>Friendly Name</strong> first — PocketID auto-generates the group name from it using underscores as word separators. Using slug <code>smith_family</code> as an example, create these two groups:</p>
 
 <table>
@@ -55,7 +67,7 @@
 
 <p>After typing the friendly name, check that the auto-generated group name matches the value in the table exactly — this is what appears in OIDC claims and must match what the app expects. The convention is <code>cup_collector_</code> prefix, your slug, then <code>_owner</code> or <code>_viewer</code>. The app ignores any group that doesn't start with <code>cup_collector_</code>.</p>
 
-<h2>Step 2 — Register the application</h2>
+<h2 id="step-2">Step 2 — Register the application</h2>
 <ol class="steps">
   <li>In the PocketID admin panel, navigate to <strong>OIDC Clients → Create OIDC Client</strong>.</li>
   <li>Fill in the form. The fields and toggles all appear on the same creation screen:</li>
@@ -80,10 +92,10 @@
   <li>Save. PocketID displays the generated <strong>Client ID</strong> and <strong>Client Secret</strong> — copy both for the secrets file during deployment.</li>
 </ol>
 
-<h2>Step 3 — Restrict access to your groups</h2>
+<h2 id="step-3">Step 3 — Restrict access to your groups</h2>
 <p>The OIDC client page has an <strong>Allowed User Groups</strong> section below the form. It shows a table of all your PocketID groups with checkboxes. Check both groups you created in Step 1. If no groups are selected, all PocketID users can access the app — selecting groups here restricts access to only those members. Users not in either group will be denied at the PocketID login screen before they ever reach the app.</p>
 
-<h2>Step 4 — Add users and assign groups</h2>
+<h2 id="step-4">Step 4 — Add users and assign groups</h2>
 <p>Each person who will use Cup Collector needs a PocketID account and must be in one of the two role groups.</p>
 <ol class="steps">
   <li>In the PocketID admin panel, go to <strong>Users → Create User</strong>.</li>
@@ -93,7 +105,7 @@
 
 <p>A user who isn't in either group will see an "access denied" page when they try to sign in.</p>
 
-<h2>Step 5 — Verify the "My Apps" launch icon</h2>
+<h2 id="step-5">Step 5 — Verify the "My Apps" launch icon</h2>
 <p>PocketID shows registered applications in each user's "My Apps" panel. To verify:</p>
 <ol class="steps">
   <li>Have a user log in to PocketID.</li>
@@ -102,7 +114,7 @@
 </ol>
 <p>If the icon doesn't appear, check that the Launch URL is saved correctly and that the icon uploaded without errors.</p>
 
-<h2>Dev instance (local development)</h2>
+<h2 id="dev">Dev instance (local development)</h2>
 <p>To develop without touching your production PocketID, the dev shell includes a <code>pocketid-serve</code> command that starts a containerized PocketID instance on port 1411.</p>
 
 <pre>nix develop
