@@ -11,7 +11,8 @@
     "typeRoots": ["../app/node_modules/@types"],
     "baseUrl": "..",
     "paths": {
-      "pocketbase": ["app/node_modules/pocketbase/dist/pocketbase.cjs.d.ts"]
+      "pocketbase": ["app/node_modules/pocketbase/dist/pocketbase.cjs.d.ts"],
+      "node-html-parser": ["app/node_modules/node-html-parser/dist/index.d.ts"]
     }
   }
 }

@@ -25,7 +25,10 @@ import * as path from "path";
 import * as https from "https";
 import * as http from "http";
 
+import { parse } from "node-html-parser";
+
 import { buildRows, toSlug, type OutputRow } from "../app/src/lib/catalog";
+import { COUNTRY_CODES, CITY_TO_REGION, COORDS } from "../app/src/lib/catalog-data";
 
 function baseName(name: string): string {
   return name.replace(/\s+\d+$/, "").trim();
@@ -143,62 +146,47 @@ interface PageData {
 
 async function fetchPageData(pageUrl: string): Promise<PageData> {
   try {
-    const html = await fetchText(pageUrl);
+    const doc = parse(await fetchText(pageUrl));
 
-    // Extract year from og:title or <title> — e.g. "Been There Ghent 2016 – Starbucks Mugs"
+    // Year from og:title or <title> — e.g. "Been There Ghent 2016 – Starbucks Mugs"
     let year: number | null = null;
-    const titleSources = [
-      html.match(/<meta[^>]*og:title[^>]*>/)?.[0]?.match(/content="([^"]+)"/)?.[1],
-      html.match(/<title[^>]*>([^<]+)<\/title>/)?.[1],
-    ];
-    for (const src of titleSources) {
+    for (const src of [
+      doc.querySelector('meta[property="og:title"]')?.getAttribute('content'),
+      doc.querySelector('title')?.textContent,
+    ]) {
       if (!src) continue;
       const m = src.match(/\b(201[3-9]|202[0-9])\b/);
       if (m) { year = parseInt(m[1], 10); break; }
     }
 
-    // Extract image URL from og:image
+    // Image URL from og:image, falling back to wp-post-image srcset
     let image_url = "";
-    const ogLine = html.match(/<meta[^>]*og:image[^>]*>/);
-    if (ogLine) {
-      const m = ogLine[0].match(/content="([^"]+)"/);
-      if (m) image_url = m[1];
-    }
-    if (!image_url) {
-      const srcsetMatch = html.match(/class="[^"]*wp-post-image[^"]*"[^>]*srcset="([^"]+)"/);
-      if (srcsetMatch) {
-        const urls = srcsetMatch[1].split(",").map((s) => s.trim().split(/\s+/)[0]);
-        image_url = urls.find((u) => !/-\d+x\d+\./.test(u)) ?? urls[urls.length - 1];
+    const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
+    if (ogImage) {
+      image_url = ogImage;
+    } else {
+      const srcset = doc.querySelector('.wp-post-image')?.getAttribute('srcset');
+      if (srcset) {
+        const urls = srcset.split(",").map((s: string) => s.trim().split(/\s+/)[0]);
+        image_url = urls.find((u: string) => !/-\d+x\d+\./.test(u)) ?? urls[urls.length - 1] ?? "";
       }
     }
 
-    // Extract all /tag/ slugs linked from the page
-    const tags: string[] = [];
-    for (const m of html.matchAll(/href="\/tag\/([^/"]+)\/"/g)) {
-      if (!tags.includes(m[1])) tags.push(m[1]);
+    // Tags — only <a rel="tag"> links (the cup-specific tags, not the sidebar tag cloud).
+    // Extract the slug from each href, e.g. /tag/british-columbia/ → "british-columbia".
+    const tagSet = new Set<string>();
+    for (const a of doc.querySelectorAll('a[rel="tag"]')) {
+      const slug = (a.getAttribute('href') ?? '').replace(/\/$/, '').split('/').pop();
+      if (slug) tagSet.add(slug);
     }
+    const tags = [...tagSet];
 
-    // Extract the first substantial paragraph from the post content area.
-    // WordPress typically wraps post body in <div class="entry-content">.
+    // First substantial paragraph from the post content (for variant_notes).
+    // node-html-parser decodes HTML entities and strips tags via textContent.
     let description = "";
-    const contentMatch = html.match(/class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/div>/);
-    if (contentMatch) {
-      for (const m of contentMatch[1].matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)) {
-        // Strip inner tags and decode basic HTML entities
-        const text = m[1]
-          .replace(/<[^>]+>/g, "")
-          .replace(/&amp;/g, "&")
-          .replace(/&lt;/g, "<")
-          .replace(/&gt;/g, ">")
-          .replace(/&#8217;/g, "'")
-          .replace(/&#8220;/g, "“")
-          .replace(/&#8221;/g, "”")
-          .trim();
-        if (text.length >= 60) { // skip captions and short metadata lines
-          description = text;
-          break;
-        }
-      }
+    for (const p of doc.querySelector('.entry-content')?.querySelectorAll('p') ?? []) {
+      const text = p.textContent.replace(/\s+/g, ' ').trim();
+      if (text.length >= 60) { description = text; break; }
     }
 
     return { image_url, year, tags, description };
@@ -207,18 +195,30 @@ async function fetchPageData(pageUrl: string): Promise<PageData> {
   }
 }
 
-// ── Sub-collection tag picker ─────────────────────────────────────────────────
-// Filters the raw tag list from a cup page down to the most relevant
-// sub-collection label, excluding series slugs, location slugs, and version tags.
+// ── Tag helpers ───────────────────────────────────────────────────────────────
 
 const SERIES_SLUGS = new Set([
   "you-are-here", "been-there", "discovery-series", "ornament", "icon-mini",
   "been-there-disney-parks", "you-are-here-disney-parks",
 ]);
+
+// Geographic scope indicators — not sub-collections and not regions.
+const SCOPE_TAGS = new Set([
+  "city", "country", "province", "state", "region", "area", "territory", "island",
+]);
+
 const VERSION_TAG_RE = /^v\d+$/;
 
+function slugToTitle(slug: string): string {
+  return slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+// ── Sub-collection tag picker ─────────────────────────────────────────────────
+// Filters the raw tag list from a cup page down to the most relevant
+// sub-collection label, excluding series slugs, scope slugs, location slugs,
+// and version tags.
+
 function pickSubCollection(tags: string[], row: OutputRow): string {
-  // Build the set of location-derived slugs to exclude
   const locationSlugs = new Set<string>();
   for (const text of [row.name, row.region, row.country]) {
     if (!text) continue;
@@ -230,12 +230,57 @@ function pickSubCollection(tags: string[], row: OutputRow): string {
 
   for (const tag of tags) {
     if (SERIES_SLUGS.has(tag)) continue;
+    if (SCOPE_TAGS.has(tag)) continue;
     if (VERSION_TAG_RE.test(tag)) continue;
     if (locationSlugs.has(tag)) continue;
-    // Convert slug to title-case display name, e.g. "campus-collection" → "Campus Collection"
-    return tag.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    return slugToTitle(tag);
   }
   return "";
+}
+
+// ── Tag-based geography fix ───────────────────────────────────────────────────
+// Corrects or fills country/country_code from country tags, and fills an empty
+// region from tags that are already known region values (safe against false
+// positives like "Campus Collection").
+
+const KNOWN_REGIONS = new Set(Object.values(CITY_TO_REGION));
+
+function applyTagGeography(tags: string[], row: OutputRow): void {
+  // Find the first tag whose title-cased form is a key in COUNTRY_CODES.
+  // COUNTRY_CODES already maps "Canada" → "CA", "Philippines" → "PH", etc.
+  let tagCountry: string | null = null;
+  let tagCountryCode: string | null = null;
+  for (const tag of tags) {
+    const title = slugToTitle(tag);
+    const code = COUNTRY_CODES[title];
+    if (code) { tagCountry = title; tagCountryCode = code; break; }
+  }
+
+  if (tagCountry && tagCountry !== row.country) {
+    if (row.country) console.log(`  tag-fix: ${row.name}: country "${row.country}" → "${tagCountry}"`);
+    row.country = tagCountry;
+    row.country_code = tagCountryCode!;
+    // Clear region — it was resolved for the old country; geo backfill will re-set correctly.
+    row.region = "";
+    // Update coordinates if COORDS has an entry for the corrected country.
+    const newCoords = COORDS[`${row.name},${tagCountry}`];
+    if (newCoords) { row.lat = newCoords[0]; row.lng = newCoords[1]; }
+  }
+
+  // Fill empty region from the first tag that is a known geographic region value.
+  // Skips country-scope cups (they have no sub-region), series tags, scope words,
+  // country tags, and the cup's own name slug.
+  if (!row.region && row.scope !== "country") {
+    const nameSlug = toSlug(row.name);
+    for (const tag of tags) {
+      if (SERIES_SLUGS.has(tag)) continue;
+      if (SCOPE_TAGS.has(tag)) continue;
+      if (COUNTRY_CODES[slugToTitle(tag)]) continue;
+      if (tag === nameSlug) continue;
+      const title = slugToTitle(tag);
+      if (KNOWN_REGIONS.has(title)) { row.region = title; break; }
+    }
+  }
 }
 
 async function withConcurrency<T>(
@@ -263,6 +308,42 @@ function csvField(val: string | number): string {
 // OutputRow from catalog.ts already has all needed fields (including the new variant ones).
 // This alias keeps writeCSV's signature readable.
 type CsvRow = OutputRow;
+
+// Overridable string fields — lat/lng/year are excluded because 0 is ambiguous with "no override".
+const OVERRIDE_STRING_FIELDS = [
+  "scope", "venue_series", "item_type", "region", "country", "country_code",
+  "image_url", "more_info_url", "notes", "sub_collection", "variant_of", "variant_notes",
+] as const;
+
+function applyOverrides(rows: CsvRow[], overridesPath: string): void {
+  if (!fs.existsSync(overridesPath)) return;
+  const lines = fs.readFileSync(overridesPath, "utf-8").split("\n").filter(Boolean);
+  if (lines.length < 2) return; // header only
+  const headers = lines[0].split(",");
+  const col = (row: string[], name: string) => {
+    const i = headers.indexOf(name);
+    return i === -1 ? "" : (row[i] ?? "").replace(/^"|"$/g, "").trim();
+  };
+  let count = 0;
+  for (const line of lines.slice(1)) {
+    const parts = line.split(",");
+    const name = col(parts, "name");
+    const series = col(parts, "series");
+    if (!name || !series) continue;
+    const target = rows.find(r => r.name === name && r.series === series);
+    if (!target) {
+      console.warn(`  [override] no match for "${name}" (${series})`);
+      continue;
+    }
+    let changed = false;
+    for (const field of OVERRIDE_STRING_FIELDS) {
+      const val = col(parts, field);
+      if (val) { target[field] = val; changed = true; }
+    }
+    if (changed) count++;
+  }
+  console.log(`\nApplied ${count} override(s) from ${path.basename(overridesPath)}.`);
+}
 
 function writeCSV(rows: CsvRow[], filePath: string): void {
   const header = "name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes,sub_collection,variant_of,variant_notes";
@@ -307,6 +388,7 @@ async function main() {
       const { image_url, year, tags, description } = await fetchPageData(row.more_info_url);
       row.image_url = image_url;
       if (year !== null) row.year = year;
+      applyTagGeography(tags, row);
       row.sub_collection = pickSubCollection(tags, row);
       // Only store variant_notes on cups whose name ends in a number (e.g. "Atlanta 2")
       if (/\s+\d+$/.test(row.name) && description) row.variant_notes = description;
@@ -314,9 +396,13 @@ async function main() {
       process.stdout.write(`\r  ${done}/${rowsWithUrl.length}`);
     });
     const withImage = rows.filter((r) => r.image_url).length;
+    const noImage = rows.filter((r) => r.more_info_url && !r.image_url);
     const withSubCollection = rows.filter((r) => r.sub_collection).length;
     const withVariantNotes = rows.filter((r) => r.variant_notes).length;
     console.log(`\n  image_url resolved:   ${withImage} / ${rowsWithUrl.length}`);
+    if (noImage.length > 0) {
+      noImage.forEach((r) => console.log(`    [no image] ${r.name} (${r.series})`));
+    }
     console.log(`  sub_collection found: ${withSubCollection} / ${rowsWithUrl.length}`);
     console.log(`  variant_notes found:  ${withVariantNotes} cups`);
   }
@@ -327,7 +413,18 @@ async function main() {
   let variantCount = 0;
   for (const row of rows) {
     if (!/\s+\d+$/.test(row.name)) continue; // not a numbered cup
-    const base = bySeriesAndName.get(`${row.series}|${baseName(row.name)}`);
+    const m = row.name.match(/^(.+?)\s+(\d+)$/);
+    if (!m) continue;
+    const [, basePart, numStr] = m;
+    const num = parseInt(numStr, 10);
+
+    // Candidate 1: plain base name same item_type (e.g. "Atlanta 2" → "Atlanta")
+    const plainBase = bySeriesAndName.get(`${row.series}|${basePart}`);
+    // Candidate 2: previous number, same item_type (e.g. "Canada 2" → "Canada 1" when no plain "Canada" mug exists)
+    const prevBase = num > 1 ? bySeriesAndName.get(`${row.series}|${basePart} ${num - 1}`) : undefined;
+
+    // Prefer plain base if same item_type; fall back to N-1 if same item_type
+    const base = [plainBase, prevBase].find(b => b && b.item_type === row.item_type);
     if (base) {
       row.variant_of = base.name;
       variantCount++;
@@ -337,12 +434,15 @@ async function main() {
   }
   if (variantCount > 0) console.log(`\nLinked ${variantCount} variant cup(s) to their base via variant_of.`);
 
+  const overridesPath = path.join(path.dirname(path.resolve(outPath)), "cups-overrides.csv");
+  applyOverrides(rows, overridesPath);
+
   writeCSV(rows, outPath);
   console.log(`\nWrote ${rows.length} rows to ${outPath}`);
   console.log("\nNext steps:");
   console.log("  1. Fill in hobbydb_url column where known");
-  console.log("  2. import-cups --file cups.csv --dry-run");
-  console.log("  3. import-cups --file cups.csv");
+  console.log("  2. import-cups --dry-run");
+  console.log("  3. import-cups");
 }
 
 main().catch((err) => {

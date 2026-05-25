@@ -19,6 +19,85 @@ import PocketBase from "pocketbase";
 import { parseCSV, rowMatchesExisting, diffRow, baseName, type CsvRow } from "../app/src/lib/cup-import";
 import { toCupSlug } from "../app/src/lib/slug";
 
+// ── Geo backfill — Natural Earth admin-1 boundaries ──────────────────────────
+
+const DATA_DIR     = path.resolve(path.dirname(process.argv[1]), "data");
+const GEOJSON_PATH = path.join(DATA_DIR, "ne_10m_admin1.geojson");
+const GEOJSON_URL  =
+  "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/" +
+  "ne_10m_admin_1_states_provinces.geojson";
+
+type Ring        = number[][];
+type PolyCoords  = Ring[];
+type MultiCoords = PolyCoords[];
+interface GeoProps { name: string | null; name_en: string | null; iso_a2: string | null; [k: string]: unknown; }
+interface PolygonGeom      { type: "Polygon";      coordinates: PolyCoords;  }
+interface MultiPolygonGeom { type: "MultiPolygon"; coordinates: MultiCoords; }
+type GeoGeom = PolygonGeom | MultiPolygonGeom;
+interface GeoFeature    { type: "Feature"; properties: GeoProps; geometry: GeoGeom; }
+interface GeoCollection { type: "FeatureCollection"; features: GeoFeature[]; }
+
+function pointInRing(lng: number, lat: number, ring: Ring): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i]; const [xj, yj] = ring[j];
+    if ((yi > lat) !== (yj > lat) && lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)
+      inside = !inside;
+  }
+  return inside;
+}
+
+function pointInPoly(lng: number, lat: number, coords: PolyCoords): boolean {
+  if (!pointInRing(lng, lat, coords[0])) return false;
+  for (let i = 1; i < coords.length; i++) if (pointInRing(lng, lat, coords[i])) return false;
+  return true;
+}
+
+function pointInGeom(lng: number, lat: number, geom: GeoGeom): boolean {
+  if (geom.type === "Polygon")      return pointInPoly(lng, lat, geom.coordinates);
+  if (geom.type === "MultiPolygon") return geom.coordinates.some(p => pointInPoly(lng, lat, p));
+  return false;
+}
+
+async function loadGeoIndex(): Promise<Map<string, GeoFeature[]>> {
+  if (!fs.existsSync(GEOJSON_PATH)) {
+    console.log("  Downloading Natural Earth admin-1 boundaries (~40 MB, one-time)…");
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const res = await fetch(GEOJSON_URL, { signal: AbortSignal.timeout(60_000) });
+    if (!res.ok) throw new Error(`Download failed: ${res.status} ${res.statusText}`);
+    fs.writeFileSync(GEOJSON_PATH, await res.text(), "utf-8");
+    console.log(`  Cached → ${GEOJSON_PATH}`);
+  }
+  const col = JSON.parse(fs.readFileSync(GEOJSON_PATH, "utf-8")) as GeoCollection;
+  const index = new Map<string, GeoFeature[]>();
+  for (const f of col.features) {
+    const code = String(f.properties.iso_a2 ?? "").toUpperCase();
+    if (!code || code === "-1" || code === "-99") continue;
+    const bucket = index.get(code) ?? []; bucket.push(f); index.set(code, bucket);
+  }
+  return index;
+}
+
+// Bounding-box overrides for jurisdictions too small for Natural Earth 50m resolution.
+// Checked before the polygon lookup so they take priority.
+const GEO_OVERRIDES: Array<{ cc: string; minLat: number; maxLat: number; minLng: number; maxLng: number; region: string }> = [
+  // Washington D.C. — federal district, absent from admin-1 data; points fall into VA/MD without this
+  { cc: "US", minLat: 38.791, maxLat: 38.996, minLng: -77.120, maxLng: -76.909, region: "Washington, D.C." },
+];
+
+function geoLookup(lng: number, lat: number, cc: string, index: Map<string, GeoFeature[]>): string | null {
+  const upper = cc.toUpperCase();
+  for (const o of GEO_OVERRIDES) {
+    if (o.cc === upper && lat >= o.minLat && lat <= o.maxLat && lng >= o.minLng && lng <= o.maxLng)
+      return o.region;
+  }
+  for (const f of index.get(upper) ?? []) {
+    if (pointInGeom(lng, lat, f.geometry))
+      return String(f.properties.name_en || f.properties.name || "").trim() || null;
+  }
+  return null;
+}
+
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
@@ -156,7 +235,7 @@ async function main() {
         scope: row.scope || "city",
         venue_series: row.venue_series || undefined,
         item_type: row.item_type || "mug",
-        region: row.region,
+        region: row.region || (existingRecord?.region as string) || "",
         country: row.country,
         country_code: row.country_code,
         series: row.series,
@@ -236,10 +315,68 @@ async function main() {
     }
   }
 
+  // ── Geo region backfill ─────────────────────────────────────────────────────
+  // Fills missing `region` on any cup with lat/lng using Natural Earth admin-1
+  // boundaries (point-in-polygon). Runs before sibling backfill so filled regions
+  // can propagate to coordinate-less cups in the same city group.
+  console.log("\n── Geo Region Backfill ──");
+  try {
+    const geoIndex = await loadGeoIndex();
+    interface GeoCup { id: string; name: string; series: string; year: number; lat: number; lng: number; country_code: string; }
+    const geoCups = await pb.collection("cups").getFullList<GeoCup>({
+      fields: "id,name,series,year,lat,lng,country_code",
+      filter: "region = \"\" && scope != \"country\" && lat != 0 && lng != 0",
+    });
+    type GeoMiss = { name: string; country_code: string; lat: number; lng: number };
+    const printGeoMisses = (misses: GeoMiss[]) => {
+      if (misses.length === 0) return;
+      const byCC = new Map<string, string[]>();
+      for (const m of misses) {
+        const arr = byCC.get(m.country_code) ?? []; arr.push(m.name); byCC.set(m.country_code, arr);
+      }
+      console.log(`  No match (${misses.length}) — add to CITY_TO_REGION in catalog-data.ts:`);
+      for (const [cc, names] of [...byCC.entries()].sort(([a], [b]) => a.localeCompare(b)))
+        console.log(`    [${cc}] ${names.join(", ")}`);
+    };
+
+    if (geoCups.length === 0) {
+      console.log("  Nothing to backfill.");
+    } else if (isDryRun) {
+      let geoWould = 0;
+      const misses: GeoMiss[] = [];
+      for (const cup of geoCups) {
+        const region = geoLookup(cup.lng, cup.lat, cup.country_code, geoIndex);
+        if (region) { if (isDebug) console.log(`  ${cup.name} (${cup.series}) → region="${region}"`); geoWould++; }
+        else misses.push({ name: cup.name, country_code: cup.country_code, lat: cup.lat, lng: cup.lng });
+      }
+      console.log(`  Would update: ${geoWould} of ${geoCups.length} cup(s).`);
+      printGeoMisses(misses);
+    } else {
+      let geoUpdated = 0;
+      const misses: GeoMiss[] = [];
+      for (const cup of geoCups) {
+        const region = geoLookup(cup.lng, cup.lat, cup.country_code, geoIndex);
+        if (!region) { misses.push({ name: cup.name, country_code: cup.country_code, lat: cup.lat, lng: cup.lng }); continue; }
+        try {
+          await pb.collection("cups").update(cup.id, { region });
+          if (isDebug) console.log(`  Updated: ${cup.name} (${cup.series}) → "${region}"`);
+          geoUpdated++;
+        } catch (err) {
+          console.error(`  ERROR: ${cup.name} [${cup.id}]:`, err);
+          errors++;
+        }
+      }
+      console.log(`  Updated: ${geoUpdated}  No match: ${misses.length}`);
+      printGeoMisses(misses);
+    }
+  } catch (err) {
+    console.warn("  Geo backfill skipped (network unavailable or boundary file missing):", (err as Error).message);
+  }
+
   // ── Region backfill ─────────────────────────────────────────────────────────
-  // Fills missing `region` on cups where a same-series sibling already has one.
-  // Example: "Santa Barbara" (region="") when "Santa Barbara" in another series
-  // or "Atlanta 2" (region="") next to "Atlanta" (region="Georgia").
+  // Fills missing `region` on cups where a same-city sibling already has one.
+  // Runs after geo backfill so that geo-filled regions propagate to cups without
+  // coordinates (e.g. "Atlanta 2" gets "Georgia" from "Atlanta" which got it via geo).
   console.log("\n── Region Backfill ──");
   interface CupRecord { id: string; name: string; series: string; country_code: string; scope: string; region: string; item_type: string; }
   const allCups = await pb.collection("cups").getFullList<CupRecord>({
@@ -287,6 +424,27 @@ async function main() {
       }
     }
     console.log(`  Backfilled: ${backfilled}`);
+  }
+
+  // ── Missing catalog images ───────────────────────────────────────────────────
+  // Cups with no image_credit have no catalog photo from starbucks-mugs.com.
+  // Check whether a personal photo (own_photo on owned_cups) covers them so the
+  // output tells you whether action is actually needed.
+  interface NoCatalogImage { id: string; name: string; series: string; }
+  const noCatalogImage = await pb.collection("cups").getFullList<NoCatalogImage>({
+    filter: 'image_credit = ""',
+    fields: "id,name,series",
+  });
+  if (noCatalogImage.length > 0) {
+    console.log("\n── Missing Catalog Images ──");
+    for (const cup of noCatalogImage) {
+      const hasPersonalPhoto = await pb.collection("owned_cups").getList(1, 1, {
+        filter: `cup_id = "${cup.id}" && own_photo != ""`,
+        fields: "id",
+      }).then(r => r.totalItems > 0);
+      const note = hasPersonalPhoto ? " — personal photo uploaded, no action needed" : " — no fallback, consider finding an image";
+      console.log(`  ${cup.name} (${cup.series})${note}`);
+    }
   }
 
   if (isDryRun) {

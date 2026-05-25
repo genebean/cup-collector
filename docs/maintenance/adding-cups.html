@@ -99,6 +99,11 @@ import-cups --file /path/to/cups.csv</pre>
 
 <p>The script prints a summary of created, updated, unchanged, and errored records. Run with <code>--dry-run</code> first whenever you're unsure about the data.</p>
 
+<div class="callout tip">
+  <strong>Default path for scraper-generated catalogs</strong>
+  If you're importing the CSV produced by <code>build-catalog</code> (rather than a hand-maintained spreadsheet), the file lands at <code>cups.csv</code> in the project root by default and <code>import-cups</code> picks it up automatically — no <code>--file</code> flag needed. See <a href="../setup/catalog.html">Catalog Setup</a> for the full scraper workflow.
+</div>
+
 <h3>Option B — Web UI</h3>
 <p>Open the app, go to <strong>Settings → Import Cups</strong>. Upload the CSV file, review the dry-run preview, then submit. The web UI uses the same upsert logic as the CLI script. Suitable for small updates; the CLI is faster and more informative for large imports.</p>
 
@@ -107,6 +112,14 @@ import-cups --file /path/to/cups.csv</pre>
   <li>Open the PocketBase admin UI → Collections → cups — new entries should appear.</li>
   <li>Open the app — new cups should appear in Browse and on the map (if they have lat/lng coordinates).</li>
 </ol>
+
+<h2>Overriding scraped catalog data</h2>
+<p>If a cup's data on starbucks-mugs.com is wrong or incomplete (a missing image, an incorrect year, a note you want to add), you can fix it permanently using <code>cups-overrides.csv</code> in the project root. This is tracked in git and applied automatically at the end of every <code>build-catalog</code> run, so your corrections survive future scrapes without any manual re-patching.</p>
+<p>The file uses the same columns as <code>cups.csv</code>. Only <code>name</code> and <code>series</code> are required to identify the cup — fill in only the fields you want to change:</p>
+<pre>name,series,image_url
+Christmas Barcelona,You Are Here,https://example.com/xmas-barcelona.jpg</pre>
+<p>Blank cells in the overrides file are ignored and never clear a scraped value. After editing the file, re-run <code>build-catalog</code> then <code>import-cups</code> to apply the change.</p>
+<p>The <code>import-cups</code> script also reports cups with no catalog image at the end of every run, so you always know which ones might benefit from an override entry.</p>
 
 <nav class="page-nav">
   <a class="prev" href="../index.html">Docs Home</a>

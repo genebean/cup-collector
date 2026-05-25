@@ -51,6 +51,7 @@ export const COORDS: Record<string, [number, number]> = {
   "Orlando,United States":        [28.5383,  -81.3792],
   "Sacramento,United States":     [38.5816, -121.4944],
   "San Jose,United States":       [37.3382, -121.8863],
+  "San Jose,Costa Rica":          [ 9.9281,  -84.0907],
   "Oakland,United States":        [37.8044, -122.2712],
   "Raleigh,United States":        [35.7796,  -78.6382],
   "Louisville,United States":     [38.2527,  -85.7585],
@@ -213,6 +214,7 @@ export const COORDS: Record<string, [number, number]> = {
   "Ontario,Canada":          [51.2538,  -85.3232],
   "Manitoba,Canada":         [53.7609,  -98.8139],
   "Saskatchewan,Canada":     [52.9399, -106.4509],
+  "Alberta,Canada":          [54.0000, -114.3736],
   "Vancouver Island,Canada": [49.6508, -125.4493],
   "Whistler,Canada":         [50.1163, -122.9574],
   "Canada,Canada":           [56.1304, -106.3468],
@@ -229,6 +231,7 @@ export const COORDS: Record<string, [number, number]> = {
   "Madrid,Spain":              [40.4168,  -3.7038],
   "Amsterdam,Netherlands":     [52.3676,   4.9041],
   "Brussels,Belgium":          [50.8503,   4.3517],
+  "Luxembourg,Luxembourg":     [49.8153,   6.1296],
   "Ghent,Belgium":             [51.0543,   3.7174],
   "Vienna,Austria":            [48.2082,  16.3738],
   "Prague,Czech Republic":     [50.0755,  14.4378],
@@ -263,6 +266,8 @@ export const COORDS: Record<string, [number, number]> = {
   // ── Oceania ─────────────────────────────────────────────────────────────────
   "Sydney,Australia":     [-33.8688,  151.2093],
   "Melbourne,Australia":  [-37.8136,  144.9631],
+  "Victoria,Canada":      [ 48.4284, -123.3656],
+  "Kuwait,Kuwait":        [ 29.3759,   47.9774],
   "Brisbane,Australia":   [-27.4698,  153.0251],
   "Auckland,New Zealand": [-36.8485,  174.7633],
   // ── Latin America ───────────────────────────────────────────────────────────
@@ -277,6 +282,7 @@ export const COORDS: Record<string, [number, number]> = {
   "Mexico,Mexico":               [23.6345, -102.5528],
   "Mazatlan,Mexico":             [23.2494, -106.4111],
   "San Miguel,Mexico":           [20.9144, -100.7452],
+  "San Miguel,El Salvador":      [13.4831,  -88.1790],
   "El Salvador,El Salvador":     [13.7942,  -88.8965],
   "Guyana,Guyana":               [ 4.8604,  -58.9302],
   "Hong Kong Disneyland,China":  [22.3130,  114.0413],
@@ -651,6 +657,7 @@ export const COORDS: Record<string, [number, number]> = {
   "Ciudad De Mexico,Mexico": [19.4326, -99.1332],
   "Coquimbo,Chile":        [-29.9533,  -71.3436],
   "Cordoba,Argentina":     [-31.4201,  -64.1888],
+  "Cordoba,Spain":         [ 37.8882,   -4.7794],
   "Curitiba,Brazil":       [-25.4290,  -49.2671],
   "Cusco,Peru":            [-13.5170,  -71.9784],
   "Ensenada,Mexico":       [31.8667, -116.5967],
@@ -676,7 +683,7 @@ export const COORDS: Record<string, [number, number]> = {
   "Rosario,Argentina":     [-32.9468,  -60.6393],
   "Salvador,Brazil":       [-12.9714,  -38.5014],
   "San Miguel De Allende,Mexico": [20.9147, -100.7453],
-  "Santiago Dr,Chile":     [-33.4489,  -70.6693],
+  "Santiago Dr,Dominican Republic": [19.4500,  -70.7000],
   "Sao Paulo,Brazil":      [-23.5505,  -46.6333],
   "Temuco,Chile":          [-38.7396,  -72.5900],
   "Valparaiso,Chile":      [-33.0472,  -71.6127],
@@ -772,6 +779,7 @@ export const COORDS: Record<string, [number, number]> = {
   "Cambridge Uk,United Kingdom":               [52.2053,   0.1218],
   // ── Disney Parks (France) ─────────────────────────────────────────────────
   "Disney Parc Walt Disney Studios,France":    [48.8682,   2.7832],
+  "Disneyland Paris,France":                   [48.8682,   2.7832],
 };
 
 export const COUNTRY_CODES: Record<string, string> = {
@@ -783,7 +791,7 @@ export const COUNTRY_CODES: Record<string, string> = {
   "Puerto Rico": "PR", "Trinidad And Tobago": "TT", "Bahamas": "BS",
   "Guyana": "GY", "Suriname": "SR",
   // South America
-  "Brazil": "BR", "Argentina": "AR", "Colombia": "CO",
+  "Brazil": "BR", "Brasil": "BR", "Argentina": "AR", "Colombia": "CO",
   "Peru": "PE", "Chile": "CL", "Ecuador": "EC", "Bolivia": "BO",
   "Uruguay": "UY", "Paraguay": "PY", "Venezuela": "VE",
   // Europe
@@ -821,6 +829,8 @@ export const COUNTRY_CODES: Record<string, string> = {
   "Malta": "MT", "Monaco": "MC",
   "Trinidad and Tobago": "TT",
   "Turks and Caicos Islands": "TC",
+  // Relief mugs that represent a whole country but whose cup name doesn't directly match a country name
+  "Christmas Philippines Red": "PH",
 };
 
 export interface CupEntry {
@@ -861,7 +871,7 @@ export const CITY_TO_COUNTRY: Record<string, string> = {
   "Montreal": "Canada", "Ontario": "Canada", "Ottawa": "Canada",
   "Quebec": "Canada", "Quebec City": "Canada", "Saskatchewan": "Canada",
   "Toronto": "Canada", "Vancouver": "Canada", "Vancouver Island": "Canada",
-  "Whistler": "Canada", "Winnipeg": "Canada",
+  "Niagara Falls": "United States", "Whistler": "Canada", "Winnipeg": "Canada",
   // United Kingdom
   "Birmingham": "United Kingdom", "Edinburgh": "United Kingdom",
   "London": "United Kingdom", "Manchester": "United Kingdom",
@@ -882,11 +892,14 @@ export const CITY_TO_COUNTRY: Record<string, string> = {
   "Shanghai": "China", "Singapore": "Singapore", "Taipei": "Taiwan",
   "Tel Aviv": "Israel", "Tokyo": "Japan",
   // Asia — Relief/Icon Mini series cities
-  "Cebu": "Philippines", "Chengdu": "China", "Dongguan": "China",
+  "Cebu": "Philippines", "Christmas Philippines Red": "Philippines",
+  "Chengdu": "China", "Dongguan": "China",
   "Guangzhou": "China", "Hangzhou": "China", "Hsinchu": "Taiwan",
   "Johor": "Malaysia", "Kaohsiung": "Taiwan", "Macau": "China",
   "Nanjing": "China", "Phuket": "Thailand", "Selangor": "Malaysia",
   "Tainan": "Taiwan", "Taichung": "Taiwan", "Taoyuan": "Taiwan",
+  // Middle East — country self-maps for cups like "Kuwait National Day 2020"
+  "Kuwait": "Kuwait", "Luxembourg": "Luxembourg",
   // Asia — additional YAH/BT cities
   "Almaty": "Kazakhstan", "Astana": "Kazakhstan", "Baku": "Azerbaijan",
   "Bali": "Indonesia",
@@ -933,6 +946,7 @@ export const CITY_TO_COUNTRY: Record<string, string> = {
   "Christchurch": "New Zealand", "Dunedin": "New Zealand",
   "Gold Coast": "Australia", "Melbourne": "Australia",
   "North Island": "New Zealand", "Perth": "Australia",
+  "Victoria": "Canada",
   "Queenstown": "New Zealand", "South Island": "New Zealand",
   "Sydney": "Australia",
   // China — additional cities
@@ -1054,7 +1068,7 @@ export const CITY_TO_COUNTRY: Record<string, string> = {
   "Queretaro": "Mexico", "Rio De Janeiro": "Brazil",
   "Rosario": "Argentina", "Salvador": "Brazil",
   "San Miguel De Allende": "Mexico",
-  "Santiago Dr": "Chile", "Sao Paulo": "Brazil",
+  "Santiago Dr": "Dominican Republic", "Sao Paulo": "Brazil",
   "Temuco": "Chile", "Tulum": "Mexico",
   "Valparaiso": "Chile", "Veracruz": "Mexico",
   "Villahermosa": "Mexico", "Zacatecas": "Mexico",
@@ -1083,7 +1097,7 @@ export const CITY_TO_COUNTRY: Record<string, string> = {
   "Chile": "Chile", "China": "China",
   "Colombia": "Colombia", "Cyprus": "Cyprus",
   "Czech Republic": "Czech Republic",
-  "Denmark": "Denmark", "Egypt": "Egypt",
+  "Denmark": "Denmark", "Egypt": "Egypt", "El Salvador": "El Salvador",
   "Finland": "Finland", "France": "France",
   "Germany": "Germany", "Greece": "Greece",
   "Hungary": "Hungary", "Iceland": "Iceland",
@@ -1164,7 +1178,7 @@ export const CITY_TO_COUNTRY: Record<string, string> = {
   "Monterey": "United States", "Myrtle Beach": "United States", "Napa": "United States",
   "Nashville": "United States", "New Haven": "United States",
   "New Orleans": "United States", "New York City": "United States",
-  "Niagara Falls": "United States", "Oahu": "United States", "Oakland": "United States",
+  "Oahu": "United States", "Oakland": "United States",
   "Oklahoma City": "United States", "Omaha": "United States",
   "Orange County": "United States", "Orlando": "United States",
   "Palm Springs": "United States", "Park City": "United States",
@@ -1225,6 +1239,8 @@ export const CITY_TO_COUNTRY: Record<string, string> = {
   "Cambridge Uk": "United Kingdom",
   // France — Disney parks
   "Disney Parc Walt Disney Studios": "France",
+  "Disney Disneyland Paris": "France",
+  "Disneyland Paris": "France",
   // US venues
   "Canadas Wonderland": "Canada",
   "Universal Studios Resort": "United States",
@@ -1234,7 +1250,8 @@ export const CITY_TO_COUNTRY: Record<string, string> = {
 // Locations where the slug title-cases to a whole-country name (scope: "country").
 
 export const WHOLE_COUNTRY_SLUGS = new Set([
-  "Canada", "El Salvador", "Guyana", "Korea", "Mexico", "Singapore",
+  "Brasil", "Canada", "El Salvador", "Guyana", "Korea", "Mexico", "Singapore",
+  "Turks Caicos",
 ]);
 
 // ── City → state/province region lookup ──────────────────────────────────────
@@ -1244,7 +1261,7 @@ export const WHOLE_COUNTRY_SLUGS = new Set([
 export const CITY_TO_REGION: Record<string, string> = {
   // US cities → state
   "Albuquerque": "New Mexico", "Anchorage": "Alaska", "Ann Arbor": "Michigan",
-  "Aspen": "Colorado", "Athens": "Georgia", "Atlanta": "Georgia",
+  "Aspen": "Colorado", "Atlanta": "Georgia",
   "Atlantic City": "New Jersey", "Auburn University": "Alabama",
   "Austin": "Texas", "Baltimore": "Maryland", "Baton Rouge": "Louisiana",
   "Berkeley": "California", "Big Island": "Hawaii", "Boise": "Idaho",
@@ -1272,7 +1289,7 @@ export const CITY_TO_REGION: Record<string, string> = {
   "Napa": "California", "Nashville": "Tennessee",
   "New Haven": "Connecticut", "New Orleans": "Louisiana",
   "New York": "New York", "New York City": "New York",
-  "Niagara Falls": "New York", "Oahu": "Hawaii",
+  "Oahu": "Hawaii",
   "Oakland": "California", "Oklahoma City": "Oklahoma",
   "Omaha": "Nebraska", "Orange County": "California",
   "Orlando": "Florida", "Palm Springs": "California",
@@ -1284,7 +1301,7 @@ export const CITY_TO_REGION: Record<string, string> = {
   "Raleigh": "North Carolina", "Richmond": "Virginia",
   "Sacramento": "California", "Salt Lake City": "Utah",
   "San Antonio": "Texas", "San Diego": "California",
-  "San Francisco": "California", "San Jose": "California",
+  "San Francisco": "California",
   "Santa Fe": "New Mexico", "Savannah": "Georgia",
   "Seattle": "Washington", "Sedona": "Arizona",
   "Spokane": "Washington", "St. Louis": "Missouri",
@@ -1303,9 +1320,43 @@ export const CITY_TO_REGION: Record<string, string> = {
   "Yosemite": "California",
   // Canada cities → province
   "Banff": "Alberta", "Vancouver Island": "British Columbia",
-  "Whistler": "British Columbia",
+  "Victoria": "British Columbia", "Whistler": "British Columbia",
   // Atlantic Canada regional grouping
   "Atlantic Canada": "Atlantic Canada",
+  // Brazil cities → state
+  "Florianopolis": "Santa Catarina",
+  // China / Hong Kong / Macau — HK and MO are SARs indexed separately in Natural Earth
+  "Christmas Hong Kong": "Hong Kong", "Christmas Macau": "Macau",
+  "Disney Hong Kong Disneyland": "Hong Kong",
+  "Hong Kong": "Hong Kong", "Hong Kong 2 Dragon": "Hong Kong",
+  "Hong Kong Disneyland": "Hong Kong",
+  "Hong Kong Gold": "Hong Kong", "Hong Kong Green": "Hong Kong",
+  "Hong Kong Red": "Hong Kong", "Hong Kong Silver": "Hong Kong",
+  "Macau": "Macau", "Macau Green": "Macau", "Macau Silver": "Macau",
+  // China coastal cities — coordinates land in water or on islands outside admin-1 polygons
+  "Quanzhou": "Fujian", "Shantou": "Guangdong",
+  "Xiamen": "Fujian", "Zhuhai": "Guangdong",
+  // Denmark
+  "Copenhagen": "Hovedstaden",
+  // Spain autonomous communities (island archipelagos — coordinates fall in water at admin-1 resolution)
+  "Balearic Islands": "Balearic Islands",
+  "Canary Islands": "Canary Islands",
+  // Italy — Venice coordinates land in the lagoon, outside the Veneto polygon
+  "Venezia": "Veneto",
+  // Malaysia states
+  "Malacca": "Malacca", "Sabah": "Sabah",
+  // Norway
+  "Stavanger": "Rogaland",
+  // New Zealand — cup represents the island as a geographic entity
+  "North Island": "North Island",
+  // Philippines
+  "Boracay": "Western Visayas", "Boracay 2": "Western Visayas",
+  "Boracay 2 Summer Edition 2023": "Western Visayas",
+  "Cavite": "Cavite",
+  // Romania
+  "Constanta": "Constanta",
+  // Mexico — federal entities whose geo backfill returns the wrong NE region
+  "Ciudad De Mexico": "Ciudad de Mexico",
 };
 
 // ── Discovery Series — derived from starbucks-mugs.com sitemap ───────────────
@@ -1352,7 +1403,7 @@ export const CA_PROVINCES = new Set([
 ]);
 
 export const AU_STATES = new Set([
-  "New South Wales", "Victoria", "Queensland", "South Australia",
+  "New South Wales", "Queensland", "South Australia",
   "Western Australia", "Tasmania", "Northern Territory",
   "Australian Capital Territory",
 ]);

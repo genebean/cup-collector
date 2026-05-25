@@ -153,11 +153,15 @@ export function rowMatchesExisting(row: CsvRow, existing: Record<string, unknown
   // hobbydb_url is filled manually after export — only compare when the CSV has a value,
   // so a hand-curated DB entry is never overwritten by an empty CSV column.
   const hobbydbMatch = !row.hobbydb_url || row.hobbydb_url === s(existing.hobbydb_url);
+  // region may be empty in the CSV for cups whose region is set by geo backfill at import
+  // time. Treat "CSV empty, DB non-empty" as matching so geo-backfilled regions are not
+  // cleared and re-filled on every subsequent import run.
+  const regionMatches = row.region === s(existing.region) || (row.region === "" && s(existing.region) !== "");
   return (
     row.item_type      === s(existing.item_type) &&
     row.scope          === (s(existing.scope) || "city") &&
     row.venue_series   === s(existing.venue_series) &&
-    row.region         === s(existing.region) &&
+    regionMatches &&
     row.country        === s(existing.country) &&
     row.country_code   === s(existing.country_code) &&
     row.lat            === n(existing.lat) &&
@@ -182,7 +186,7 @@ export function diffRow(row: CsvRow, existing: Record<string, unknown>): string[
   if (row.item_type      !== s(existing.item_type))           diffs.push(`item_type: csv="${row.item_type}" db="${s(existing.item_type)}"`);
   if (row.scope          !== (s(existing.scope) || "city"))  diffs.push(`scope: csv="${row.scope}" db="${s(existing.scope) || "city"}"`);
   if (row.venue_series   !== s(existing.venue_series))        diffs.push(`venue_series: csv="${row.venue_series}" db="${s(existing.venue_series)}"`);
-  if (row.region         !== s(existing.region))              diffs.push(`region: csv="${row.region}" db="${s(existing.region)}"`);
+  if (row.region !== s(existing.region) && !(row.region === "" && s(existing.region) !== "")) diffs.push(`region: csv="${row.region}" db="${s(existing.region)}"`);
   if (row.country        !== s(existing.country))             diffs.push(`country: csv="${row.country}" db="${s(existing.country)}"`);
   if (row.country_code   !== s(existing.country_code))        diffs.push(`country_code: csv="${row.country_code}" db="${s(existing.country_code)}"`);
   if (row.lat            !== n(existing.lat))                 diffs.push(`lat: csv=${row.lat} db=${n(existing.lat)}`);
