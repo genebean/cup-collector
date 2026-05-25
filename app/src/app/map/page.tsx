@@ -10,6 +10,7 @@ import { getPocketBase } from "@/lib/pocketbase";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { useNearbyRadius, RADIUS_OPTIONS } from "@/hooks/useNearbyRadius";
+import { chipMetersForZoom } from "@/lib/nearby-radius";
 import type { Cup, OwnedCup, CupWithOwnership, NearbyStore, CollectionPrefs } from "@/types";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
@@ -23,6 +24,10 @@ export default function MapPage() {
   const { radiusMeters, setRadius } = useNearbyRadius();
   const [worldViewTick, setWorldViewTick] = useState(0);
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapZoom, setMapZoom] = useState<number | null>(null);
+  // Radius used for a manual "Search here" — captured from the zoom-based chip
+  // at click time. Kept separate from radiusMeters so it doesn't trigger ZoomUpdater.
+  const [searchRadius, setSearchRadius] = useState(radiusMeters);
 
   // Request geolocation on mount — falls back gracefully if denied
   useEffect(() => {
@@ -67,11 +72,13 @@ export default function MapPage() {
   // Changing the radius clears the manual search so it reverts to GPS mode.
   const storeLat = searchCenter?.lat ?? userLocation?.lat;
   const storeLng = searchCenter?.lng ?? userLocation?.lng;
+  // Manual searches use searchRadius (zoom-based at click time); GPS auto-fetch uses radiusMeters.
+  const effectiveRadius = searchCenter ? searchRadius : radiusMeters;
 
   const { data: storesData, isFetching: isFetchingStores } = useQuery<{ stores: NearbyStore[] }>({
-    queryKey: ["nearby-stores", storeLat, storeLng, radiusMeters],
+    queryKey: ["nearby-stores", storeLat, storeLng, effectiveRadius],
     queryFn: () =>
-      fetch(`/api/nearby-starbucks?lat=${storeLat}&lng=${storeLng}&radius=${radiusMeters}`).then((r) =>
+      fetch(`/api/nearby-starbucks?lat=${storeLat}&lng=${storeLng}&radius=${effectiveRadius}`).then((r) =>
         r.json()
       ),
     enabled: !!(storeLat && storeLng),
@@ -81,6 +88,9 @@ export default function MapPage() {
     try {
       const pos = JSON.parse(sessionStorage.getItem("map_position") ?? "null");
       if (pos?.lat !== undefined && pos?.lng !== undefined) {
+        // Capture the zoom-based chip radius into searchRadius — avoids calling
+        // setRadius (which changes targetZoom and triggers ZoomUpdater's flyTo).
+        setSearchRadius(mapZoom !== null ? activeChipMeters : radiusMeters);
         setSearchCenter({ lat: pos.lat, lng: pos.lng });
       }
     } catch { /* ignore */ }
@@ -124,6 +134,11 @@ export default function MapPage() {
   const stores = storesData?.stores ?? [];
   const targetZoom = RADIUS_OPTIONS.find((o) => o.meters === radiusMeters)?.zoom ?? 11;
 
+  // Which chip to visually highlight: driven by current map zoom so the chip
+  // progresses through 2mi → 5mi → 10mi → 25mi as the user zooms in/out.
+  // Falls back to the last explicitly selected radius when zoom isn't yet known.
+  const activeChipMeters = mapZoom !== null ? chipMetersForZoom(mapZoom) : radiusMeters;
+
   return (
     <div className="flex flex-col h-screen bg-cream dark:bg-gray-900">
       <OfflineBanner />
@@ -157,7 +172,7 @@ export default function MapPage() {
                     key={opt.meters}
                     onClick={() => { setRadius(opt.meters); setSearchCenter(null); }}
                     className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                      radiusMeters === opt.meters
+                      activeChipMeters === opt.meters
                         ? "bg-gold text-green-dark border-gold font-semibold"
                         : "border-white/30 text-white/70 hover:border-white/60"
                     }`}
@@ -179,7 +194,7 @@ export default function MapPage() {
 
         {searchCenter && !isFetchingStores && stores.length === 0 && (
           <p className="text-xs text-white/60 text-center pt-1">
-            No Starbucks found within {RADIUS_OPTIONS.find((o) => o.meters === radiusMeters)?.label ?? "range"} of the center of the map
+            No Starbucks found within {RADIUS_OPTIONS.find((o) => o.meters === effectiveRadius)?.label ?? "range"} of the center of the map
           </p>
         )}
       </header>
@@ -192,6 +207,7 @@ export default function MapPage() {
           userLocation={userLocation}
           targetZoom={targetZoom}
           worldViewTick={worldViewTick}
+          onZoomChange={setMapZoom}
         />
       </div>
 

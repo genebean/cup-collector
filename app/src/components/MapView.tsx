@@ -34,6 +34,7 @@ interface MapViewProps {
   userLocation: { lat: number; lng: number } | null;
   targetZoom: number;
   worldViewTick?: number;
+  onZoomChange?: (zoom: number) => void;
 }
 
 // Saves map center+zoom to sessionStorage on every pan/zoom so position
@@ -75,6 +76,15 @@ function WorldViewResetter({ tick }: { tick: number }) {
       map.flyTo([20, 0], 2, { duration: 1.5 });
     }
   }, [tick, map]);
+  return null;
+}
+
+// Reports zoom level to the parent on mount and after each zoom animation completes.
+function ZoomTracker({ onZoomChange }: { onZoomChange?: (zoom: number) => void }) {
+  const map = useMapEvents({
+    zoomend() { onZoomChange?.(map.getZoom()); },
+  });
+  useEffect(() => { onZoomChange?.(map.getZoom()); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 
@@ -221,7 +231,7 @@ function buildLocationGroups(cups: CupWithOwnership[]): LocationGroup[] {
   });
 }
 
-export default function MapView({ cups, stores, userLocation, targetZoom, worldViewTick = 0 }: MapViewProps) {
+export default function MapView({ cups, stores, userLocation, targetZoom, worldViewTick = 0, onZoomChange }: MapViewProps) {
   const router = useRouter();
   const { isDark } = useUiTheme();
   const tiles = isDark ? TILES.dark : TILES.light;
@@ -261,6 +271,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
       <LocationUpdater location={userLocation} zoom={targetZoom} />
       <ZoomUpdater location={userLocation} zoom={targetZoom} />
       <WorldViewResetter tick={worldViewTick} />
+      <ZoomTracker onZoomChange={onZoomChange} />
       {/* Exclude themed cups — their lat/lng is a placeholder, not a real location */}
       <BoundsTracker cups={boundsTrackerCups} onVisibleCupsChange={handleVisibleCupsChange} />
 
