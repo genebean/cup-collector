@@ -29,7 +29,20 @@
 <h1>🗺️ Map View</h1>
 <p>The map is the default home screen. It gives you a visual overview of the entire collection and nearby Starbucks stores.</p>
 
-<h2 class="no-rule">Pin colors</h2>
+<nav class="toc">
+  <div class="toc-title">On this page</div>
+  <ol>
+    <li><a href="#pin-colors">Pin colors</a></li>
+    <li><a href="#navigating">Zooming and navigating</a></li>
+    <li><a href="#tapping">Tapping pins</a></li>
+    <li><a href="#cups-in-view">Cups in view</a></li>
+    <li><a href="#location">Location permission</a></li>
+    <li><a href="#nearby">Nearby Starbucks</a></li>
+    <li><a href="#search-area">Searching a different area</a></li>
+  </ol>
+</nav>
+
+<h2 id="pin-colors" class="no-rule">Pin colors</h2>
 <div class="pin-legend">
   <div class="pin-row"><div class="pin-cell"><div class="pin pin-green"></div></div><span><strong>Green</strong> — a cup you own</span></div>
   <div class="pin-row"><div class="pin-cell"><div class="pin pin-orange"></div></div><span><strong>Orange</strong> — a cup you still need</span></div>
@@ -42,7 +55,7 @@
   <span class="ph-label">Screenshot: map showing green pins (owned), orange pins (needed), and blue store pins</span>
 </div>
 
-<h2>Zooming and navigating</h2>
+<h2 id="navigating">Zooming and navigating</h2>
 <ul>
   <li>Pinch to zoom in and out, or use the + / − buttons.</li>
   <li>Drag to pan the map.</li>
@@ -50,7 +63,7 @@
   <li>When the app first opens, the map automatically zooms to your current location if you've allowed location access.</li>
 </ul>
 
-<h2>Tapping pins</h2>
+<h2 id="tapping">Tapping pins</h2>
 <ul>
   <li><strong>Tap a cup pin</strong> (green or orange) — opens a popup with the cup name, series, and year. Tap <strong>"View details"</strong> to go to the full Cup Detail screen. City cup popups also list any themed cups associated with that location.</li>
   <li><strong>Tap a Starbucks pin</strong> (blue) — opens a popup with the store name and address, a list of cups you still need that might be sold there, and a "Get directions" link that opens Apple Maps.</li>
@@ -61,12 +74,12 @@
   Themed cups (Star Wars, Discovery Series, etc.) are not tied to a specific location, so they don't appear as their own pins. They show up inside the popup of the nearest city cup instead.
 </div>
 
-<h2>Cups in view</h2>
+<h2 id="cups-in-view">Cups in view</h2>
 <p>A collapsible <strong>bottom sheet</strong> is always present at the bottom of the map screen. It shows a handle labeled <em>"X cups in view"</em> — the number of cup pins visible in the current map viewport.</p>
 <p>Tap the handle to expand the panel. It lists every cup currently visible on the map — both owned (green) and still needed (orange) — including a <strong>Needs Replacing</strong> badge for any owned cups flagged with condition issues. Tap any row to open that cup's detail screen.</p>
 <p>The count and list update automatically as you pan or zoom.</p>
 
-<h2>Location permission</h2>
+<h2 id="location">Location permission</h2>
 <p>The app asks for your location when it first opens. If you allow it:</p>
 <ul>
   <li>The map centers on where you are.</li>
@@ -81,12 +94,12 @@
   On iPhone, go to <strong>Settings → Privacy &amp; Security → Location Services</strong>. If you installed Cup Collector as a PWA (home screen app), look for its entry directly in the list. If you haven't installed it yet, find <strong>Safari</strong> and set it to "While Using", then reload the app.
 </div>
 
-<h2>Nearby Starbucks</h2>
+<h2 id="nearby">Nearby Starbucks</h2>
 <p>When location is active, the app automatically finds Starbucks stores near your position using Google's Places service — all server-side, so your exact location is never sent directly to Google. Blue store pins appear on the map.</p>
 <p>Use the <strong>radius chips</strong> in the header (e.g. 5 mi, 10 mi, 25 mi) to control how far out to search. Changing the radius re-runs the search automatically.</p>
 <p>Tap any store pin to see its name, address, a list of cups you might find there (city cups within range, state cups matching the store's state, country cups matching its country), and a "Get directions" link.</p>
 
-<h2>Searching a different area</h2>
+<h2 id="search-area">Searching a different area</h2>
 <p>Pan or zoom the map to any area, then tap <strong>"Search here"</strong> (top-right of the header) to find Starbucks stores centered on the current map view. This overrides your GPS location for the store search — useful when planning a trip or exploring an unfamiliar city.</p>
 <p>Tapping a radius chip clears the manual search and returns to GPS-based results.</p>
 

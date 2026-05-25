@@ -34,7 +34,24 @@
   Both <code>build-catalog</code> and <code>import-cups</code> are dev shell commands. Enter the shell first with <code>nix develop</code>, or call them non-interactively with <code>nix develop -c &lt;command&gt;</code>.
 </div>
 
-<h2 class="no-rule">Step 1 — Generate the catalog CSV</h2>
+<nav class="toc">
+  <div class="toc-title">On this page</div>
+  <ol>
+    <li><a href="#step-1">Step 1 — Generate the catalog CSV</a>
+      <ol>
+        <li><a href="#skipped">Skipped entries warning</a></li>
+        <li><a href="#missing-images">Missing catalog images</a></li>
+        <li><a href="#overrides">Overriding scraped data</a></li>
+      </ol>
+    </li>
+    <li><a href="#step-2">Step 2 — Connect to PocketBase</a></li>
+    <li><a href="#step-3">Step 3 — Preview the import</a></li>
+    <li><a href="#step-4">Step 4 — Import</a></li>
+    <li><a href="#step-5">Step 5 — Verify</a></li>
+  </ol>
+</nav>
+
+<h2 id="step-1" class="no-rule">Step 1 — Generate the catalog CSV</h2>
 <p><code>build-catalog</code> scrapes <strong>starbucks-mugs.com</strong> to produce a CSV containing all known cups across every series — You Are Here, Been There, Discovery Series, Relief, Icon Mini, and special editions. It fetches each cup's page to populate image URLs and release years, then writes <code>cups.csv</code> in the project root.</p>
 
 <pre>build-catalog</pre>
@@ -53,7 +70,7 @@
   The generated CSV has a <code>hobbydb_url</code> column that the scraper cannot populate automatically. If you have HobbyDB links, fill them in manually before importing. The import script preserves any <code>hobbydb_url</code> values already in the database — empty CSV cells won't overwrite hand-curated entries.
 </div>
 
-<h3>Skipped entries warning</h3>
+<h3 id="skipped">Skipped entries warning</h3>
 <p>At the end of its run, <code>build-catalog</code> may print a message like:</p>
 <pre>Skipped 4 entries with no coordinates (add to COORDS table to include):
   Disney Epcot 1 (You Are Here)
@@ -72,7 +89,7 @@
 
 <p>After editing the file, re-run <code>build-catalog</code> and then <code>import-cups</code> to pick up the new entries. It's fine to skip this for now — cups without coordinates are rare edge cases and you can add them later.</p>
 
-<h3>Missing catalog images</h3>
+<h3 id="missing-images">Missing catalog images</h3>
 <p><code>build-catalog</code> also reports cups whose page on starbucks-mugs.com has no product image:</p>
 <pre>  image_url resolved:   1967 / 1968
     [no image] Christmas Barcelona (You Are Here)</pre>
@@ -86,7 +103,7 @@ name,scope,venue_series,item_type,region,country,country_code,series,year,lat,ln
 Christmas Barcelona,,,,,,,You Are Here,,,,https://example.com/xmas-barcelona.jpg,,,,,</pre>
 <p><code>cups-overrides.csv</code> is tracked in git and applied automatically at the end of every <code>build-catalog</code> run. Blank cells are ignored — they never clear a scraped value.</p>
 
-<h2>Step 2 — Connect to PocketBase</h2>
+<h2 id="step-2">Step 2 — Connect to PocketBase</h2>
 <p><code>import-cups</code> reads <code>POCKETBASE_URL</code>, <code>POCKETBASE_ADMIN_EMAIL</code>, and <code>POCKETBASE_ADMIN_PASSWORD</code> from <code>app/.env.local</code> by default. Pass <code>--prod</code> to load <code>app/.env.prod</code> instead.</p>
 
 <p>Create <code>app/.env.prod</code> with your production PocketBase connection details (this file is gitignored):</p>
@@ -102,12 +119,12 @@ POCKETBASE_ADMIN_PASSWORD=your-pocketbase-admin-password</pre>
   <pre>ssh -L 8090:localhost:8090 yourserver</pre>
 </div>
 
-<h2>Step 3 — Preview the import</h2>
+<h2 id="step-3">Step 3 — Preview the import</h2>
 <p>Dry-run mode shows exactly what will be created, updated, or skipped without writing anything:</p>
 <pre>import-cups --prod --dry-run</pre>
 <p>Review the output. If something looks wrong (unexpected errors, missing records), fix the CSV or check that PocketBase is reachable before proceeding.</p>
 
-<h2>Step 4 — Import</h2>
+<h2 id="step-4">Step 4 — Import</h2>
 <p>When the dry-run output looks right, apply it:</p>
 <pre>import-cups --prod</pre>
 <p>The script upserts records matched on <code>name</code> + <code>series</code> + <code>year</code> + <code>item_type</code>, so it's safe to re-run — it will not duplicate records, and a mug and an ornament with the same name, series, and year are kept as separate entries.</p>
@@ -121,7 +138,7 @@ POCKETBASE_ADMIN_PASSWORD=your-pocketbase-admin-password</pre>
   Christmas Barcelona (You Are Here) — no fallback, consider finding an image</pre>
 <p>If you find an image URL for a listed cup, add it to <code>cups-overrides.csv</code> (see <a href="#overrides">Overriding scraped data</a> above), re-run <code>build-catalog</code>, then re-import.</p>
 
-<h2>Step 5 — Verify</h2>
+<h2 id="step-5">Step 5 — Verify</h2>
 <p>Open an SSH tunnel and check the PocketBase admin UI: <strong>Collections → cups</strong> should show your records. Once you sign in to the app, cups with coordinates will appear on the map and all cups will appear in Browse.</p>
 
 <nav class="page-nav">

@@ -29,7 +29,17 @@
 <h1>Prerequisites</h1>
 <p>Everything you need in place before deploying Cup Collector. Most of this infrastructure you likely already have if you're running a NixOS homelab.</p>
 
-<h2 class="no-rule">Infrastructure</h2>
+<nav class="toc">
+  <div class="toc-title">On this page</div>
+  <ol>
+    <li><a href="#infrastructure">Infrastructure</a></li>
+    <li><a href="#domains">Domain names</a></li>
+    <li><a href="#services">External services</a></li>
+    <li><a href="#local-dev">Local development (optional)</a></li>
+  </ol>
+</nav>
+
+<h2 id="infrastructure" class="no-rule">Infrastructure</h2>
 
 <div class="req">
   <div class="req-title">NixOS server <span class="req-level required">Required</span></div>
@@ -56,7 +66,7 @@
   <div class="req-desc">PocketBase runs as a container. The project is developed and tested with Podman — enable <code>virtualisation.podman.enable = true</code> in your NixOS configuration. Docker works too (<code>virtualisation.docker.enable = true</code>), but Podman is what the dev shell and docs assume.</div>
 </div>
 
-<h2>Domain names</h2>
+<h2 id="domains">Domain names</h2>
 <p>You need at least one subdomain pointing to your server's public IP:</p>
 <ul>
   <li><strong>cups.yourdomain.com</strong> — the Next.js app (required)</li>
@@ -69,7 +79,7 @@
   Omitting <code>pbDomain</code> from the module config keeps PocketBase off the public internet. You access the admin UI via SSH tunnel when needed. This is the recommended production setup.
 </div>
 
-<h2>External services</h2>
+<h2 id="services">External services</h2>
 
 <div class="req">
   <div class="req-title">Google Places API key <span class="req-level required">Required</span></div>
@@ -81,7 +91,7 @@
   <div class="req-desc">The app can be hosted on any Git forge. GitHub is assumed in the docs deployment workflow. If you use Forgejo or GitLab, adjust the Actions workflow accordingly.</div>
 </div>
 
-<h2>Local development (optional)</h2>
+<h2 id="local-dev">Local development (optional)</h2>
 <p>To run the app locally for development or testing, you only need:</p>
 <ul>
   <li>Nix installed on your machine (<code>nix develop</code> provides everything else — Node, PocketBase, all tooling)</li>

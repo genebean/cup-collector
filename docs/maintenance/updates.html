@@ -29,7 +29,17 @@
 <h1>Updating the App</h1>
 <p>Because Cup Collector is deployed as a Nix flake, updating means bumping the flake input and rebuilding. There is no manual download or installation step.</p>
 
-<h2 class="no-rule">The normal update flow</h2>
+<nav class="toc">
+  <div class="toc-title">On this page</div>
+  <ol>
+    <li><a href="#update-flow">The normal update flow</a></li>
+    <li><a href="#what-changed">Checking what changed</a></li>
+    <li><a href="#rollback">Rolling back</a></li>
+    <li><a href="#when">When to update</a></li>
+  </ol>
+</nav>
+
+<h2 id="update-flow" class="no-rule">The normal update flow</h2>
 <pre># In your NixOS config repository:
 
 # 1. Bump the cup-collector flake input to latest
@@ -41,13 +51,13 @@ git diff flake.lock
 # 3. Rebuild and switch
 sudo nixos-rebuild switch --flake .#your-hostname</pre>
 
-<h2>Checking what changed</h2>
+<h2 id="what-changed">Checking what changed</h2>
 <p>Before rebuilding, you can review the commits included in the update:</p>
 <pre># Update the lock file and commit it in one step
 nix flake update cup-collector --commit-lock-file</pre>
 <p>Or browse the commit history directly at <code>github.com/genebean/cup-collector/commits/main</code>.</p>
 
-<h2>Rolling back</h2>
+<h2 id="rollback">Rolling back</h2>
 <p>If something breaks after an update, NixOS keeps the previous generation — you can roll back instantly:</p>
 <pre>sudo nixos-rebuild --rollback switch</pre>
 <p>Or switch to a specific earlier generation:</p>
@@ -61,7 +71,7 @@ sudo systemctl restart cup-collector</pre>
 
 <p>Rolling back restores the previous version of the app, its config, and all NixOS services. Your PocketBase data is not affected — only the running software changes.</p>
 
-<h2>When to update</h2>
+<h2 id="when">When to update</h2>
 <ul>
   <li><strong>Update promptly</strong> when release notes mention a security fix or a bug that affects you.</li>
   <li><strong>Update at leisure</strong> for new features — the app is designed for long-term stability.</li>

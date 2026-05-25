@@ -29,7 +29,17 @@
 <h1>Backups</h1>
 <p>There are two sources of data that need to be kept safe: the PocketBase data directory and the curator's spreadsheet.</p>
 
-<h2 class="no-rule">What to back up</h2>
+<nav class="toc">
+  <div class="toc-title">On this page</div>
+  <ol>
+    <li><a href="#what">What to back up</a></li>
+    <li><a href="#method">Backup method</a></li>
+    <li><a href="#frequency">Suggested backup frequency</a></li>
+    <li><a href="#restoring">Restoring</a></li>
+  </ol>
+</nav>
+
+<h2 id="what" class="no-rule">What to back up</h2>
 
 <div class="callout critical">
   <strong>The PocketBase data directory is your most important backup target</strong>
@@ -45,7 +55,7 @@
 
 <p><strong>The curator's spreadsheet</strong> is the source of truth for the catalog. It lives outside this system (Google Sheets or local Excel). Keep it backed up separately — it can be used to re-import the catalog if the database is ever lost.</p>
 
-<h2>Backup method</h2>
+<h2 id="method">Backup method</h2>
 <p>If you're already backing up your homelab with Restic, Borgbackup, or a similar tool, add the PocketBase data directory to your backup paths:</p>
 <pre># Example Restic backup (adjust paths and repo for your setup)
 restic backup /var/lib/cup-collector/pb_data/</pre>
@@ -59,14 +69,14 @@ restic backup /var/lib/cup-collector/pb_data/</pre>
   In the PocketBase admin UI (via SSH tunnel at <code>http://localhost:8090/_/</code>) → Settings → Backups, you can trigger a backup and download it as a zip file. This is a good option for occasional manual snapshots before major changes.
 </div>
 
-<h2>Suggested backup frequency</h2>
+<h2 id="frequency">Suggested backup frequency</h2>
 <ul>
   <li><strong>Daily</strong> — if you mark cups owned regularly</li>
   <li><strong>Weekly</strong> — for less active periods</li>
   <li><strong>After any catalog import</strong> — take a manual backup immediately after a successful import</li>
 </ul>
 
-<h2>Restoring</h2>
+<h2 id="restoring">Restoring</h2>
 <ol class="steps">
   <li>Stop the PocketBase container:<br><code>sudo systemctl stop podman-cup-collector-pb</code></li>
   <li>Replace the data directory with your backup:
