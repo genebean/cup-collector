@@ -347,7 +347,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                       </button>
                       <div className="text-gray-500">
                         {base.series} · {base.year}
-                        {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                        {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
                       </div>
                       <div className="text-map-orange">
                         {anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}
@@ -363,7 +363,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                     </button>
                     <div className="text-gray-500">
                       {cup.series} · {cup.year}
-                      {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                      {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
                     </div>
                     <div className="text-map-orange">
                       {cup.ownedRecord?.needs_replacing ? "⚠ Needs replacing" : "Needed"}
@@ -428,7 +428,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {base.name}{versionSuffix}
                               </button>
                               {" "}· {base.series} · {base.year}
-                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
                             </div>
                           );
                         })}
@@ -442,7 +442,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {base.name}{versionSuffix}{scopeSuffix}
                               </button>
                               {" "}· {base.series} · {base.year}
-                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
                             </div>
                           );
                         })}
@@ -453,7 +453,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                               {cup.name}
                             </button>
                             {" "}· {cup.series} · {cup.year}
-                            {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                            {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
                           </div>
                         ))}
                       </>
@@ -548,7 +548,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                   </button>
                                   <div className="text-gray-500 text-xs">
                                     {base.series} · {base.year}
-                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
                                   </div>
                                   <div className="text-map-orange text-xs">{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
                                 </div>
@@ -571,7 +571,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                   </button>
                                   <div className="text-gray-500 text-xs">
                                     {base.series} · {base.year}
-                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
                                   </div>
                                   <div className="text-map-orange text-xs">{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
                                 </div>
@@ -594,7 +594,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                   </button>
                                   <div className="text-gray-500 text-xs">
                                     {base.series} · {base.year}
-                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
                                   </div>
                                   <div className="text-map-orange text-xs">{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
                                 </div>
@@ -619,7 +619,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {base.name}{versionSuffix}
                               </button>
                               {" "}· {base.series} · {base.year}
-                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
                             </div>
                           );
                         })}
@@ -633,7 +633,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {base.name}{versionSuffix}{scopeLabel}
                               </button>
                               {" "}· {base.series} · {base.year}
-                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-gold-light text-green-dark">ornament</span>}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
                             </div>
                           );
                         })}

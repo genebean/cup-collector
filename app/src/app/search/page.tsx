@@ -7,7 +7,9 @@ import { getPocketBase } from "@/lib/pocketbase";
 import { BottomNav } from "@/components/BottomNav";
 import { CupCard } from "@/components/CupCard";
 import { groupByVariant } from "@/lib/variants";
-import type { Cup, OwnedCup, CupWithOwnership } from "@/types";
+import type { Cup, OwnedCup, CupWithOwnership, CollectionPrefs } from "@/types";
+
+const EMPTY_PREFS: CollectionPrefs = {};
 
 export default function SearchPage() {
   const { data: session } = useSession();
@@ -30,6 +32,12 @@ export default function SearchPage() {
     enabled: !!householdId,
   });
 
+  const { data: prefs = EMPTY_PREFS } = useQuery<CollectionPrefs>({
+    queryKey: ["household-prefs"],
+    queryFn: () => fetch("/api/household-prefs").then((r) => r.json()),
+    enabled: !!householdId,
+  });
+
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
 
   const resultGroups = useMemo(() => {
@@ -38,7 +46,11 @@ export default function SearchPage() {
     const matched = cups
       .filter(
         (c) =>
-          (!c.is_duplicate || ownedCupIds.has(c.id)) &&
+          (ownedCupIds.has(c.id) || (
+            !c.is_duplicate &&
+            !prefs.excluded_series?.includes(c.series) &&
+            !prefs.excluded_types?.includes(c.item_type || "mug")
+          )) &&
           (
             c.name.toLowerCase().includes(q) ||
             c.country.toLowerCase().includes(q) ||
@@ -52,7 +64,7 @@ export default function SearchPage() {
         ownedRecord: ownedCups.find((o) => o.cup_id === cup.id),
       }));
     return groupByVariant(matched);
-  }, [cups, ownedCups, ownedCupIds, search]);
+  }, [cups, ownedCups, ownedCupIds, prefs, search]);
 
   return (
     <div className="flex flex-col h-screen bg-cream dark:bg-gray-900">
