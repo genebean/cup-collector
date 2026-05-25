@@ -6,6 +6,9 @@ pocketid/
 .claude/
 .mcp.json
 
+# Claude Code auto-memory (belongs in ~/.claude/projects/..., never in the repo)
+memory/
+
 # Next.js
 app/.next/
 app/node_modules/

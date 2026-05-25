@@ -309,6 +309,42 @@ function csvField(val: string | number): string {
 // This alias keeps writeCSV's signature readable.
 type CsvRow = OutputRow;
 
+// Overridable string fields — lat/lng/year are excluded because 0 is ambiguous with "no override".
+const OVERRIDE_STRING_FIELDS = [
+  "scope", "venue_series", "item_type", "region", "country", "country_code",
+  "image_url", "more_info_url", "notes", "sub_collection", "variant_of", "variant_notes",
+] as const;
+
+function applyOverrides(rows: CsvRow[], overridesPath: string): void {
+  if (!fs.existsSync(overridesPath)) return;
+  const lines = fs.readFileSync(overridesPath, "utf-8").split("\n").filter(Boolean);
+  if (lines.length < 2) return; // header only
+  const headers = lines[0].split(",");
+  const col = (row: string[], name: string) => {
+    const i = headers.indexOf(name);
+    return i === -1 ? "" : (row[i] ?? "").replace(/^"|"$/g, "").trim();
+  };
+  let count = 0;
+  for (const line of lines.slice(1)) {
+    const parts = line.split(",");
+    const name = col(parts, "name");
+    const series = col(parts, "series");
+    if (!name || !series) continue;
+    const target = rows.find(r => r.name === name && r.series === series);
+    if (!target) {
+      console.warn(`  [override] no match for "${name}" (${series})`);
+      continue;
+    }
+    let changed = false;
+    for (const field of OVERRIDE_STRING_FIELDS) {
+      const val = col(parts, field);
+      if (val) { target[field] = val; changed = true; }
+    }
+    if (changed) count++;
+  }
+  console.log(`\nApplied ${count} override(s) from ${path.basename(overridesPath)}.`);
+}
+
 function writeCSV(rows: CsvRow[], filePath: string): void {
   const header = "name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes,sub_collection,variant_of,variant_notes";
   const lines = [header, ...rows.map((r) =>
@@ -360,9 +396,13 @@ async function main() {
       process.stdout.write(`\r  ${done}/${rowsWithUrl.length}`);
     });
     const withImage = rows.filter((r) => r.image_url).length;
+    const noImage = rows.filter((r) => r.more_info_url && !r.image_url);
     const withSubCollection = rows.filter((r) => r.sub_collection).length;
     const withVariantNotes = rows.filter((r) => r.variant_notes).length;
     console.log(`\n  image_url resolved:   ${withImage} / ${rowsWithUrl.length}`);
+    if (noImage.length > 0) {
+      noImage.forEach((r) => console.log(`    [no image] ${r.name} (${r.series})`));
+    }
     console.log(`  sub_collection found: ${withSubCollection} / ${rowsWithUrl.length}`);
     console.log(`  variant_notes found:  ${withVariantNotes} cups`);
   }
@@ -394,12 +434,15 @@ async function main() {
   }
   if (variantCount > 0) console.log(`\nLinked ${variantCount} variant cup(s) to their base via variant_of.`);
 
+  const overridesPath = path.join(path.dirname(path.resolve(outPath)), "cups-overrides.csv");
+  applyOverrides(rows, overridesPath);
+
   writeCSV(rows, outPath);
   console.log(`\nWrote ${rows.length} rows to ${outPath}`);
   console.log("\nNext steps:");
   console.log("  1. Fill in hobbydb_url column where known");
-  console.log("  2. import-cups --file cups.csv --dry-run");
-  console.log("  3. import-cups --file cups.csv");
+  console.log("  2. import-cups --dry-run");
+  console.log("  3. import-cups");
 }
 
 main().catch((err) => {

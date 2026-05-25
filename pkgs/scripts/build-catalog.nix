@@ -10,6 +10,12 @@ pkgs.writeShellScriptBin "cc-build-catalog" ''
     *) set -- "--cache-dir" "$PROJ_ROOT/.scrape-cache" "$@" ;;
   esac
 
+  # Default output to cups.csv in the project root.
+  case " $* " in
+    *" --out "*) ;;
+    *) set -- "$@" "--out" "$PROJ_ROOT/cups.csv" ;;
+  esac
+
   NODE_PATH="$PROJ_ROOT/app/node_modules" \
     "$PROJ_ROOT/app/node_modules/.bin/tsx" \
     "$PROJ_ROOT/scripts/scrape-catalog.ts" \

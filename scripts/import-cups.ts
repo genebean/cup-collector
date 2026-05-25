@@ -426,6 +426,27 @@ async function main() {
     console.log(`  Backfilled: ${backfilled}`);
   }
 
+  // ── Missing catalog images ───────────────────────────────────────────────────
+  // Cups with no image_credit have no catalog photo from starbucks-mugs.com.
+  // Check whether a personal photo (own_photo on owned_cups) covers them so the
+  // output tells you whether action is actually needed.
+  interface NoCatalogImage { id: string; name: string; series: string; }
+  const noCatalogImage = await pb.collection("cups").getFullList<NoCatalogImage>({
+    filter: 'image_credit = ""',
+    fields: "id,name,series",
+  });
+  if (noCatalogImage.length > 0) {
+    console.log("\n── Missing Catalog Images ──");
+    for (const cup of noCatalogImage) {
+      const hasPersonalPhoto = await pb.collection("owned_cups").getList(1, 1, {
+        filter: `cup_id = "${cup.id}" && own_photo != ""`,
+        fields: "id",
+      }).then(r => r.totalItems > 0);
+      const note = hasPersonalPhoto ? " — personal photo uploaded, no action needed" : " — no fallback, consider finding an image";
+      console.log(`  ${cup.name} (${cup.series})${note}`);
+    }
+  }
+
   if (isDryRun) {
     console.log("\nDry run complete. Run without --dry-run to apply changes.");
   } else {

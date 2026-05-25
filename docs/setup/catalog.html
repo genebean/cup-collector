@@ -35,14 +35,16 @@
 </div>
 
 <h2 class="no-rule">Step 1 — Generate the catalog CSV</h2>
-<p><code>build-catalog</code> scrapes <strong>starbucks-mugs.com</strong> to produce a CSV containing all known cups across every series — You Are Here, Been There, Discovery Series, Relief, Icon Mini, and special editions. It fetches each cup's page to populate image URLs and release years, then writes a CSV ready for import.</p>
+<p><code>build-catalog</code> scrapes <strong>starbucks-mugs.com</strong> to produce a CSV containing all known cups across every series — You Are Here, Been There, Discovery Series, Relief, Icon Mini, and special editions. It fetches each cup's page to populate image URLs and release years, then writes <code>cups.csv</code> in the project root.</p>
 
-<pre>build-catalog --out cups.csv</pre>
+<pre>build-catalog</pre>
 
-<p>This takes a few minutes because it fetches each cup's page individually (concurrency=5 to be polite). You'll see a progress counter as it runs. When it finishes it prints a per-series summary and the output path.</p>
+<p>This takes a few minutes because it fetches each cup's page individually (concurrency=5 to be polite). You'll see a progress counter as it runs. When it finishes it prints a per-series summary.</p>
+
+<p>Pages are cached locally in <code>.scrape-cache/</code> after the first fetch. This keeps repeated runs fast <em>and</em> avoids hammering starbucks-mugs.com with redundant requests — the site is maintained by a single enthusiast, so being a considerate client matters. Delete the cache directory when you want a genuinely fresh scrape (e.g. after the site adds new cups).</p>
 
 <p>To generate only one series — useful for testing or partial refreshes:</p>
-<pre>build-catalog --out cups.csv --series "You Are Here"</pre>
+<pre>build-catalog --series "You Are Here"</pre>
 
 <p>Valid series names: <code>You Are Here</code>, <code>Been There</code>, <code>Discovery Series</code>, <code>Relief</code>, <code>Icon Mini</code>.</p>
 
@@ -70,6 +72,20 @@
 
 <p>After editing the file, re-run <code>build-catalog</code> and then <code>import-cups</code> to pick up the new entries. It's fine to skip this for now — cups without coordinates are rare edge cases and you can add them later.</p>
 
+<h3>Missing catalog images</h3>
+<p><code>build-catalog</code> also reports cups whose page on starbucks-mugs.com has no product image:</p>
+<pre>  image_url resolved:   1967 / 1968
+    [no image] Christmas Barcelona (You Are Here)</pre>
+<p>These cups will show a placeholder in the app. See <a href="#overrides">Overriding scraped data</a> below for how to supply a URL manually.</p>
+
+<h3 id="overrides">Overriding scraped data</h3>
+<p>Some cups have missing or incorrect data on starbucks-mugs.com that the scraper cannot fix automatically — a missing image, a wrong year, a note you want to add. Rather than patching the CSV by hand after every scrape, add a row to <code>cups-overrides.csv</code> in the project root.</p>
+<p>The file has the same columns as <code>cups.csv</code>. Only <code>name</code> and <code>series</code> are required (they identify the cup); fill in only the fields you want to change and leave the rest blank:</p>
+<pre># cups-overrides.csv
+name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,...
+Christmas Barcelona,,,,,,,You Are Here,,,,https://example.com/xmas-barcelona.jpg,,,,,</pre>
+<p><code>cups-overrides.csv</code> is tracked in git and applied automatically at the end of every <code>build-catalog</code> run. Blank cells are ignored — they never clear a scraped value.</p>
+
 <h2>Step 2 — Connect to PocketBase</h2>
 <p><code>import-cups</code> reads <code>POCKETBASE_URL</code>, <code>POCKETBASE_ADMIN_EMAIL</code>, and <code>POCKETBASE_ADMIN_PASSWORD</code> from <code>app/.env.local</code> by default. Pass <code>--prod</code> to load <code>app/.env.prod</code> instead.</p>
 
@@ -88,13 +104,22 @@ POCKETBASE_ADMIN_PASSWORD=your-pocketbase-admin-password</pre>
 
 <h2>Step 3 — Preview the import</h2>
 <p>Dry-run mode shows exactly what will be created, updated, or skipped without writing anything:</p>
-<pre>import-cups --prod --file cups.csv --dry-run</pre>
+<pre>import-cups --prod --dry-run</pre>
 <p>Review the output. If something looks wrong (unexpected errors, missing records), fix the CSV or check that PocketBase is reachable before proceeding.</p>
 
 <h2>Step 4 — Import</h2>
 <p>When the dry-run output looks right, apply it:</p>
-<pre>import-cups --prod --file cups.csv</pre>
-<p>The script upserts records matched on <code>name</code> + <code>series</code> + <code>year</code> + <code>item_type</code>, so it's safe to re-run — it will not duplicate records, and a mug and an ornament with the same name, series, and year are kept as separate entries. It prints a summary of created, updated, unchanged, and errored records when done.</p>
+<pre>import-cups --prod</pre>
+<p>The script upserts records matched on <code>name</code> + <code>series</code> + <code>year</code> + <code>item_type</code>, so it's safe to re-run — it will not duplicate records, and a mug and an ornament with the same name, series, and year are kept as separate entries.</p>
+<p>After upserting records, the script runs two automatic backfill passes:</p>
+<ul>
+  <li><strong>Geo region backfill</strong> — any cup with coordinates but no region gets its state or province filled in automatically using geographic boundary data. This means you rarely need to set <code>region</code> manually for city-scope cups.</li>
+  <li><strong>Sibling region backfill</strong> — if a cup still has no region after the geo pass, it inherits one from a same-city cup in the same series (useful for ornaments that share a city with a mug).</li>
+</ul>
+<p>At the end of every import run, the script also lists any cups with no catalog image and notes whether an uploaded personal photo already covers them:</p>
+<pre>── Missing Catalog Images ──
+  Christmas Barcelona (You Are Here) — no fallback, consider finding an image</pre>
+<p>If you find an image URL for a listed cup, add it to <code>cups-overrides.csv</code> (see <a href="#overrides">Overriding scraped data</a> above), re-run <code>build-catalog</code>, then re-import.</p>
 
 <h2>Step 5 — Verify</h2>
 <p>Open an SSH tunnel and check the PocketBase admin UI: <strong>Collections → cups</strong> should show your records. Once you sign in to the app, cups with coordinates will appear on the map and all cups will appear in Browse.</p>
