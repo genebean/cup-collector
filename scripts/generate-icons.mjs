@@ -1,6 +1,7 @@
-// Generates PWA icons and favicon using sharp (already in app/node_modules).
+// Generates PWA icons, favicon, and iOS splash screens using sharp (already in app/node_modules).
 // Run from the project root inside the nix dev shell:
-//   node scripts/generate-icons.mjs
+//   node scripts/generate-icons.mjs          # icons + favicon only
+//   node scripts/generate-icons.mjs --splash  # also regenerate all 15 splash screens
 
 import sharp from "../app/node_modules/sharp/lib/index.js";
 import fs from "fs";
@@ -72,6 +73,45 @@ async function generate(svgStr, filename, size) {
   console.log(`  ${filename}`);
 }
 
+// Splash screens — icon centered on a solid Deep Forest background.
+// The icon SVG has a circular green background that blends into the splash,
+// leaving just the gold cup floating on green.
+const SPLASH_SIZES = [
+  [640,  1136],
+  [750,  1334],
+  [828,  1792],
+  [1080, 2340],
+  [1125, 2436],
+  [1170, 2532],
+  [1179, 2556],
+  [1242, 2208],
+  [1242, 2688],
+  [1284, 2778],
+  [1290, 2796],
+  [1536, 2048],
+  [1668, 2224],
+  [1668, 2388],
+  [2048, 2732],
+];
+
+async function generateSplash(width, height) {
+  const iconSize = Math.min(Math.round(Math.min(width, height) * 0.28), 512);
+  const iconSvg = Buffer.from(makeSvg(iconSize));
+  const iconPng = await sharp(iconSvg).resize(iconSize, iconSize).png().toBuffer();
+
+  const left = Math.round((width  - iconSize) / 2);
+  const top  = Math.round((height - iconSize) / 2);
+
+  const filename = `splash-${width}x${height}.png`;
+  await sharp({
+    create: { width, height, channels: 4, background: { r: 30, g: 57, b: 50, alpha: 1 } },
+  })
+    .composite([{ input: iconPng, left, top }])
+    .png()
+    .toFile(path.join(OUT_DIR, "splash", filename));
+  console.log(`  splash/${filename}`);
+}
+
 console.log("Generating icons…");
 await generate(makeSvg(192),  "icon-192.png",          192);
 await generate(makeSvg(512),  "icon-512.png",          512);
@@ -87,4 +127,11 @@ fs.renameSync(
   path.resolve("app/public/favicon.ico")
 );
 console.log("  ../favicon.ico");
+
+if (process.argv.includes("--splash")) {
+  console.log("Generating splash screens…");
+  fs.mkdirSync(path.join(OUT_DIR, "splash"), { recursive: true });
+  for (const [w, h] of SPLASH_SIZES) await generateSplash(w, h);
+}
+
 console.log("Done.");
