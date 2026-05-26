@@ -319,6 +319,7 @@ export default function CupDetailPage() {
             {effectiveBase.region && <Row label="Region" value={effectiveBase.region} />}
             <Row label="Country" value={effectiveBase.country} />
             <Row label="Series" value={effectiveBase.item_type === "ornament" ? `${effectiveBase.series} Ornaments` : effectiveBase.series} />
+            {effectiveBase.sub_collection && <Row label="Collection" value={effectiveBase.sub_collection} />}
             <Row label="Year" value={String(effectiveBase.year)} />
             <div className="pt-1 border-t border-gray-100 dark:border-gray-700">
               {hasCityPin ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -207,8 +207,22 @@ function StoreCard({ store, cups }: { store: NearbyStore; cups: CupWithOwnership
 export default function StoreLocatorPage() {
   const { data: session } = useSession();
   const householdId = session?.user?.householdId ?? null;
-  const [query, setQuery] = useState("");
-  const [submittedQuery, setSubmittedQuery] = useState("");
+  const [query, setQuery] = useState(() => {
+    try { return sessionStorage.getItem("search_query") ?? ""; } catch { return ""; }
+  });
+  const [submittedQuery, setSubmittedQuery] = useState(() => {
+    try { return sessionStorage.getItem("search_submitted") ?? ""; } catch { return ""; }
+  });
+  const mainRef = useRef<HTMLElement>(null);
+  const didRestoreScroll = useRef(false);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("search_query", query); } catch {}
+  }, [query]);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("search_submitted", submittedQuery); } catch {}
+  }, [submittedQuery]);
 
   const { data: cups = [] } = useQuery<Cup[]>({
     queryKey: ["cups"],
@@ -239,7 +253,16 @@ export default function StoreLocatorPage() {
     enabled: !!submittedQuery,
   });
 
-  const stores: NearbyStore[] = storeData?.stores ?? [];
+  const stores: NearbyStore[] = useMemo(() => storeData?.stores ?? [], [storeData]);
+
+  useEffect(() => {
+    if (didRestoreScroll.current || !mainRef.current || stores.length === 0) return;
+    try {
+      const pos = Number(sessionStorage.getItem("search_scroll") ?? 0);
+      if (pos > 0) mainRef.current.scrollTop = pos;
+    } catch {}
+    didRestoreScroll.current = true;
+  }, [stores]);
 
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
 
@@ -275,13 +298,27 @@ export default function StoreLocatorPage() {
           )}
         </div>
         <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="search"
-            placeholder="City or address…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white/90 placeholder-gray-400 focus:outline-hidden"
-          />
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="City or address…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoComplete="off"
+              data-1p-ignore
+              className="w-full rounded-lg px-3 py-2 pr-8 text-sm text-gray-900 bg-white/90 placeholder-gray-400 focus:outline-hidden"
+            />
+            <button
+              type="button"
+              onClick={() => { setQuery(""); setSubmittedQuery(""); }}
+              aria-label="Clear search"
+              className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 transition-opacity ${query ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+            >
+              <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4" aria-hidden="true">
+                <path d="M4.293 4.293a1 1 0 011.414 0L8 6.586l2.293-2.293a1 1 0 111.414 1.414L9.414 8l2.293 2.293a1 1 0 01-1.414 1.414L8 9.414l-2.293 2.293a1 1 0 01-1.414-1.414L6.586 8 4.293 5.707a1 1 0 010-1.414z" />
+              </svg>
+            </button>
+          </div>
           <button
             type="submit"
             disabled={!query.trim()}
@@ -292,7 +329,14 @@ export default function StoreLocatorPage() {
         </form>
       </header>
 
-      <main className="flex-1 overflow-y-auto pt-3 pb-24">
+      <main
+        ref={mainRef}
+        className="flex-1 overflow-y-auto pt-3 pb-24"
+        onScroll={() => {
+          try { sessionStorage.setItem("search_scroll", String(mainRef.current?.scrollTop ?? 0)); }
+          catch {}
+        }}
+      >
         {!submittedQuery && (
           <div className="text-center text-gray-400 dark:text-gray-500 py-16 px-6">
             <div className="text-3xl mb-3">☕</div>
