@@ -38,6 +38,14 @@ interface MapViewProps {
   onZoomChange?: (zoom: number) => void;
 }
 
+// Stores a ref to the underlying Leaflet map so event handlers outside
+// MapContainer's component tree can call map methods imperatively.
+function MapRefSetter({ mapRef }: { mapRef: React.MutableRefObject<ReturnType<typeof useMap> | null> }) {
+  const map = useMap();
+  useEffect(() => { mapRef.current = map; }, [map, mapRef]);
+  return null;
+}
+
 // Saves map center+zoom to sessionStorage on every pan/zoom so position
 // is restored when the user navigates away and back.
 function MapPositionSaver() {
@@ -189,6 +197,7 @@ function buildLocationGroups(cups: CupWithOwnership[]): LocationGroup[] {
 export default function MapView({ cups, stores, userLocation, targetZoom, worldViewTick = 0, flyTick = 0, onZoomChange }: MapViewProps) {
   const router = useRouter();
   const { isDark } = useUiTheme();
+  const mapRef = useRef<ReturnType<typeof useMap> | null>(null);
   const tiles = isDark ? TILES.dark : TILES.light;
   const [visibleCups, setVisibleCups] = useState<CupWithOwnership[]>([]);
   const visibleCupIdsRef = useRef<Set<string>>(new Set());
@@ -222,6 +231,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
       {/* key forces a remount when switching so stale tiles don't linger */}
       <TileLayer key={isDark ? "dark" : "light"} attribution={tiles.attribution} url={tiles.url} />
 
+      <MapRefSetter mapRef={mapRef} />
       <MapPositionSaver />
       <LocationUpdater location={userLocation} zoom={targetZoom} />
       <ZoomUpdater location={userLocation} zoom={targetZoom} flyTick={flyTick} />
@@ -250,10 +260,10 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
           Green  = everything at this location is owned and in good condition.
           Orange = anything unowned OR owned but needs replacing. */}
       {locationGroups.map((group) => {
-        const allCups = [...group.cityCups, ...group.stateCups, ...group.countryCups];
-        const needsAction = allCups.some(
-          (c) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false)
-        );
+        const isNeededCup = (c: CupWithOwnership) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false);
+        // Group variants before checking color: owning any version of a cup counts as owned.
+        const allVariantGroups = groupByVariant([...group.cityCups, ...group.stateCups, ...group.countryCups]);
+        const needsAction = allVariantGroups.some(({ members }) => members.every(isNeededCup));
         const isGreen = !needsAction;
 
         // Header for the first city cup's location name
@@ -270,8 +280,14 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
               fillOpacity: 0.85,
               weight: 2,
             }}
+            eventHandlers={{
+              click: () => mapRef.current?.panInside([group.lat, group.lng], {
+                paddingTopLeft:     [5, 320],
+                paddingBottomRight: [5, 80],
+              }),
+            }}
           >
-            <Popup autoPanPaddingBottomRight={[5, 72]}>
+            <Popup autoPan={false}>
               {(() => {
                 const isNeeded = (c: CupWithOwnership) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false);
 
@@ -281,17 +297,17 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                 const neededCityGroups = cityGroups.filter(({ members }) => members.every((c) => !c.isOwned));
                 const ownedCityGroups  = cityGroups.filter(({ members }) => members.some((c) => c.isOwned));
 
-                const neededState   = group.stateCups.filter(isNeeded);
-                const neededCountry = group.countryCups.filter(isNeeded);
                 const neededThemed  = group.themedCups.filter(isNeeded);
-                const ownedState    = group.stateCups.filter((c) => !isNeeded(c));
-                const ownedCountry  = group.countryCups.filter((c) => !isNeeded(c));
                 const ownedThemed   = group.themedCups.filter((c) => !isNeeded(c));
 
-                const neededStateGroups  = groupByVariant(neededState);
-                const neededCountryGroups = groupByVariant(neededCountry);
-                const ownedStateGroups   = groupByVariant(ownedState);
-                const ownedCountryGroups = groupByVariant(ownedCountry);
+                // Group variants before splitting needed/owned so a base in one bucket
+                // and its variant in the other are always shown together.
+                const allStateGroups    = groupByVariant(group.stateCups);
+                const allCountryGroups  = groupByVariant(group.countryCups);
+                const neededStateGroups  = allStateGroups.filter(({ members }) => members.every((c) => !c.isOwned));
+                const ownedStateGroups   = allStateGroups.filter(({ members }) => members.some((c) => c.isOwned));
+                const neededCountryGroups = allCountryGroups.filter(({ members }) => members.every((c) => !c.isOwned));
+                const ownedCountryGroups  = allCountryGroups.filter(({ members }) => members.some((c) => c.isOwned));
 
                 const cityGroupRow = ({ base, members }: { base: CupWithOwnership; members: CupWithOwnership[] }) => {
                   const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
@@ -346,7 +362,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                         {neededStateGroups.length > 0 && (
                           <>
                             <div className="font-semibold mt-2 mb-1">
-                              {neededState[0].region || neededState[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span>
+                              {neededStateGroups[0].base.region || neededStateGroups[0].base.name} <span className="font-normal text-gray-400 text-xs">(state)</span>
                             </div>
                             {neededStateGroups.map((g) => cityGroupRow(g))}
                           </>
@@ -355,7 +371,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                         {neededCountryGroups.length > 0 && (
                           <>
                             <div className="font-semibold mt-2 mb-1">
-                              {neededCountry[0].country || neededCountry[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span>
+                              {neededCountryGroups[0].base.country || neededCountryGroups[0].base.name} <span className="font-normal text-gray-400 text-xs">(country)</span>
                             </div>
                             {neededCountryGroups.map((g) => cityGroupRow(g))}
                           </>
@@ -449,10 +465,12 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
           if (group.members.some((c) => c.isOwned))   bucket.ownedGroups.push(group);
         }
         const cityLocations = Array.from(locationBuckets.values());
-        const neededStateGroups  = groupByVariant(neededState);
-        const neededCountryGroups = groupByVariant(neededCountry);
-        const ownedStateGroups   = groupByVariant(ownedState);
-        const ownedCountryGroups = groupByVariant(ownedCountry);
+        const allStoreStateGroups   = groupByVariant([...neededState, ...ownedState]);
+        const allStoreCountryGroups = groupByVariant([...neededCountry, ...ownedCountry]);
+        const neededStateGroups  = allStoreStateGroups.filter(({ members }) => members.every((c) => !c.isOwned));
+        const ownedStateGroups   = allStoreStateGroups.filter(({ members }) => members.some((c) => c.isOwned));
+        const neededCountryGroups = allStoreCountryGroups.filter(({ members }) => members.every((c) => !c.isOwned));
+        const ownedCountryGroups  = allStoreCountryGroups.filter(({ members }) => members.some((c) => c.isOwned));
         const hasNeeded = cityLocations.some((l) => l.neededGroups.length > 0) || neededStateGroups.length > 0 || neededCountryGroups.length > 0;
         const hasOwned  = cityLocations.some((l) => l.ownedGroups.length > 0)  || ownedStateGroups.length > 0  || ownedCountryGroups.length > 0;
         const hasCups = hasNeeded || hasOwned;
@@ -468,8 +486,14 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
               fillOpacity: 0.9,
               weight: 2,
             }}
+            eventHandlers={{
+              click: () => mapRef.current?.panInside([store.lat, store.lng], {
+                paddingTopLeft:     [5, 320],
+                paddingBottomRight: [5, 80],
+              }),
+            }}
           >
-            <Popup autoPanPaddingBottomRight={[5, 72]}>
+            <Popup autoPan={false}>
               <div className="text-sm min-w-[180px] max-h-[60vh] overflow-y-auto pr-1">
                 <div className="font-semibold flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 flex-shrink-0 text-green-starbucks">
@@ -515,7 +539,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                         {neededStateGroups.length > 0 && (
                           <>
                             <div className="font-semibold mt-2 mb-1">
-                              {neededState[0].region || neededState[0].name} <span className="font-normal text-gray-400 text-xs">(state)</span>
+                              {neededStateGroups[0].base.region || neededStateGroups[0].base.name} <span className="font-normal text-gray-400 text-xs">(state)</span>
                             </div>
                             {neededStateGroups.map(({ base, members }) => {
                               const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
@@ -538,7 +562,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                         {neededCountryGroups.length > 0 && (
                           <>
                             <div className="font-semibold mt-2 mb-1">
-                              {neededCountry[0].country || neededCountry[0].name} <span className="font-normal text-gray-400 text-xs">(country)</span>
+                              {neededCountryGroups[0].base.country || neededCountryGroups[0].base.name} <span className="font-normal text-gray-400 text-xs">(country)</span>
                             </div>
                             {neededCountryGroups.map(({ base, members }) => {
                               const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";

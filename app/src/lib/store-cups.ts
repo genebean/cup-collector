@@ -68,11 +68,13 @@ export function groupedStoreCups(store: NearbyStore, cups: CupWithOwnership[]) {
     if (group.members.some((c) => c.isOwned))   bucket.ownedGroups.push(group);
   }
 
+  const allStateGroups   = groupByVariant([...neededState, ...ownedState]);
+  const allCountryGroups = groupByVariant([...neededCountry, ...ownedCountry]);
   return {
     cityLocations: Array.from(locationBuckets.values()),
-    neededStateGroups:   groupByVariant(neededState),
-    neededCountryGroups: groupByVariant(neededCountry),
-    ownedStateGroups:    groupByVariant(ownedState),
-    ownedCountryGroups:  groupByVariant(ownedCountry),
+    neededStateGroups:   allStateGroups.filter(({ members }) => members.every((c) => !c.isOwned)),
+    ownedStateGroups:    allStateGroups.filter(({ members }) => members.some((c) => c.isOwned)),
+    neededCountryGroups: allCountryGroups.filter(({ members }) => members.every((c) => !c.isOwned)),
+    ownedCountryGroups:  allCountryGroups.filter(({ members }) => members.some((c) => c.isOwned)),
   };
 }
