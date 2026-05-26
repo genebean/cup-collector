@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { groupByVariant } from "@/lib/variants";
+import { groupByVariant, findRepresentative } from "@/lib/variants";
 import type { Cup } from "@/types";
 
 function cup(overrides: Partial<Cup> & Pick<Cup, "id" | "name" | "series">): Cup {
@@ -106,5 +106,30 @@ describe("groupByVariant", () => {
     expect(groups).toHaveLength(2);
     expect(groups.find((g) => g.base.id === "atl")!.members.map((c) => c.id)).toEqual(["atl", "atl2"]);
     expect(groups.find((g) => g.base.id === "yatl")!.members.map((c) => c.id)).toEqual(["yatl", "yatl2"]);
+  });
+});
+
+describe("findRepresentative", () => {
+  it("returns the sole member for a single-element array", () => {
+    expect(findRepresentative([ATL]).id).toBe("atl");
+  });
+
+  it("returns the highest-numbered variant when trailing numbers differ", () => {
+    expect(findRepresentative([ATL, ATL2, ATL3]).id).toBe("atl3");
+  });
+
+  it("order-independent — same result regardless of input order", () => {
+    expect(findRepresentative([ATL3, ATL, ATL2]).id).toBe("atl3");
+  });
+
+  it("tiebreaks by year when trailing numbers are equal — higher year wins", () => {
+    const old = cup({ id: "sea",  name: "Seattle", series: "You Are Here", year: 2018 });
+    const newer = cup({ id: "sea2", name: "Seattle", series: "You Are Here", year: 2022 });
+    expect(findRepresentative([old, newer]).id).toBe("sea2");
+  });
+
+  it("cup with no trailing number loses to one with any trailing number", () => {
+    // ATL has no trailing number (treated as 0); ATL2 has trailing 2
+    expect(findRepresentative([ATL, ATL2]).id).toBe("atl2");
   });
 });

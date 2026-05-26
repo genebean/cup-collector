@@ -51,3 +51,15 @@ export function groupByVariant<T extends Cup>(cups: T[]): VariantGroup<T>[] {
 
   return groups;
 }
+
+// Returns the member with the highest trailing variant number (e.g. "Atlanta 3" > "Atlanta 2" > "Atlanta").
+// Tiebreaks by year (descending). For a single-member group this is always members[0].
+export function findRepresentative<T extends Cup>(members: T[]): T {
+  return members.reduce((best, c) => {
+    const numBest = +(best.name.match(/\s+(\d+)$/) ?? [0, 0])[1];
+    const numC = +(c.name.match(/\s+(\d+)$/) ?? [0, 0])[1];
+    if (numC > numBest) return c;
+    if (numBest > numC) return best;
+    return (c.year ?? 0) >= (best.year ?? 0) ? c : best;
+  });
+}

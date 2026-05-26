@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, Fragment } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { haversineMi } from "@/lib/geo";
 import { buildSeriesOptions } from "@/lib/browse";
-import { groupByVariant } from "@/lib/variants";
+import { groupByVariant, findRepresentative } from "@/lib/variants";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { CupCard } from "@/components/CupCard";
+import { SwipeableRow } from "@/components/SwipeableRow";
 import type { Cup, OwnedCup, CupWithOwnership, CupScope, CollectionPrefs } from "@/types";
 
 type StatusFilter = "all" | "needed" | "owned";
@@ -20,6 +21,7 @@ export default function BrowsePage() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const householdId = session?.user?.householdId ?? null;
+  const canWrite = session?.user?.householdRole === "owner";
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [seriesFilter, setSeriesFilter] = useState("");   // "" = no filter; "Series|ornament" for ornaments
@@ -68,6 +70,25 @@ export default function BrowsePage() {
       }
     });
     return () => { pb.collection("owned_cups").unsubscribe("*"); };
+  }, [householdId, queryClient]);
+
+  const toggleOwnership = useCallback(async (cup: CupWithOwnership) => {
+    if (cup.ownedRecord?.needs_replacing) {
+      await fetch(`/api/owned-cups?id=${cup.ownedRecord.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ needs_replacing: false }),
+      });
+    } else if (cup.isOwned && cup.ownedRecord) {
+      await fetch(`/api/owned-cups?id=${cup.ownedRecord.id}`, { method: "DELETE" });
+    } else {
+      await fetch("/api/owned-cups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cup_id: cup.id }),
+      });
+    }
+    queryClient.invalidateQueries({ queryKey: ["owned_cups", householdId] });
   }, [householdId, queryClient]);
 
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
@@ -252,14 +273,34 @@ export default function BrowsePage() {
         {displayedGroups.length === 0 ? (
           <div className="text-center text-gray-400 dark:text-gray-500 py-16">No cups match your search.</div>
         ) : (
-          displayedGroups.map(({ base, members }) => (
-            <CupCard
-              key={base.id}
-              cup={base}
-              variantCount={members.length > 1 ? members.length : undefined}
-              ownedVariants={members.length > 1 ? members.filter((c) => c.isOwned).length : undefined}
-            />
-          ))
+          displayedGroups.map(({ base, members }) => {
+            const representative = findRepresentative(members);
+            const card = (
+              <CupCard
+                cup={base}
+                variantCount={members.length > 1 ? members.length : undefined}
+                ownedVariants={members.length > 1 ? members.filter((c) => c.isOwned).length : undefined}
+                imageCup={members.length > 1 ? representative : undefined}
+              />
+            );
+
+            if (!canWrite) return <Fragment key={base.id}>{card}</Fragment>;
+
+            const needsReplacing = representative.ownedRecord?.needs_replacing ?? false;
+            const actionLabel = needsReplacing ? "Replaced ✓" : representative.isOwned ? "Unmark" : "Mark Owned";
+            const actionColor = representative.isOwned && !needsReplacing ? "bg-orange-500" : "bg-green-starbucks";
+
+            return (
+              <SwipeableRow
+                key={base.id}
+                actionLabel={actionLabel}
+                actionColor={actionColor}
+                onAction={() => toggleOwnership(representative)}
+              >
+                {card}
+              </SwipeableRow>
+            );
+          })
         )}
       </main>
 

@@ -7,6 +7,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { getPocketBase, getFileUrl } from "@/lib/pocketbase";
 import { looksLikeId } from "@/lib/slug";
+import { findRepresentative } from "@/lib/variants";
 import { useNearbyRadius } from "@/hooks/useNearbyRadius";
 import { BottomNav } from "@/components/BottomNav";
 import type { Cup, OwnedCup, NearbyStore } from "@/types";
@@ -271,13 +272,14 @@ export default function CupDetailPage() {
   }
 
   // Hero: show the first personal photo found across any group member, falling
-  // back to the base catalog image. Photo upload lives in each version card.
+  // back to the newest/highest-numbered variant's catalog image.
+  const heroSource = findRepresentative(groupMembers);
   const firstOwnedWithPhoto = groupOwnedRecords.find((r) => r.own_photo);
   const ownPhotoUrl = firstOwnedWithPhoto
     ? getFileUrl(firstOwnedWithPhoto.collectionId, firstOwnedWithPhoto.id, firstOwnedWithPhoto.own_photo)
     : null;
   const imageUrl = ownPhotoUrl ??
-    (effectiveBase.image ? getFileUrl(effectiveBase.collectionId, effectiveBase.id, effectiveBase.image) : null);
+    (heroSource.image ? getFileUrl(heroSource.collectionId, heroSource.id, heroSource.image) : null);
 
   return (
     <div className="flex flex-col h-screen bg-cream dark:bg-gray-900">
