@@ -119,7 +119,7 @@ export default function BrowsePage() {
     let groups = groupByVariant(withOwnership);
 
     if (search.trim()) {
-      const q = search.toLowerCase();
+      const q = search.trim().toLowerCase();
       groups = groups.filter(({ members }) =>
         members.some(
           (c) =>
