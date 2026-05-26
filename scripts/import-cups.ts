@@ -171,6 +171,26 @@ async function main() {
   const rows = parseCSV(fs.readFileSync(csvPath, "utf-8"));
   console.log(`Parsed ${rows.length} rows from CSV.\n`);
 
+  // Sort so unnumbered base cups are processed before their numbered variants.
+  // This ensures same-run bases are in PocketBase (or the local map) when variants resolve.
+  rows.sort((a, b) => {
+    const numA = +(a.name.match(/\s+(\d+)$/) ?? [0, 0])[1];
+    const numB = +(b.name.match(/\s+(\d+)$/) ?? [0, 0])[1];
+    return numA - numB;
+  });
+
+  // Pre-load all existing cups into a local map for single-pass variant_of resolution.
+  // Cups created during this run are added here so variants can reference same-run bases.
+  const cupIdByKey = new Map<string, string>();
+  {
+    const existing = await pb.collection("cups").getFullList<{ id: string; name: string; series: string; item_type: string }>({
+      fields: "id,name,series,item_type",
+    });
+    for (const c of existing) {
+      cupIdByKey.set(`${c.name}|${c.series}|${c.item_type || "mug"}`, c.id);
+    }
+  }
+
   let created = 0;
   let updated = 0;
   let skipped = 0;
@@ -212,22 +232,19 @@ async function main() {
         }
       }
 
-      // Resolve variant_of name → PocketBase ID.
-      // The CSV stores the base cup's name (same series); we look it up by name+series+item_type.
-      // Only resolved when the CSV has a value — admin-set variant_of is never cleared by import.
+      // Resolve variant_of name → PocketBase ID using the pre-loaded local map.
+      // Cups created earlier in this run are also in the map, so same-run bases
+      // can be referenced by variants processed later in the same import.
       let variantOfId: string | undefined;
       if (row.variant_of) {
-        try {
-          const itemTypeClause = row.item_type === "ornament"
-            ? `item_type = "ornament"`
-            : `item_type != "ornament"`;
-          const baseRecord = await pb.collection("cups").getFirstListItem(
-            `name="${row.variant_of}" && series="${row.series}" && ${itemTypeClause}`
-          );
-          variantOfId = baseRecord.id as string;
-        } catch {
+        const baseKey = `${row.variant_of}|${row.series}|${row.item_type || "mug"}`;
+        const resolvedId = cupIdByKey.get(baseKey);
+        if (resolvedId && !resolvedId.startsWith("__pending__")) {
+          variantOfId = resolvedId;
+        } else if (!resolvedId) {
           console.warn(`  [WARN] ${label}: could not resolve variant_of="${row.variant_of}" — skipping variant link`);
         }
+        // else: base is pending creation in this dry-run — link will resolve correctly on real import
       }
 
       const data: Record<string, unknown> = {
@@ -285,11 +302,14 @@ async function main() {
           updated++;
         }
       } else {
+        const cupKey = `${row.name}|${row.series}|${row.item_type || "mug"}`;
         if (isDryRun) {
           console.log(`  [CREATE] ${label}`);
+          cupIdByKey.set(cupKey, `__pending__${cupKey}`);
         } else {
-          await pb.collection("cups").create(data);
+          const newRecord = await pb.collection("cups").create(data);
           console.log(`  Created: ${label}`);
+          cupIdByKey.set(cupKey, newRecord.id as string);
         }
         created++;
       }
