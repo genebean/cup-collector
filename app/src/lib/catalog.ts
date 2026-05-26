@@ -129,6 +129,72 @@ export function buildSeriesFromSitemap(
 
     const locationSlug = slug.replace(`${slugPrefix}-`, "");
 
+    // Disney Parks mugs — include as themed under the Disney Parks venue series
+    if (locationSlug.startsWith("disney-")) {
+      const parkSlug = locationSlug.replace("disney-", "");
+      const parkName = parkSlug
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+      entries.push({
+        city: parkName,
+        region: "",
+        country: "",
+        series: seriesName,
+        year: defaultYear,
+        scope: "themed",
+        venue_series: "Been There Disney Parks",
+        notes: "Available at Disney parks",
+        moreInfoUrl: url,
+      });
+      continue;
+    }
+
+    // Marvel-themed mugs (e.g. Avengers Campus at Disney California Adventure)
+    if (locationSlug.startsWith("marvel-")) {
+      const themeSlug = locationSlug.replace("marvel-", "");
+      const themeName = themeSlug
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+      entries.push({
+        city: themeName,
+        region: "",
+        country: "",
+        series: seriesName,
+        year: defaultYear,
+        scope: "themed",
+        venue_series: "Been There Disney Parks",
+        notes: "Available at Avengers Campus (Disney California Adventure)",
+        moreInfoUrl: url,
+      });
+      continue;
+    }
+
+    // Pin Drop style mugs — strip prefix, resolve city coords normally
+    if (locationSlug.startsWith("pin-drop-")) {
+      const citySlug = locationSlug.replace("pin-drop-", "");
+      let pinCityName = citySlug
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+      pinCityName = pinCityName.replace(/\bD C\b/, "DC");
+      if (pinCityName === "St Louis") pinCityName = "St. Louis";
+      const pinCountry = resolveCountry(pinCityName);
+      const pinRegion = CITY_TO_REGION[pinCityName] ?? "";
+      entries.push({
+        city: pinCityName,
+        region: pinRegion,
+        country: pinCountry,
+        series: seriesName,
+        year: defaultYear,
+        scope: "city",
+        notes: "",
+        moreInfoUrl: url,
+      });
+      continue;
+    }
+
     if (locationSlug.includes("ornament")) continue;
     if (excludeLocationPrefixes.some((p) => locationSlug.startsWith(p))) continue;
 
@@ -227,10 +293,30 @@ export function buildDiscoverySeriesFromSitemap(mugsIndex: Map<string, string>):
 
     const locationSlug = slug.replace("discovery-series-", "");
 
-    // Skip ornaments, Disney sub-series, and Wicked
+    // Skip ornaments and Wicked (configured via DISCOVERY_EXCLUDE_PREFIXES)
     if (locationSlug.includes("ornament")) continue;
-    if (locationSlug.startsWith("disney-")) continue;
     if (DISCOVERY_EXCLUDE_PREFIXES.some(p => locationSlug.startsWith(p))) continue;
+
+    // Disney Parks — include as themed cups
+    if (locationSlug.startsWith("disney-")) {
+      const parkSlug = locationSlug.replace("disney-", "");
+      const parkName = parkSlug
+        .split("-")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+      entries.push({
+        city: parkName,
+        region: "",
+        country: "",
+        series: "Discovery Series",
+        year: 2020,
+        scope: "themed",
+        venue_series: "Been There Disney Parks",
+        notes: "Available at Disney parks",
+        moreInfoUrl: url,
+      });
+      continue;
+    }
 
     // Detect Star Wars slugs (prefixed or bare planet names)
     const isStarWars = locationSlug.startsWith("star-wars-") || STAR_WARS_BARE_SLUGS.has(locationSlug);
@@ -339,9 +425,51 @@ export function buildOrnamentsFromSitemap(
 
     const locationSlug = slug.replace(ornamentPrefix, "");
 
-    // Skip Disney parks and Star Wars planets — no standalone coords needed
-    if (locationSlug.startsWith("disney-")) continue;
-    if (locationSlug.startsWith("star-wars-") || STAR_WARS_BARE_SLUGS.has(locationSlug)) continue;
+    // Disney Parks ornaments — include as themed
+    if (locationSlug.startsWith("disney-")) {
+      const parkSlug = locationSlug.replace("disney-", "");
+      const parkName = parkSlug
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+      entries.push({
+        city: parkName,
+        region: "",
+        country: "",
+        series: seriesName,
+        year: defaultYear,
+        scope: "themed",
+        venue_series: "Been There Disney Parks",
+        notes: "Available at Disney parks",
+        moreInfoUrl: url,
+        item_type: "ornament",
+      });
+      continue;
+    }
+
+    // Star Wars ornaments — include as themed
+    if (locationSlug.startsWith("star-wars-") || STAR_WARS_BARE_SLUGS.has(locationSlug)) {
+      const rawSlug = locationSlug.startsWith("star-wars-")
+        ? locationSlug.replace("star-wars-", "")
+        : locationSlug;
+      const displayName = STAR_WARS_NAME_FIXES[rawSlug] ?? rawSlug
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+      entries.push({
+        city: displayName,
+        region: "",
+        country: "",
+        series: seriesName,
+        year: defaultYear,
+        scope: "themed",
+        venue_series: "Been There Disney Parks",
+        notes: "Star Wars — available at Disney parks (Galaxy's Edge)",
+        moreInfoUrl: url,
+        item_type: "ornament",
+      });
+      continue;
+    }
 
     let cityName = locationSlug
       .split("-")
@@ -497,6 +625,35 @@ export function buildIconMiniFromSitemap(mugsIndex: Map<string, string>): CupEnt
   return entries;
 }
 
+// ── Inverted Star Wars Been There slugs ───────────────────────────────────────
+// Handles slugs of the form star-wars-been-there-{planet} — the structure is
+// inverted vs the normal been-there-{location} pattern so buildSeriesFromSitemap
+// never sees them.
+
+export function buildStarWarsBeenThereFromSitemap(mugsIndex: Map<string, string>): CupEntry[] {
+  const entries: CupEntry[] = [];
+  for (const [slug, url] of mugsIndex) {
+    if (!slug.startsWith("star-wars-been-there-")) continue;
+    const planetSlug = slug.replace("star-wars-been-there-", "");
+    const displayName = STAR_WARS_NAME_FIXES[planetSlug] ?? planetSlug
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+    entries.push({
+      city: displayName,
+      region: "",
+      country: "",
+      series: "Been There",
+      year: 2019,
+      scope: "themed",
+      venue_series: "Been There Disney Parks",
+      notes: "Star Wars — available at Disney parks (Galaxy's Edge)",
+      moreInfoUrl: url,
+    });
+  }
+  return entries;
+}
+
 // ── Build output rows ─────────────────────────────────────────────────────────
 
 export interface OutputRow {
@@ -528,9 +685,14 @@ export function buildRows(filterSeries: string | null, mugsIndex: Map<string, st
     ? buildSeriesFromSitemap(mugsIndex, "you-are-here", "You Are Here", ["ornament"], 2015)
     : [];
 
-  // Been There — derived live from sitemap (exclude disney-*, marvel-*, pin-drop-*, ornament*)
+  // Been There — derived live from sitemap (disney-/marvel-/pin-drop- handled inside builder)
   const btEntries = (!filterSeries || filterSeries === "Been There")
-    ? buildSeriesFromSitemap(mugsIndex, "been-there", "Been There", ["disney-", "marvel-", "pin-drop-", "ornament"], 2019)
+    ? buildSeriesFromSitemap(mugsIndex, "been-there", "Been There", ["ornament"], 2019)
+    : [];
+
+  // Inverted Star Wars Been There slugs: star-wars-been-there-{planet}
+  const swBeenThereEntries = (!filterSeries || filterSeries === "Been There")
+    ? buildStarWarsBeenThereFromSitemap(mugsIndex)
     : [];
 
   // Discovery Series — derived live from sitemap
@@ -567,7 +729,7 @@ export function buildRows(filterSeries: string | null, mugsIndex: Map<string, st
   const deduped: CupEntry[] = [];
   for (const e of [
     ...catalogEntries,
-    ...yahEntries, ...btEntries, ...discoveryEntries,
+    ...yahEntries, ...btEntries, ...swBeenThereEntries, ...discoveryEntries,
     ...yahOrnaments, ...btOrnaments, ...discoveryOrnaments,
     ...reliefEntries, ...iconMiniEntries,
   ]) {

@@ -408,8 +408,8 @@ async function main() {
   }
 
   // Post-process: set variant_of for numbered cups whose base exists in the same series.
-  // Build a lookup by "series|name" for fast resolution.
-  const bySeriesAndName = new Map(rows.map((r) => [`${r.series}|${r.name}`, r]));
+  // Key includes item_type so mug and ornament versions of the same name don't collide.
+  const bySeriesAndName = new Map(rows.map((r) => [`${r.series}|${r.name}|${r.item_type}`, r]));
   let variantCount = 0;
   for (const row of rows) {
     if (!/\s+\d+$/.test(row.name)) continue; // not a numbered cup
@@ -418,13 +418,12 @@ async function main() {
     const [, basePart, numStr] = m;
     const num = parseInt(numStr, 10);
 
-    // Candidate 1: plain base name same item_type (e.g. "Atlanta 2" → "Atlanta")
-    const plainBase = bySeriesAndName.get(`${row.series}|${basePart}`);
-    // Candidate 2: previous number, same item_type (e.g. "Canada 2" → "Canada 1" when no plain "Canada" mug exists)
-    const prevBase = num > 1 ? bySeriesAndName.get(`${row.series}|${basePart} ${num - 1}`) : undefined;
+    // Candidate 1: plain base name, same item_type (e.g. "Atlanta 2" → "Atlanta")
+    const plainBase = bySeriesAndName.get(`${row.series}|${basePart}|${row.item_type}`);
+    // Candidate 2: previous number, same item_type (e.g. "Canada 2" → "Canada 1" when no plain "Canada" exists)
+    const prevBase = num > 1 ? bySeriesAndName.get(`${row.series}|${basePart} ${num - 1}|${row.item_type}`) : undefined;
 
-    // Prefer plain base if same item_type; fall back to N-1 if same item_type
-    const base = [plainBase, prevBase].find(b => b && b.item_type === row.item_type);
+    const base = plainBase ?? prevBase;
     if (base) {
       row.variant_of = base.name;
       variantCount++;
