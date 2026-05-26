@@ -1,16 +1,37 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { countryCodeToFlag } from "@/lib/country";
+import { toCupSlug } from "@/lib/slug";
 import type { Cup, OwnedCup, CollectionPrefs } from "@/types";
 
 const EMPTY_PREFS: CollectionPrefs = {};
+
+// Derive a display-friendly theme group from a themed cup's notes/series/venue fields.
+function getThemeGroup(cup: Cup): string {
+  const notes = cup.notes?.toLowerCase() ?? "";
+  const series = cup.series?.toLowerCase() ?? "";
+  if (notes.includes("star wars")) return "Star Wars";
+  if (notes.includes("avengers campus") || notes.includes("black panther") || series === "been there marvel") return "Marvel";
+  if (notes.includes("cruise ship")) return "Cruise Ships";
+  if (cup.venue_series === "Been There Disney Parks") return "Disney Parks";
+  if (cup.venue_series) return cup.venue_series;
+  return cup.series;
+}
+
+function readStatsDrill(): { country: { name: string; code: string } | null; region: string | null; theme: string | null } {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem("stats_drill") ?? "{}");
+    return { country: saved.country ?? null, region: saved.region ?? null, theme: saved.theme ?? null };
+  } catch { return { country: null, region: null, theme: null }; }
+}
 const R_LARGE = 45;
 const R_SMALL = 32;
 const CIRC_LARGE = 2 * Math.PI * R_LARGE;
@@ -112,10 +133,18 @@ export default function StatsPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const householdId = session?.user?.householdId ?? null;
+  const didRestoreScroll = useRef(false);
 
   const [countrySeries, setCountrySeries] = useState("all");
-  const [selectedCountry, setSelectedCountry] = useState<{ name: string; code: string } | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<{ name: string; code: string } | null>(
+    () => readStatsDrill().country
+  );
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(
+    () => readStatsDrill().region
+  );
+  const [selectedTheme, setSelectedTheme] = useState<string | null>(
+    () => readStatsDrill().theme
+  );
   const [showVariants, setShowVariants] = useState(false);
 
   const { data: cups = [] } = useQuery<Cup[]>({
@@ -139,6 +168,36 @@ export default function StatsPage() {
     queryFn: () => fetch("/api/household-prefs").then((r) => r.json()),
     enabled: !!householdId,
   });
+
+  // Save window scroll position for back-navigation restore
+  useEffect(() => {
+    const handler = () => {
+      try { sessionStorage.setItem("stats_scroll", String(Math.round(window.scrollY))); } catch {}
+    };
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  // Persist drill-down state so Back from cup detail returns to the same drill level
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("stats_drill", JSON.stringify({
+        country: selectedCountry, region: selectedRegion, theme: selectedTheme,
+      }));
+    } catch {}
+  }, [selectedCountry, selectedRegion, selectedTheme]);
+
+  // Restore scroll once data loads (after navigating back from cup detail)
+  useEffect(() => {
+    if (didRestoreScroll.current || cups.length === 0) return;
+    requestAnimationFrame(() => {
+      try {
+        const pos = Number(sessionStorage.getItem("stats_scroll") ?? 0);
+        if (pos > 0) window.scrollTo(0, pos);
+      } catch {}
+    });
+    didRestoreScroll.current = true;
+  }, [cups]);
 
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
 
@@ -185,17 +244,39 @@ export default function StatsPage() {
   const ornOwned = displayableOrnaments.filter((c) => ownedCupIds.has(c.id)).length;
 
   const seriesStats = useMemo(() => SERIES_LABELS.map(({ series, label }) => {
-    const subset = statsMugs.filter((c) => c.series === series);
+    // Exclude themed cups — they're in the Themed card, not By Series
+    const subset = statsMugs.filter((c) => c.series === series && c.scope !== "themed");
     const tot = subset.length;
     const own = subset.filter((c) => statsOwnedIds.has(c.id)).length;
     return { label, tot, own };
   }), [statsMugs, statsOwnedIds]);
 
-  const filteredMugs = useMemo(() =>
-    countrySeries === "all"
-      ? statsMugs
-      : statsMugs.filter((c) => c.series === countrySeries),
-    [statsMugs, countrySeries]);
+  const filteredMugs = useMemo(() => {
+    // Exclude themed cups from the By Country card — they have no geographic data
+    const base = statsMugs.filter((c) => c.scope !== "themed");
+    return countrySeries === "all" ? base : base.filter((c) => c.series === countrySeries);
+  }, [statsMugs, countrySeries]);
+
+  // Themed cups grouped by derived theme — excludes city/state/country-scope cups
+  const themedCupsData = useMemo(() => {
+    const themed = displayableMugs.filter((c) => c.scope === "themed");
+    const base = showVariants ? themed : themed.filter((c) => !c.variant_of);
+    const map = new Map<string, Cup[]>();
+    for (const c of base) {
+      const group = getThemeGroup(c);
+      const list = map.get(group) ?? [];
+      list.push(c);
+      map.set(group, list);
+    }
+    return [...map.entries()]
+      .map(([theme, cups]) => ({
+        theme,
+        cups: cups.sort((a, b) => a.name.localeCompare(b.name)),
+        tot: cups.length,
+        own: cups.filter((c) => statsOwnedIds.has(c.id)).length,
+      }))
+      .sort((a, b) => b.own - a.own || b.tot - a.tot);
+  }, [displayableMugs, statsOwnedIds, showVariants]);
 
   const countryStats = useMemo(() => {
     const map = new Map<string, { code: string; tot: number; own: number }>();
@@ -241,13 +322,15 @@ export default function StatsPage() {
     if (!selectedCountry || !selectedRegion) return [];
     // Variants share their base cup's name so they roll up under the same city row
     const baseNameById = new Map(cups.map((c) => [c.id, c.name]));
-    const map = new Map<string, { tot: number; own: number }>();
+    const baseCupById = new Map(cups.map((c) => [c.id, c]));
+    const map = new Map<string, { tot: number; own: number; baseCup: Cup }>();
     for (const c of filteredMugs) {
       if (c.scope !== "city") continue;
       if (c.country !== selectedCountry.name) continue;
       if (c.region !== selectedRegion) continue;
       const key = c.variant_of ? (baseNameById.get(c.variant_of) ?? c.name) : c.name;
-      const s = map.get(key) ?? { tot: 0, own: 0 };
+      const baseCup = c.variant_of ? (baseCupById.get(c.variant_of) ?? c) : c;
+      const s = map.get(key) ?? { tot: 0, own: 0, baseCup };
       s.tot++;
       if (statsOwnedIds.has(c.id)) s.own++;
       map.set(key, s);
@@ -302,9 +385,12 @@ export default function StatsPage() {
             )}
           </div>
           {needsReplacing > 0 && (
-            <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+            <Link
+              href="/browse?needs_replacing=1"
+              className="text-xs text-orange-600 dark:text-orange-400 font-medium underline-offset-2 hover:underline"
+            >
               ⚠ {needsReplacing} need{needsReplacing === 1 ? "s" : ""} replacing
-            </div>
+            </Link>
           )}
         </div>
 
@@ -330,6 +416,75 @@ export default function StatsPage() {
             );
           })}
         </div>
+
+        {/* Themed Cups — grouped by franchise/theme, one-level drill-down to individual cups */}
+        {themedCupsData.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              {selectedTheme ? (
+                <>
+                  <button
+                    onClick={() => setSelectedTheme(null)}
+                    className="text-green-starbucks font-semibold text-sm shrink-0"
+                  >
+                    ← Back
+                  </button>
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    {selectedTheme}
+                  </span>
+                </>
+              ) : (
+                <h2 className="font-semibold text-sm text-gray-700 dark:text-gray-200">Themed Cups</h2>
+              )}
+            </div>
+
+            {selectedTheme ? (
+              // Individual cups in the selected theme
+              (() => {
+                const entry = themedCupsData.find((e) => e.theme === selectedTheme);
+                if (!entry) return null;
+                return entry.cups.map((cup) => {
+                  const isOwned = statsOwnedIds.has(cup.id);
+                  return (
+                    <Link
+                      key={cup.id}
+                      href={`/cup/${toCupSlug(cup)}`}
+                      className="flex items-center justify-between text-sm py-0.5"
+                    >
+                      <span className="text-gray-700 dark:text-gray-300 flex-1 min-w-0 truncate pr-2">{cup.name}</span>
+                      <span className={`shrink-0 font-semibold text-xs px-2 py-0.5 rounded-full ${
+                        isOwned
+                          ? "bg-green-starbucks/10 text-green-starbucks"
+                          : "bg-gray-100 dark:bg-gray-600 text-gray-400 dark:text-gray-400"
+                      }`}>
+                        {isOwned ? "Owned ›" : "Not owned ›"}
+                      </span>
+                    </Link>
+                  );
+                });
+              })()
+            ) : (
+              // Theme group list
+              themedCupsData.map(({ theme, tot, own }) => {
+                const p = tot > 0 ? own / tot : 0;
+                return (
+                  <button key={theme} className="w-full text-left" onClick={() => setSelectedTheme(theme)}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-700 dark:text-gray-300">{theme}</span>
+                      <span className="text-gray-500 dark:text-gray-400 tabular-nums">{own}/{tot} ›</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                        style={{ width: `${p * 100}%` }}
+                      />
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        )}
 
         {/* By Country — mugs, with series filter + region drill-down */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 space-y-3">
@@ -411,12 +566,12 @@ export default function StatsPage() {
                     {regionScopeCups.map((cup) => {
                       const isOwned = statsOwnedIds.has(cup.id);
                       return (
-                        <div key={cup.id} className="flex items-center justify-between text-sm">
+                        <Link key={cup.id} href={`/cup/${toCupSlug(cup)}`} className="flex items-center justify-between text-sm">
                           <span className="text-gray-600 dark:text-gray-300">{cup.series}{cup.year ? ` · ${cup.year}` : ""}</span>
                           <span className={`font-semibold text-xs px-2 py-0.5 rounded-full ${isOwned ? "bg-green-starbucks/10 text-green-starbucks" : "bg-gray-100 dark:bg-gray-600 text-gray-400 dark:text-gray-400"}`}>
-                            {isOwned ? "Owned" : "Not owned"}
+                            {isOwned ? "Owned ›" : "Not owned ›"}
                           </span>
-                        </div>
+                        </Link>
                       );
                     })}
                   </div>
@@ -425,13 +580,13 @@ export default function StatsPage() {
                 {cityStats.length === 0 ? (
                   <p className="text-sm text-gray-400 dark:text-gray-500 py-2">No city cups in this region.</p>
                 ) : (
-                  cityStats.map(({ city, tot, own }) => {
+                  cityStats.map(({ city, tot, own, baseCup }) => {
                     const p = tot > 0 ? own / tot : 0;
                     return (
-                      <div key={city}>
+                      <Link key={city} href={`/cup/${toCupSlug(baseCup)}`} className="block">
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-gray-700 dark:text-gray-300">{city}</span>
-                          <span className="text-gray-500 dark:text-gray-400 tabular-nums">{own}/{tot}</span>
+                          <span className="text-gray-500 dark:text-gray-400 tabular-nums">{own}/{tot} ›</span>
                         </div>
                         <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                           <div
@@ -439,7 +594,7 @@ export default function StatsPage() {
                             style={{ width: `${p * 100}%` }}
                           />
                         </div>
-                      </div>
+                      </Link>
                     );
                   })
                 )}

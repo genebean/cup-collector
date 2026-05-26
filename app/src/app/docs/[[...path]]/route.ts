@@ -99,6 +99,15 @@ export async function GET(
       html = html.replaceAll(placeholder, replacement);
     }
 
+    // When served from the app (not GitHub Pages), inject a "← App" link
+    // so users can navigate back without using the browser back button.
+    if (process.env.NEXTAUTH_URL) {
+      html = html.replace(
+        '<nav class="topbar-nav">',
+        '<nav class="topbar-nav"><a href="/">← App</a>'
+      );
+    }
+
     // When serving index.html for a directory request, the browser's base URL
     // is the directory path (e.g. /docs) rather than /docs/ — relative hrefs
     // like "shared.css" would resolve to /shared.css instead of /docs/shared.css.

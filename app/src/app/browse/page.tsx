@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from "rea
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getPocketBase } from "@/lib/pocketbase";
 import { haversineMi } from "@/lib/geo";
 import { buildSeriesOptions } from "@/lib/browse";
@@ -25,6 +26,7 @@ function readSaved(key: string, fallback: string): string {
 
 export default function BrowsePage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { data: session } = useSession();
   const householdId = session?.user?.householdId ?? null;
   const canWrite = session?.user?.householdRole === "owner";
@@ -36,6 +38,8 @@ export default function BrowsePage() {
   const [subCollectionFilter, setSubCollectionFilter] = useState(() => readSaved("subCollectionFilter", ""));
   const [nearMe, setNearMe] = useState(() => readSaved("nearMe", "false") === "true");
   const [search, setSearch] = useState(() => readSaved("search", ""));
+  // Always initialize false — URL param is read after mount so server+client HTML match
+  const [needsReplacingFilter, setNeedsReplacingFilter] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const didRestoreScroll = useRef(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -45,6 +49,13 @@ export default function BrowsePage() {
       (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => {}
     );
+  }, []);
+
+  // Read needs_replacing URL param after mount (client-only; initializing in useState causes hydration mismatch)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("needs_replacing") === "1") {
+      setNeedsReplacingFilter(true); // eslint-disable-line react-hooks/set-state-in-effect
+    }
   }, []);
 
   // Persist filter state across back-navigation
@@ -172,6 +183,12 @@ export default function BrowsePage() {
     if (scopeFilter)           groups = groups.filter(({ base }) => (base.scope || "city") === scopeFilter);
     if (subCollectionFilter)   groups = groups.filter(({ members }) => members.some((c) => c.sub_collection === subCollectionFilter));
 
+    if (needsReplacingFilter) {
+      groups = groups.filter(({ members }) =>
+        members.some((c) => c.isOwned && c.ownedRecord?.needs_replacing === true)
+      );
+    }
+
     // Near Me — explicit opt-in sort toggle; use base cup coordinates
     if (nearMe && userLocation) {
       groups.sort((a, b) => {
@@ -183,7 +200,7 @@ export default function BrowsePage() {
     }
 
     return groups;
-  }, [displayableCups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, scopeFilter, subCollectionFilter, nearMe, search, userLocation]);
+  }, [displayableCups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, scopeFilter, subCollectionFilter, needsReplacingFilter, nearMe, search, userLocation]);
 
   // Restore scroll position once after the list first renders with data
   useEffect(() => {
@@ -327,8 +344,24 @@ export default function BrowsePage() {
           </div>
         )}
 
-        {/* Status chips + Near Me */}
-        <div className="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide">
+        {/* Needs-replacing filter banner — always in DOM, shown/hidden via CSS to avoid hydration mismatch */}
+        <div className={`items-center justify-between mt-2 px-3 py-1.5 rounded-lg bg-orange-500/20 border border-orange-500/40 ${needsReplacingFilter ? "flex" : "hidden"}`}>
+          <span className="text-xs font-medium text-orange-200">⚠ Showing cups that need replacing</span>
+          <button
+            type="button"
+            onClick={() => {
+              setNeedsReplacingFilter(false);
+              router.replace("/browse", { scroll: false });
+            }}
+            className="text-xs text-orange-200 hover:text-white ml-2"
+            aria-label="Clear needs-replacing filter"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Status chips + Near Me — hidden when needs-replacing banner is active */}
+        <div className={`gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide ${needsReplacingFilter ? "hidden" : "flex"}`}>
           <button className={chipClass(statusFilter === "all")} onClick={() => setStatusFilter("all")}>All</button>
           <button className={chipClass(statusFilter === "needed")} onClick={() => setStatusFilter("needed")}>Still Need</button>
           <button className={chipClass(statusFilter === "owned")} onClick={() => setStatusFilter("owned")}>Already Have</button>
