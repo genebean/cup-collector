@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, Fragment } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { getPocketBase } from "@/lib/pocketbase";
 import { haversineMi } from "@/lib/geo";
 import { buildSeriesOptions } from "@/lib/browse";
@@ -17,18 +18,26 @@ type StatusFilter = "all" | "needed" | "owned";
 type ScopeFilter = "" | CupScope;
 const EMPTY_PREFS: CollectionPrefs = {};
 
+function readSaved(key: string, fallback: string): string {
+  try { return (JSON.parse(sessionStorage.getItem("browse_state") ?? "{}")[key] as string) ?? fallback; }
+  catch { return fallback; }
+}
+
 export default function BrowsePage() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const householdId = session?.user?.householdId ?? null;
   const canWrite = session?.user?.householdRole === "owner";
 
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [seriesFilter, setSeriesFilter] = useState("");   // "" = no filter; "Series|ornament" for ornaments
-  const [countryFilter, setCountryFilter] = useState(""); // "" = no filter
-  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>(""); // "" = no filter
-  const [nearMe, setNearMe] = useState(false);
-  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => readSaved("statusFilter", "all") as StatusFilter);
+  const [seriesFilter, setSeriesFilter] = useState(() => readSaved("seriesFilter", ""));
+  const [countryFilter, setCountryFilter] = useState(() => readSaved("countryFilter", ""));
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>(() => readSaved("scopeFilter", "") as ScopeFilter);
+  const [subCollectionFilter, setSubCollectionFilter] = useState(() => readSaved("subCollectionFilter", ""));
+  const [nearMe, setNearMe] = useState(() => readSaved("nearMe", "false") === "true");
+  const [search, setSearch] = useState(() => readSaved("search", ""));
+  const mainRef = useRef<HTMLElement>(null);
+  const didRestoreScroll = useRef(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
@@ -37,6 +46,16 @@ export default function BrowsePage() {
       () => {}
     );
   }, []);
+
+  // Persist filter state across back-navigation
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("browse_state", JSON.stringify({
+        statusFilter, seriesFilter, countryFilter, scopeFilter, subCollectionFilter,
+        nearMe: String(nearMe), search,
+      }));
+    } catch {}
+  }, [statusFilter, seriesFilter, countryFilter, scopeFilter, subCollectionFilter, nearMe, search]);
 
   const { data: cups = [] } = useQuery<Cup[]>({
     queryKey: ["cups"],
@@ -103,6 +122,10 @@ export default function BrowsePage() {
   }), [cups, ownedCupIds, prefs]);
 
   const seriesOptions = useMemo(() => buildSeriesOptions(displayableCups), [displayableCups]);
+  const subCollectionOptions = useMemo(
+    () => [...new Set(displayableCups.map((c) => c.sub_collection).filter(Boolean))].sort(),
+    [displayableCups]
+  );
   const { pinnedCountries, otherCountries } = useMemo(() => {
     const all = [...new Set(displayableCups.map((c) => c.country).filter(Boolean))];
     const pinned = ["United States", "Canada", "Mexico"].filter((c) => all.includes(c));
@@ -145,8 +168,9 @@ export default function BrowsePage() {
       groups = groups.filter(({ base }) => base.series === filterSeries);
       if (filterType) groups = groups.filter(({ base }) => (base.item_type || "mug") === filterType);
     }
-    if (countryFilter) groups = groups.filter(({ base }) => base.country === countryFilter);
-    if (scopeFilter)   groups = groups.filter(({ base }) => (base.scope || "city") === scopeFilter);
+    if (countryFilter)         groups = groups.filter(({ base }) => base.country === countryFilter);
+    if (scopeFilter)           groups = groups.filter(({ base }) => (base.scope || "city") === scopeFilter);
+    if (subCollectionFilter)   groups = groups.filter(({ members }) => members.some((c) => c.sub_collection === subCollectionFilter));
 
     // Near Me — explicit opt-in sort toggle; use base cup coordinates
     if (nearMe && userLocation) {
@@ -159,11 +183,22 @@ export default function BrowsePage() {
     }
 
     return groups;
-  }, [displayableCups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, scopeFilter, nearMe, search, userLocation]);
+  }, [displayableCups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, scopeFilter, subCollectionFilter, nearMe, search, userLocation]);
+
+  // Restore scroll position once after the list first renders with data
+  useEffect(() => {
+    if (didRestoreScroll.current || !mainRef.current || displayedGroups.length === 0) return;
+    try {
+      const pos = Number(sessionStorage.getItem("browse_scroll") ?? 0);
+      if (pos > 0) mainRef.current.scrollTop = pos;
+    } catch {}
+    didRestoreScroll.current = true;
+  }, [displayedGroups]);
 
   const ownedCount = useMemo(() => displayableCups.filter((c) => ownedCupIds.has(c.id)).length, [displayableCups, ownedCupIds]);
   const totalCount = displayableCups.length;
   const hasScopedCups = displayableCups.some((c) => c.scope === "state" || c.scope === "country" || c.scope === "themed");
+  const hasSubCollections = subCollectionOptions.length > 0;
 
   const chipClass = (active: boolean) =>
     `flex-shrink-0 text-xs px-3 py-1 rounded-full border font-medium transition-colors ${
@@ -191,21 +226,36 @@ export default function BrowsePage() {
               <p className="text-xs text-white/60 leading-tight">{session.user.householdName}</p>
             )}
           </div>
-          <span className="text-xs text-white/60">
-            {totalCount} cups · {ownedCount} owned
-          </span>
+          <Link
+            href="/stats"
+            className="text-sm text-white/80 bg-white/10 px-2.5 py-1 rounded-full hover:bg-white/20 active:bg-white/30 transition-colors"
+          >
+            {ownedCount}/{totalCount} owned ›
+          </Link>
         </div>
 
         {/* Search bar */}
-        <input
-          type="search"
-          placeholder="Search by city, country, or series…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-gray-900 bg-white/90 placeholder-gray-400 focus:outline-hidden"
-        />
+        <div className="relative mt-2">
+          <input
+            type="text"
+            placeholder="Search by city, country, or series…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg px-3 py-2 pr-8 text-sm text-gray-900 bg-white/90 placeholder-gray-400 focus:outline-hidden"
+          />
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            aria-label="Clear search"
+            className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-gray-600 transition-opacity ${search ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          >
+            <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4" aria-hidden="true">
+              <path d="M4.293 4.293a1 1 0 011.414 0L8 6.586l2.293-2.293a1 1 0 111.414 1.414L9.414 8l2.293 2.293a1 1 0 01-1.414 1.414L8 9.414l-2.293 2.293a1 1 0 01-1.414-1.414L6.586 8 4.293 5.707a1 1 0 010-1.414z" />
+            </svg>
+          </button>
+        </div>
 
-        {/* Series + Country + Scope selects — all three on one row */}
+        {/* Series + Country selects */}
         <div className="flex gap-2 mt-2">
           <div className="relative flex-1">
             <select
@@ -239,24 +289,43 @@ export default function BrowsePage() {
             </select>
             <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] leading-none text-white/60">▾</span>
           </div>
-
-          {hasScopedCups && (
-            <div className="relative flex-1">
-              <select
-                value={scopeFilter}
-                onChange={(e) => setScopeFilter(e.target.value as ScopeFilter)}
-                className={selectClass(!!scopeFilter)}
-              >
-                <option value="">Scope…</option>
-                <option value="city">Cities</option>
-                <option value="state">States</option>
-                <option value="country">Countries</option>
-                <option value="themed">Themed</option>
-              </select>
-              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] leading-none text-white/60">▾</span>
-            </div>
-          )}
         </div>
+
+        {/* Scope + Sub-collection selects — only shown when applicable */}
+        {(hasScopedCups || hasSubCollections) && (
+          <div className="flex gap-2 mt-2">
+            {hasScopedCups && (
+              <div className="relative flex-1">
+                <select
+                  value={scopeFilter}
+                  onChange={(e) => setScopeFilter(e.target.value as ScopeFilter)}
+                  className={selectClass(!!scopeFilter)}
+                >
+                  <option value="">Scope…</option>
+                  <option value="city">Cities</option>
+                  <option value="state">States</option>
+                  <option value="country">Countries</option>
+                  <option value="themed">Themed</option>
+                </select>
+                <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] leading-none text-white/60">▾</span>
+              </div>
+            )}
+
+            {hasSubCollections && (
+              <div className="relative flex-1">
+                <select
+                  value={subCollectionFilter}
+                  onChange={(e) => setSubCollectionFilter(e.target.value)}
+                  className={selectClass(!!subCollectionFilter)}
+                >
+                  <option value="">Collection…</option>
+                  {subCollectionOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] leading-none text-white/60">▾</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Status chips + Near Me */}
         <div className="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -269,7 +338,14 @@ export default function BrowsePage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto pb-20">
+      <main
+        ref={mainRef}
+        className="flex-1 overflow-y-auto pb-20"
+        onScroll={() => {
+          try { sessionStorage.setItem("browse_scroll", String(mainRef.current?.scrollTop ?? 0)); }
+          catch {}
+        }}
+      >
         {displayedGroups.length === 0 ? (
           <div className="text-center text-gray-400 dark:text-gray-500 py-16">No cups match your search.</div>
         ) : (

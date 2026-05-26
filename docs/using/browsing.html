@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Browse the cup catalog, filter by series, country, or scope, search by name, mark cups owned, track condition, add notes, and upload photos.">
+<meta name="description" content="Browse the cup catalog, filter by series, country, scope, or sub-collection, swipe to mark cups owned, view collection stats, track condition, add notes, and upload photos.">
 <link rel="icon" href="../favicon.ico">
 <link rel="stylesheet" href="../shared.css">
 <title>Browsing — Cup Collector</title>
@@ -35,9 +35,11 @@
     <li><a href="#browse">Browse screen</a>
       <ol>
         <li><a href="#filters">Filters</a></li>
+        <li><a href="#swipe">Quick ownership toggle (swipe)</a></li>
         <li><a href="#collection-prefs">Collection preferences and what's shown</a></li>
       </ol>
     </li>
+    <li><a href="#stats">Collection stats</a></li>
     <li><a href="#cup-types">Cup types: mugs, ornaments, and themed cups</a></li>
     <li><a href="#cup-detail">Cup detail</a></li>
     <li><a href="#notes">My Notes</a></li>
@@ -49,14 +51,19 @@
 </nav>
 
 <h2 id="browse" class="no-rule">Browse screen</h2>
-<p>Tap <strong>Browse</strong> in the bottom navigation. The full catalog appears as a scrollable list, with a count in the header showing how many cups you own out of the total displayable cups.</p>
+<p>Tap <strong>Browse</strong> in the bottom navigation. The full catalog appears as a scrollable list. The header shows a pill like <strong>42/1,947 owned ›</strong> — your owned count out of the total — which is also a tap target to open the <a href="#stats">Collection Stats screen</a>.</p>
 
 <h3 id="filters">Filters</h3>
-<p>The header contains three <strong>dropdown filters</strong> and a row of <strong>status chips</strong>, all working together:</p>
+<p>The header contains <strong>dropdown filters</strong> and a row of <strong>status chips</strong>, all working together:</p>
+<p><strong>Row 1</strong> (always shown):</p>
 <ul>
   <li><strong>Series</strong> — filter to a single series (You Are Here, Been There, Discovery Series, etc.). Series that include both mugs and ornaments appear as two separate entries — for example, <em>Been There</em> for mugs and <em>Been There Ornaments</em> for ornaments.</li>
   <li><strong>Country</strong> — filter to cups from a specific country (US, Canada, and Mexico are pinned to the top for quick access)</li>
-  <li><strong>Scope</strong> — filter by cup type: Cities, States, Countries, or Themed. This dropdown only appears if your catalog includes cups with multiple scopes.</li>
+</ul>
+<p><strong>Row 2</strong> (shown when applicable):</p>
+<ul>
+  <li><strong>Scope</strong> — filter by cup type: Cities, States, Countries, or Themed. Only appears if your catalog includes cups with multiple scopes.</li>
+  <li><strong>Collection</strong> — filter by sub-collection such as "Campus Collection". Only appears when cups with sub-collection tags exist in your catalog.</li>
 </ul>
 <p>The <strong>status chips</strong> below the dropdowns let you narrow by ownership:</p>
 <ul>
@@ -65,15 +72,37 @@
   <li><strong>Already Have</strong> — only cups you own</li>
   <li><strong>Near Me</strong> — sorts unowned cups closest to you first (only appears when location is active)</li>
 </ul>
-<p>The <strong>search bar</strong> at the top filters by cup name, country, or series as you type. All filters combine — for example, "You Are Here" series + "Japan" country + "Still Need" gives you only the Japanese You Are Here cups you still need.</p>
+<p>The <strong>search bar</strong> at the top filters by cup name, country, or series as you type. Tap the <strong>×</strong> inside the box to clear it. All filters combine — for example, "You Are Here" series + "Japan" country + "Still Need" gives you only the Japanese You Are Here cups you still need.</p>
+
+<div class="callout tip">
+  <strong>Filters persist when you navigate away</strong>
+  If you tap a cup to view its detail and then tap Back, the Browse screen restores your filters and scroll position exactly as you left them. Filters reset when you navigate to a different main tab.
+</div>
 
 <div class="callout tip">
   <strong>Near Me doesn't filter — it sorts</strong>
   Tapping Near Me reorders the list with unowned cups closest to your position shown first. All cups still appear; nothing is hidden. Useful when you're in a city and want to know which needed cups are nearby.
 </div>
 
+<h3 id="swipe">Quick ownership toggle (swipe)</h3>
+<div class="callout warn">
+  <strong>Owner only</strong>
+  Swipe-to-own is only available to household owners. Viewers see the list but cannot swipe.
+</div>
+<p>Swipe any cup row <strong>left</strong> to reveal a quick action button. What the button does depends on the cup's current state:</p>
+<ul>
+  <li><strong>Mark Owned</strong> (green) — cup is not yet owned; tap to add it to your collection</li>
+  <li><strong>Unmark</strong> (orange) — cup is owned and in good condition; tap to remove it from your collection</li>
+  <li><strong>Replaced ✓</strong> (green) — cup is owned but flagged as needing replacement; tap to clear the flag</li>
+</ul>
+<p>For cups with multiple versions (variants), the swipe targets the <strong>newest version</strong> (highest numbered variant). To toggle a specific version, open the cup's detail screen instead.</p>
+<p>Tap anywhere on the card to close the action button without triggering it.</p>
+
 <h3 id="collection-prefs">Collection preferences and what's shown</h3>
 <p>Browse only shows cups from the series and item types your household has chosen to track (set in <a href="settings.html">Settings → What I Collect</a>). Unowned cups from excluded series or types are hidden. Owned cups always appear regardless of preferences.</p>
+
+<h2 id="stats">Collection stats</h2>
+<p>Tap the <strong>owned/total pill</strong> in the Browse header (e.g. <em>42/1,947 owned ›</em>) to open the <a href="stats.html">Collection Stats screen</a>. It shows progress rings for mugs and ornaments, series bars, and a country breakdown you can drill into by region and city. See <a href="stats.html">Collection Stats</a> for full details.</p>
 
 <h2 id="cup-types">Cup types: mugs, ornaments, and themed cups</h2>
 <p>The catalog contains several kinds of cups:</p>
@@ -86,7 +115,7 @@
 <p>In the Browse list, themed cups show a small <strong>"themed"</strong> badge next to their name. On the cup detail screen, the subtitle identifies the scope: <em>State Cup</em>, <em>Country Cup</em>, or <em>Special Edition</em>. City cups and ornaments have no scope prefix.</p>
 
 <h2 id="cup-detail">Cup detail</h2>
-<p>Tap any cup in the Browse list to open the <strong>Cup Detail screen</strong>. This shows:</p>
+<p>Tap any cup in the Browse list to open the <strong>Cup Detail screen</strong>. The Browse thumbnail and the detail hero both show the image of the <strong>newest version</strong> (highest-numbered variant) when multiple versions exist. This shows:</p>
 <ul>
   <li>The cup's image (or a letter placeholder if no image is available)</li>
   <li>City, country, series, year, and scope label</li>
@@ -138,7 +167,7 @@
 
 <nav class="page-nav">
   <a class="prev" href="map-view.html">Map View</a>
-  <a class="next" href="stores.html">Find Stores</a>
+  <a class="next" href="stats.html">Collection Stats</a>
 </nav>
 
 </body>

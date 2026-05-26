@@ -22,6 +22,7 @@ export default function MapPage() {
   const householdId = session?.user?.householdId ?? null;
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const { radiusMeters, setRadius } = useNearbyRadius();
+  const [ownedOnly, setOwnedOnly] = useState(false);
   const [worldViewTick, setWorldViewTick] = useState(0);
   const [flyTick, setFlyTick] = useState(0);
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -115,6 +116,7 @@ export default function MapPage() {
     cups
       .filter((c) => {
         const owned = ownedCupIds.has(c.id);
+        if (ownedOnly && !owned) return false;
         // Owned cups always show; only hide unowned cups from excluded series/types
         if (!owned) {
           if (c.is_duplicate) return false;
@@ -129,7 +131,7 @@ export default function MapPage() {
         isOwned: ownedCupIds.has(cup.id),
         ownedRecord: ownedCups.find((o) => o.cup_id === cup.id),
       })),
-    [cups, ownedCups, ownedCupIds, prefs]
+    [cups, ownedCups, ownedCupIds, prefs, ownedOnly]
   );
 
   const stores = storesData?.stores ?? [];
@@ -185,12 +187,24 @@ export default function MapPage() {
             </div>
           ) : <div />}
 
-          <button
-            onClick={handleSearchHere}
-            className="text-xs px-2 py-0.5 rounded-full border border-white/30 text-white/70 hover:border-white/60 hover:text-white active:bg-white/20 transition-colors"
-          >
-            Search here
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setOwnedOnly((v) => !v)}
+              className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                ownedOnly
+                  ? "bg-gold text-green-dark border-gold font-semibold"
+                  : "border-white/30 text-white/70 hover:border-white/60"
+              }`}
+            >
+              Owned
+            </button>
+            <button
+              onClick={handleSearchHere}
+              className="text-xs px-2 py-0.5 rounded-full border border-white/30 text-white/70 hover:border-white/60 hover:text-white active:bg-white/20 transition-colors"
+            >
+              Search here
+            </button>
+          </div>
         </div>
 
         {searchCenter && !isFetchingStores && stores.length === 0 && (

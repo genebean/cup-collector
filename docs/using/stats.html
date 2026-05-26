@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Understand the Collection Stats screen — progress rings for mugs and ornaments, series bars, country and region drill-down, variant counting, and the series filter.">
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
+<title>Collection Stats — Cup Collector</title>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="../index.html" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">/</span>
+  <span>User Guides</span>
+  <span class="sep">/</span>
+  Collection Stats
+  <span class="guide-badge badge-user">User Guide</span>
+</nav>
+
+<h1>📊 Collection Stats</h1>
+<p>The Collection Stats screen gives you a visual overview of your collection's completeness — broken down by series, country, region, and city.</p>
+<p>Open it by tapping the <strong>owned/total pill</strong> (e.g. <em>42/1,947 owned ›</em>) in the Browse header.</p>
+
+<nav class="toc">
+  <div class="toc-title">On this page</div>
+  <ol>
+    <li><a href="#rings">Progress rings</a></li>
+    <li><a href="#series">By Series</a></li>
+    <li><a href="#country">By Country</a></li>
+    <li><a href="#drill-down">Region and city drill-down</a></li>
+    <li><a href="#series-filter">Series filter</a></li>
+    <li><a href="#variants">Variant counting</a></li>
+    <li><a href="#ornaments">Ornaments by Country</a></li>
+  </ol>
+</nav>
+
+<h2 id="rings" class="no-rule">Progress rings</h2>
+<p>At the top of the screen, one or two circular progress rings show your overall completion percentage.</p>
+<ul>
+  <li>The <strong>Mugs ring</strong> (cup icon in the center) always appears and covers all non-ornament cups.</li>
+  <li>The <strong>Ornaments ring</strong> (hanging-cup icon) appears alongside it when your household tracks ornaments. If you don't track ornaments, only the Mugs ring is shown, slightly larger.</li>
+</ul>
+<p>Below each ring: the percentage, the owned/total count, and the label. If any owned cups are flagged as needing replacement, a warning count appears beneath the rings.</p>
+<p>Counts respect your collection preferences — excluded series or item types are not counted in the total.</p>
+
+<h2 id="series">By Series</h2>
+<p>Horizontal progress bars show your completion for each mug series: <strong>You Are Here</strong>, <strong>Been There</strong>, and <strong>Discovery Series</strong>. Each bar shows owned/total and fills proportionally.</p>
+<p>Ornaments are tracked separately in the Ornaments by Country card rather than appearing here.</p>
+
+<h2 id="country">By Country</h2>
+<p>The By Country card lists the top 12 countries by your collection activity, sorted by how many cups you own (most owned first), with total available as the tiebreaker. Each row shows the flag, country name, owned/total count, and a progress bar.</p>
+<p>Tap any country row (it shows a <strong>›</strong>) to drill into that country's regions.</p>
+
+<h2 id="drill-down">Region and city drill-down</h2>
+<p>The By Country card supports three levels of detail:</p>
+<ol>
+  <li><strong>Country list</strong> — the default view; top 12 countries.</li>
+  <li><strong>Region list</strong> — tap a country to see a breakdown by state, province, or equivalent, sorted alphabetically. Tap <strong>← Back</strong> in the card header to return.</li>
+  <li><strong>City list</strong> — tap a region to see a breakdown by city, sorted alphabetically. The card header shows a breadcrumb (e.g. <em>🇺🇸 United States › Georgia · by city</em>) so you always know where you are. Tap <strong>← Back</strong> to return to the region list.</li>
+</ol>
+<p>At the city level, if there is a region-scoped cup (e.g. a Georgia state cup), it appears as a summary block above the city bars, showing each matching cup's series and whether you own it.</p>
+<p>All three levels stay in sync with the series filter — if you've filtered to "You Are Here", every level shows only You Are Here cups.</p>
+
+<h2 id="series-filter">Series filter</h2>
+<p>Inside the By Country card, a row of chips filters which series the country, region, and city counts are based on:</p>
+<ul>
+  <li><strong>All</strong> — show all mug series combined (default)</li>
+  <li><strong>You Are Here</strong> — show only YAH cups</li>
+  <li><strong>Been There</strong> — show only Been There cups</li>
+  <li><strong>Discovery</strong> — show only Discovery Series cups</li>
+</ul>
+<p>Switching the series filter resets any open drill-down back to the country list.</p>
+
+<h2 id="variants">Variant counting</h2>
+<p>Some locations have multiple versions of the same cup — for example, an original "Atlanta" and a later "Atlanta 2". By default, these are counted as <strong>one location</strong>: the totals reflect how many distinct places you have cups for, and ownership of any variant marks that location as owned.</p>
+<p>To see variants counted individually, tap the <strong>Variants</strong> chip (right edge of the chip row in the By Country card). With variants on, each version adds to the total for its city, giving a more granular view of your collection depth.</p>
+
+<h2 id="ornaments">Ornaments by Country</h2>
+<p>When your household tracks ornaments, a separate <strong>Ornaments by Country</strong> card appears below the main By Country card. It uses the same bar format as the country list but with amber-colored bars and is scoped to ornaments only. It is shown independently from the mug series filter.</p>
+
+<nav class="page-nav">
+  <a class="prev" href="browsing.html">Browsing</a>
+  <a class="next" href="stores.html">Find Stores</a>
+</nav>
+
+</body>
+</html>
