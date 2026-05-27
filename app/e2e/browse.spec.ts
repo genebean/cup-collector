@@ -9,13 +9,13 @@ test.describe("browse page — real PocketBase data", () => {
   test("shows seeded cups and correct count in header", async ({ page }) => {
     await page.goto("/browse");
 
-    // Header shows owned/total count — 7 cups were seeded in global-setup
-    await expect(page.getByText(/7 owned/)).toBeVisible({ timeout: 10_000 });
+    // Header shows owned/total count — 8 cups were seeded in global-setup
+    await expect(page.getByText(/8 owned/)).toBeVisible({ timeout: 10_000 });
   });
 
   test("seeded cup names appear in the list", async ({ page }) => {
     await page.goto("/browse");
-    await expect(page.getByText(/7 owned/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/8 owned/)).toBeVisible({ timeout: 10_000 });
 
     // Scope to main to avoid matching hidden <option> elements in the header selects
     const main = page.locator("main");
@@ -26,7 +26,7 @@ test.describe("browse page — real PocketBase data", () => {
 
   test("search filters cups by name", async ({ page }) => {
     await page.goto("/browse");
-    await expect(page.getByText(/7 owned/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/8 owned/)).toBeVisible({ timeout: 10_000 });
 
     await page.getByPlaceholder(/search/i).fill("Seattle");
 
@@ -36,7 +36,7 @@ test.describe("browse page — real PocketBase data", () => {
 
   test("country select filters to cups from that country", async ({ page }) => {
     await page.goto("/browse");
-    await expect(page.getByText(/7 owned/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/8 owned/)).toBeVisible({ timeout: 10_000 });
 
     // Japan has one seeded cup (Tokyo) — nth(1) targets the Country select (0 = Series)
     await page.locator("select").nth(1).selectOption({ label: "Japan" });
@@ -48,7 +48,7 @@ test.describe("browse page — real PocketBase data", () => {
 
   test("country and status filters combine independently", async ({ page }) => {
     await page.goto("/browse");
-    await expect(page.getByText(/7 owned/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/8 owned/)).toBeVisible({ timeout: 10_000 });
 
     // Filter to United States (Seattle + Atlanta + Georgia state cup) then to Still Need
     const countrySelect = page.locator("select").nth(1);
@@ -57,7 +57,7 @@ test.describe("browse page — real PocketBase data", () => {
 
     // Seattle, Atlanta, and Georgia (state) are seeded but not owned — all should appear
     await expect(page.getByText("Seattle", { exact: false })).toBeVisible();
-    await expect(page.getByText("Atlanta", { exact: false })).toBeVisible();
+    await expect(page.getByText("Atlanta", { exact: false }).first()).toBeVisible();
     await expect(page.getByText("Georgia", { exact: false })).toBeVisible();
     // Japan should be filtered out by country
     await expect(page.getByText("Tokyo", { exact: false })).not.toBeVisible();
@@ -65,7 +65,7 @@ test.describe("browse page — real PocketBase data", () => {
 
   test("Already Have chip shows only owned cups", async ({ page }) => {
     await page.goto("/browse");
-    await expect(page.getByText(/7 owned/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/8 owned/)).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole("button", { name: "Already Have" }).click();
 
@@ -75,7 +75,7 @@ test.describe("browse page — real PocketBase data", () => {
 
   test("All chip resets status filter", async ({ page }) => {
     await page.goto("/browse");
-    await expect(page.getByText(/7 owned/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/8 owned/)).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole("button", { name: "Already Have" }).click();
     await expect(page.getByText("No cups match your search.")).toBeVisible();
@@ -86,7 +86,7 @@ test.describe("browse page — real PocketBase data", () => {
 
   test("scope badge visible on state and country cups", async ({ page }) => {
     await page.goto("/browse");
-    await expect(page.getByText(/7 owned/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/8 owned/)).toBeVisible({ timeout: 10_000 });
 
     const main = page.locator("main");
 
@@ -102,7 +102,7 @@ test.describe("browse page — real PocketBase data", () => {
 
   test("scope filter dropdown filters to city/state/country cups", async ({ page }) => {
     await page.goto("/browse");
-    await expect(page.getByText(/7 owned/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/8 owned/)).toBeVisible({ timeout: 10_000 });
 
     const main = page.locator("main");
 
