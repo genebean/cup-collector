@@ -73,6 +73,7 @@
             play-e2e()           { cc-play-e2e "$@"; }
             import-cups()        { cc-import-cups "$@"; }
             build-catalog()      { cc-build-catalog "$@"; }
+            dedup-cups()         { cc-dedup-cups "$@"; }
             gen-auth-secret()    { cc-gen-auth-secret "$@"; }
             create-household()   { cc-create-household "$@"; }
 
@@ -102,6 +103,7 @@
               echo "  Catalog:"
               echo "    build-catalog         scrape to cups.csv (cached; delete .scrape-cache/ to force fresh fetch)"
               echo "    import-cups           import cups.csv into PocketBase (includes region backfill)"
+              echo "    dedup-cups            find and merge duplicate cups in PocketBase (dry run; add --apply to write)"
               echo ""
               echo "  Setup:"
               echo "    gen-auth-secret       generate AUTH_SECRET value"
