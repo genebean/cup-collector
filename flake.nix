@@ -67,6 +67,7 @@
             dev-next-bypass()    { cc-dev-next-bypass "$@"; }
             dev-next-network()   { cc-dev-next-network "$@"; }
             dev-next-https()     { cc-dev-next-https "$@"; }
+            dev-stack-network()  { cc-dev-stack-network "$@"; }
             docs-serve()         { cc-docs-serve "$@"; }
             check()              { cc-check "$@"; }
             playwright-install() { cc-playwright-install "$@"; }
@@ -82,12 +83,13 @@
               echo ""
               echo "  Stack (tmux — starts everything at once):"
               echo "    dev-stack             start PocketBase + PocketID + Next.js + Docs in tmux"
+              echo "    dev-stack-network     start PocketBase + Next.js (network/Tailscale, auth bypass) in tmux"
               echo "    dev-stack-kill        stop all services and close the tmux session"
               echo ""
               echo "  Local dev (individual services):"
               echo "    pb-serve              start PocketBase on :8090 (applies migrations)"
               echo "    pocketid-serve        start PocketID on :1411"
-              echo "    dev-next              start Next.js on :3000"
+              echo "    dev-next              start Next.js on localhost:3000 (real PocketID auth)"
               echo "    docs-serve            serve docs on :4000"
               echo ""
               echo "  Mobile / network testing:"
