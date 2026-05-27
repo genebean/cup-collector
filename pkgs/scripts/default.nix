@@ -20,4 +20,5 @@
   (import ./dedup-cups.nix { inherit pkgs; })
   (import ./gen-auth-secret.nix { inherit pkgs; })
   (import ./create-household.nix { inherit pkgs; })
+  (import ./gen-changelog.nix { inherit pkgs; })
 ]

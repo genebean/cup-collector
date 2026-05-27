@@ -21,6 +21,7 @@
           migrationsDir = ./pocketbase/migrations;
           appSrc = ./app;
           docsDir = ./docs;
+          changelogFile = ./CHANGELOG.md;
         };
 
       in
@@ -49,6 +50,7 @@
               tmux # used by cc-dev-stack to manage the dev service windows
               deadnix # Nix dead-code linter — used by pre-commit nixfmt hook
               nixfmt-tree # Nix formatter — used by `nix fmt` and pre-commit
+              git-cliff # changelog generator — used by cc-gen-changelog
               # PocketBase runs via podman (matches production; stays current automatically).
               # typescript and ts-node are installed as npm devDependencies in app/
               # and invoked via `npx` — this avoids node-version mismatches in nixpkgs.
@@ -77,6 +79,7 @@
             dedup-cups()         { cc-dedup-cups "$@"; }
             gen-auth-secret()    { cc-gen-auth-secret "$@"; }
             create-household()   { cc-create-household "$@"; }
+            gen-changelog()      { cc-gen-changelog "$@"; }
 
             if [[ $- == *i* ]]; then
               echo "Cup Collector dev shell"
@@ -106,6 +109,9 @@
               echo "    build-catalog         scrape to cups.csv (cached; delete .scrape-cache/ to force fresh fetch)"
               echo "    import-cups           import cups.csv into PocketBase (includes region backfill)"
               echo "    dedup-cups            find and merge duplicate cups in PocketBase (dry run; add --apply to write)"
+              echo ""
+              echo "  Release:"
+              echo "    gen-changelog         generate CHANGELOG.md from git history (requires gh auth)"
               echo ""
               echo "  Setup:"
               echo "    gen-auth-secret       generate AUTH_SECRET value"
