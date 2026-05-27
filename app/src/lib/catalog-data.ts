@@ -625,6 +625,7 @@ export const COORDS: Record<string, [number, number]> = {
   "Sabah,Malaysia":   [ 5.9788, 116.0753],
   "Sarawak,Malaysia": [ 1.5533, 110.3592],
   // ── India ───────────────────────────────────────────────────────────────────
+  "Ahmedabad,India": [23.0225,  72.5714],
   "Bengaluru,India": [12.9716,  77.5946],
   "Chennai,India":   [13.0827,  80.2707],
   "Delhi,India":     [28.7041,  77.1025],
@@ -939,6 +940,7 @@ export const CITY_TO_COUNTRY: Record<string, string> = {
   "Penang": "Malaysia", "Perak": "Malaysia", "Perlis": "Malaysia",
   "Sabah": "Malaysia", "Sarawak": "Malaysia", "Malacca": "Malaysia",
   // India
+  "Ahmedabad": "India",
   "Bengaluru": "India", "Chennai": "India", "Delhi": "India",
   "Goa": "India", "Hyderabad": "India", "Kolkata": "India", "Pune": "India",
   // Oceania
