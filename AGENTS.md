@@ -148,9 +148,9 @@ Each command has two forms:
 |---|---|
 | `pb-serve` / `cc-pb-serve` | Start PocketBase on localhost:8090 |
 | `pocketid-serve` / `cc-pocketid-serve` | Start PocketID container on localhost:1411 |
-| `dev-next` / `cc-dev-next` | Start Next.js dev server on localhost:3000 |
+| `dev-next` / `cc-dev-next` | Start Next.js dev server on localhost:3000 (real PocketID auth) |
 | `dev-next-bypass` / `cc-dev-next-bypass` | Start Next.js dev server with Playwright auth bypass |
-| `dev-next-network <addr>` / `cc-dev-next-network` | Start Next.js on `<addr>:3000` with auth bypass (phone/Tailscale testing) |
+| `dev-next-network <addr>` / `cc-dev-next-network` | Start Next.js on Tailscale IP:3000 with auth bypass (phone/Tailscale testing; auto-detects IP) |
 | `dev-next-https <addr>` / `cc-dev-next-https` | Start Next.js with local HTTPS proxy on `:8443` (mobile/geolocation testing over Tailscale) |
 | `import-cups --file cups.csv` | Import cup catalog from CSV |
 | `import-cups --file cups.csv --dry-run` | Preview import without writing |

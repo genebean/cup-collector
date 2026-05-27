@@ -10,6 +10,8 @@
   (import ./dev-stack-status.nix { inherit pkgs; })
   (import ./dev-stack-kill.nix { inherit pkgs; })
   (import ./dev-stack.nix { inherit pkgs; })
+  (import ./dev-stack-network-status.nix { inherit pkgs; })
+  (import ./dev-stack-network.nix { inherit pkgs; })
   (import ./check.nix { inherit pkgs; })
   (import ./playwright-install.nix { inherit pkgs; })
   (import ./play-e2e.nix { inherit pkgs; })
