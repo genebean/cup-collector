@@ -140,6 +140,7 @@ export default function StatsPage() {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const [showVariants, setShowVariants] = useState(false);
+  const [expandedCity, setExpandedCity] = useState<string | null>(null);
 
   const { data: cups = [] } = useQuery<Cup[]>({
     queryKey: ["cups"],
@@ -337,15 +338,16 @@ export default function StatsPage() {
     // Variants share their base cup's name so they roll up under the same city row
     const baseNameById = new Map(cups.map((c) => [c.id, c.name]));
     const baseCupById = new Map(cups.map((c) => [c.id, c]));
-    const map = new Map<string, { tot: number; own: number; baseCup: Cup }>();
+    const map = new Map<string, { tot: number; own: number; baseCup: Cup; allCups: Cup[] }>();
     for (const c of filteredMugs) {
       if (c.scope !== "city") continue;
       if (c.country !== selectedCountry.name) continue;
       if (c.region !== selectedRegion) continue;
       const key = c.variant_of ? (baseNameById.get(c.variant_of) ?? c.name) : c.name;
       const baseCup = c.variant_of ? (baseCupById.get(c.variant_of) ?? c) : c;
-      const s = map.get(key) ?? { tot: 0, own: 0, baseCup };
+      const s = map.get(key) ?? { tot: 0, own: 0, baseCup, allCups: [] };
       s.tot++;
+      s.allCups.push(c);
       if (statsOwnedIds.has(c.id)) s.own++;
       map.set(key, s);
     }
@@ -595,21 +597,64 @@ export default function StatsPage() {
                 {cityStats.length === 0 ? (
                   <p className="text-sm text-gray-400 dark:text-gray-500 py-2">No city cups in this region.</p>
                 ) : (
-                  cityStats.map(({ city, tot, own, baseCup }) => {
+                  cityStats.map(({ city, tot, own, baseCup, allCups }) => {
                     const p = tot > 0 ? own / tot : 0;
+                    const isExpanded = expandedCity === city;
+
+                    // Single cup — navigate directly (original behaviour)
+                    if (tot === 1) {
+                      return (
+                        <Link key={city} href={`/cup/${toCupSlug(baseCup)}`} onClick={markCupNavigation} className="block">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-700 dark:text-gray-300">{city}</span>
+                            <span className="text-gray-500 dark:text-gray-400 tabular-nums">{own}/{tot} ›</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${p * 100}%` }} />
+                          </div>
+                        </Link>
+                      );
+                    }
+
+                    // Multiple cups — expand inline to show each one
                     return (
-                      <Link key={city} href={`/cup/${toCupSlug(baseCup)}`} onClick={markCupNavigation} className="block">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-gray-700 dark:text-gray-300">{city}</span>
-                          <span className="text-gray-500 dark:text-gray-400 tabular-nums">{own}/{tot} ›</span>
-                        </div>
-                        <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                            style={{ width: `${p * 100}%` }}
-                          />
-                        </div>
-                      </Link>
+                      <div key={city}>
+                        <button className="w-full text-left" onClick={() => setExpandedCity(isExpanded ? null : city)}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-700 dark:text-gray-300">{city}</span>
+                            <span className="text-gray-500 dark:text-gray-400 tabular-nums">{own}/{tot} {isExpanded ? "▲" : "▼"}</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${p * 100}%` }} />
+                          </div>
+                        </button>
+                        {isExpanded && (
+                          <div className="mt-1.5 ml-3 space-y-1 border-l-2 border-blue-200 dark:border-blue-800 pl-3">
+                            {allCups.map((cup) => {
+                              const isOwned = statsOwnedIds.has(cup.id);
+                              return (
+                                <Link
+                                  key={cup.id}
+                                  href={`/cup/${toCupSlug(cup)}`}
+                                  onClick={markCupNavigation}
+                                  className="flex items-center justify-between text-sm py-0.5"
+                                >
+                                  <span className="text-gray-600 dark:text-gray-300 truncate pr-2">
+                                    {cup.series}{cup.year ? ` · ${cup.year}` : ""}
+                                  </span>
+                                  <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                    isOwned
+                                      ? "bg-green-starbucks/10 text-green-starbucks"
+                                      : "bg-gray-100 dark:bg-gray-600 text-gray-400 dark:text-gray-400"
+                                  }`}>
+                                    {isOwned ? "Owned ›" : "Not owned ›"}
+                                  </span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })
                 )}
@@ -624,7 +669,7 @@ export default function StatsPage() {
                     <button
                       key={region}
                       className="w-full text-left"
-                      onClick={() => setSelectedRegion(region)}
+                      onClick={() => { setSelectedRegion(region); setExpandedCity(null); }}
                     >
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-gray-700 dark:text-gray-300">{region}</span>

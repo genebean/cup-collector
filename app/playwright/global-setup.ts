@@ -104,7 +104,8 @@ async function seedTestData(pb: PocketBase): Promise<void> {
 
   const cupDefs = [
     { name: "Seattle",   scope: "city",    region: "WA",  country: "United States",  country_code: "US", series: "Been There", year: 2018, lat: 47.6062,  lng: -122.3321 },
-    { name: "Atlanta",   scope: "city",    region: "GA",  country: "United States",  country_code: "US", series: "Been There", year: 2019, lat: 33.749,   lng: -84.388 },
+    { name: "Atlanta",   scope: "city",    region: "GA",  country: "United States",  country_code: "US", series: "Been There",    year: 2019, lat: 33.749,   lng: -84.388 },
+    { name: "Atlanta",   scope: "city",    region: "GA",  country: "United States",  country_code: "US", series: "You Are Here", year: 2021, lat: 33.749,   lng: -84.388 },
     { name: "London",    scope: "city",    region: "",    country: "United Kingdom",  country_code: "GB", series: "Been There", year: 2019, lat: 51.5074,  lng: -0.1278 },
     { name: "Tokyo",     scope: "city",    region: "",    country: "Japan",           country_code: "JP", series: "Been There", year: 2020, lat: 35.6762,  lng: 139.6503 },
     { name: "Sydney",    scope: "city",    region: "NSW", country: "Australia",       country_code: "AU", series: "Been There", year: 2020, lat: -33.8688, lng: 151.2093 },

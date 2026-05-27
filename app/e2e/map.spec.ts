@@ -46,9 +46,9 @@ test.describe("map — pin interactions", () => {
 
   test("pins render for seeded cups", async ({ page }) => {
     await page.goto("/map");
-    // 7 seeded cups (5 city + Georgia state + Australia country) are all within
+    // 8 seeded cups (5 city + Atlanta YAH duplicate + Georgia state + Australia country) are all within
     // the world-view bounds — wait until BoundsTracker reports them all
-    await expect(page.getByText("7 cups in view")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("8 cups in view")).toBeVisible({ timeout: 15_000 });
     // 5 city-scope cups each get a pin; state/country cups attach to city popups
     const pins = page.locator("path.leaflet-interactive");
     expect(await pins.count()).toBeGreaterThan(0);
@@ -99,9 +99,9 @@ test.describe("map — pin interactions", () => {
   });
 
   test("excluding a series removes its unowned cups from the map", async ({ page }) => {
-    // All seeded cups are "Been There"; excluding it makes every unowned cup invisible.
+    // Excluding all seeded series makes every unowned cup invisible.
     await page.request.post("/api/household-prefs", {
-      data: { excluded_series: ["Been There"] },
+      data: { excluded_series: ["Been There", "You Are Here"] },
       headers: { "Content-Type": "application/json" },
     });
 
