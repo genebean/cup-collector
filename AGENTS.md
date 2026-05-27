@@ -165,6 +165,31 @@ Each command has two forms:
 
 ---
 
+## Verification Before Committing or Reporting Success
+
+- **Verify before reporting success.** Run the thing — scripts, commands,
+  derivations, UI flows — before claiming it works. Do not assume correctness
+  because the code looks right.
+- **Wait for explicit human approval before committing or pushing** when the
+  change includes UI behaviour that requires visual verification in a browser.
+  Automated test passage (`check`, Playwright) is not sufficient for visual
+  changes. Report what changed and what to look at, then wait for the go-ahead.
+
+---
+
+## Git Branch Workflow
+
+- Always start new work from a fresh main:
+  `git checkout main && git pull`, then `git checkout -b <branch-name>`
+- Delete merged branches locally after the PR merges:
+  `git branch -d <old-branch>`
+- Only rebase when there is actual divergence from main. Before opening a PR,
+  check `git log --oneline origin/main..HEAD`. If main has not moved ahead of
+  your branch base, rebasing rewrites commit SHAs for no reason and should be
+  skipped.
+
+---
+
 ## Data Model
 
 Three PocketBase collections. All data is self-hosted.
@@ -358,8 +383,20 @@ server-side only, personal use stays in free tier.
 
 ## Commit and PR Hygiene
 
-- Write commit messages that explain *why*, not just *what*
-- If a change affects the spec, update `docs/reference/spec.html` in the same commit
+- Write commit messages as descriptions of what the code **is**, not what
+  changed. Include a body: one short paragraph per major component describing
+  what it does, key decisions, and any non-obvious constraints. Reserve
+  before/after framing for bug fixes only.
+- Incremental local commits are fine as a working tool for rollback or local
+  context, but must be squashed before pushing. What reaches the remote should
+  reflect the final, complete state of the work — shaped from the full diff.
+  Multiple commits in a pushed PR are only justified for genuinely independent
+  logical concerns.
+- If a follow-up fix is caught after committing (even after pushing), amend
+  immediately and silently — use `--force-with-lease` if already pushed. Do not
+  wait to be asked.
+- If a change affects any `docs/` page (including `docs/reference/spec.html`),
+  update those docs in the same branch and PR.
 - Do not bundle unrelated changes in one commit
 - `package-lock.json` changes must be committed — required for `buildNpmPackage`
 - After pushing new commits to a PR branch, update the PR description with
