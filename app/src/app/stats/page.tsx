@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -136,15 +136,9 @@ export default function StatsPage() {
   const didRestoreScroll = useRef(false);
 
   const [countrySeries, setCountrySeries] = useState("all");
-  const [selectedCountry, setSelectedCountry] = useState<{ name: string; code: string } | null>(
-    () => readStatsDrill().country
-  );
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(
-    () => readStatsDrill().region
-  );
-  const [selectedTheme, setSelectedTheme] = useState<string | null>(
-    () => readStatsDrill().theme
-  );
+  const [selectedCountry, setSelectedCountry] = useState<{ name: string; code: string } | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const [showVariants, setShowVariants] = useState(false);
 
   const { data: cups = [] } = useQuery<Cup[]>({
@@ -178,7 +172,23 @@ export default function StatsPage() {
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  // Persist drill-down state so Back from cup detail returns to the same drill level
+  // Restore drill-down state post-mount, but ONLY when returning from a cup detail page.
+  // Same flag pattern as browse: markCupNavigation sets stats_return_pending before navigating.
+  useEffect(() => {
+    const returning = sessionStorage.getItem("stats_return_pending") === "1";
+    sessionStorage.removeItem("stats_return_pending");
+    if (returning) {
+      try {
+        const saved = readStatsDrill();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (saved.country) setSelectedCountry(saved.country);
+        if (saved.region) setSelectedRegion(saved.region);
+        if (saved.theme) setSelectedTheme(saved.theme);
+      } catch {}
+    }
+  }, []);
+
+  // Persist drill-down state so returning from a cup detail restores the same level.
   useEffect(() => {
     try {
       sessionStorage.setItem("stats_drill", JSON.stringify({
@@ -186,6 +196,10 @@ export default function StatsPage() {
       }));
     } catch {}
   }, [selectedCountry, selectedRegion, selectedTheme]);
+
+  const markCupNavigation = useCallback(() => {
+    try { sessionStorage.setItem("stats_return_pending", "1"); } catch {}
+  }, []);
 
   // Restore scroll once data loads (after navigating back from cup detail)
   useEffect(() => {
@@ -449,6 +463,7 @@ export default function StatsPage() {
                     <Link
                       key={cup.id}
                       href={`/cup/${toCupSlug(cup)}`}
+                      onClick={markCupNavigation}
                       className="flex items-center justify-between text-sm py-0.5"
                     >
                       <span className="text-gray-700 dark:text-gray-300 flex-1 min-w-0 truncate pr-2">{cup.name}</span>
@@ -566,7 +581,7 @@ export default function StatsPage() {
                     {regionScopeCups.map((cup) => {
                       const isOwned = statsOwnedIds.has(cup.id);
                       return (
-                        <Link key={cup.id} href={`/cup/${toCupSlug(cup)}`} className="flex items-center justify-between text-sm">
+                        <Link key={cup.id} href={`/cup/${toCupSlug(cup)}`} onClick={markCupNavigation} className="flex items-center justify-between text-sm">
                           <span className="text-gray-600 dark:text-gray-300">{cup.series}{cup.year ? ` · ${cup.year}` : ""}</span>
                           <span className={`font-semibold text-xs px-2 py-0.5 rounded-full ${isOwned ? "bg-green-starbucks/10 text-green-starbucks" : "bg-gray-100 dark:bg-gray-600 text-gray-400 dark:text-gray-400"}`}>
                             {isOwned ? "Owned ›" : "Not owned ›"}
@@ -583,7 +598,7 @@ export default function StatsPage() {
                   cityStats.map(({ city, tot, own, baseCup }) => {
                     const p = tot > 0 ? own / tot : 0;
                     return (
-                      <Link key={city} href={`/cup/${toCupSlug(baseCup)}`} className="block">
+                      <Link key={city} href={`/cup/${toCupSlug(baseCup)}`} onClick={markCupNavigation} className="block">
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-gray-700 dark:text-gray-300">{city}</span>
                           <span className="text-gray-500 dark:text-gray-400 tabular-nums">{own}/{tot} ›</span>

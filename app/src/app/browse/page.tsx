@@ -19,11 +19,6 @@ type StatusFilter = "all" | "needed" | "owned";
 type ScopeFilter = "" | CupScope;
 const EMPTY_PREFS: CollectionPrefs = {};
 
-function readSaved(key: string, fallback: string): string {
-  try { return (JSON.parse(sessionStorage.getItem("browse_state") ?? "{}")[key] as string) ?? fallback; }
-  catch { return fallback; }
-}
-
 export default function BrowsePage() {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -31,14 +26,16 @@ export default function BrowsePage() {
   const householdId = session?.user?.householdId ?? null;
   const canWrite = session?.user?.householdRole === "owner";
 
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => readSaved("statusFilter", "all") as StatusFilter);
-  const [seriesFilter, setSeriesFilter] = useState(() => readSaved("seriesFilter", ""));
-  const [countryFilter, setCountryFilter] = useState(() => readSaved("countryFilter", ""));
-  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>(() => readSaved("scopeFilter", "") as ScopeFilter);
-  const [subCollectionFilter, setSubCollectionFilter] = useState(() => readSaved("subCollectionFilter", ""));
-  const [nearMe, setNearMe] = useState(() => readSaved("nearMe", "false") === "true");
-  const [search, setSearch] = useState(() => readSaved("search", ""));
-  // Always initialize false — URL param is read after mount so server+client HTML match
+  // All filter state initializes to defaults — sessionStorage and URL params are
+  // client-only and cannot be read during SSR; reading them in lazy initializers
+  // causes hydration mismatches. Restored in the post-mount effect below.
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [seriesFilter, setSeriesFilter] = useState("");
+  const [countryFilter, setCountryFilter] = useState("");
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>("");
+  const [subCollectionFilter, setSubCollectionFilter] = useState("");
+  const [nearMe, setNearMe] = useState(false);
+  const [search, setSearch] = useState("");
   const [needsReplacingFilter, setNeedsReplacingFilter] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const didRestoreScroll = useRef(false);
@@ -51,14 +48,31 @@ export default function BrowsePage() {
     );
   }, []);
 
-  // Read needs_replacing URL param after mount (client-only; initializing in useState causes hydration mismatch)
+  // Restore client-only state after mount, but ONLY when returning from a cup detail page.
+  // The flag is set in markCupNavigation (below) when a cup card is tapped, so arbitrary
+  // navigation to /browse (e.g. from /stats or /settings) always starts fresh.
   useEffect(() => {
+    const returning = sessionStorage.getItem("browse_return_pending") === "1";
+    sessionStorage.removeItem("browse_return_pending");
+    if (returning) {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem("browse_state") ?? "{}");
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (saved.statusFilter) setStatusFilter(saved.statusFilter as StatusFilter);
+        if (saved.seriesFilter) setSeriesFilter(saved.seriesFilter);
+        if (saved.countryFilter) setCountryFilter(saved.countryFilter);
+        if (saved.scopeFilter) setScopeFilter(saved.scopeFilter as ScopeFilter);
+        if (saved.subCollectionFilter) setSubCollectionFilter(saved.subCollectionFilter);
+        if (saved.nearMe === "true") setNearMe(true);
+        if (saved.search) setSearch(saved.search);
+      } catch {}
+    }
     if (new URLSearchParams(window.location.search).get("needs_replacing") === "1") {
-      setNeedsReplacingFilter(true); // eslint-disable-line react-hooks/set-state-in-effect
+      setNeedsReplacingFilter(true);
     }
   }, []);
 
-  // Persist filter state across back-navigation
+  // Persist filter state so it's available when the user taps back from a cup detail.
   useEffect(() => {
     try {
       sessionStorage.setItem("browse_state", JSON.stringify({
@@ -67,6 +81,12 @@ export default function BrowsePage() {
       }));
     } catch {}
   }, [statusFilter, seriesFilter, countryFilter, scopeFilter, subCollectionFilter, nearMe, search]);
+
+  // Set the "returning from cup" flag when tapping a cup card so the restore
+  // effect above knows to apply saved state on the next /browse mount.
+  const markCupNavigation = useCallback(() => {
+    try { sessionStorage.setItem("browse_return_pending", "1"); } catch {}
+  }, []);
 
   const { data: cups = [] } = useQuery<Cup[]>({
     queryKey: ["cups"],
@@ -390,6 +410,7 @@ export default function BrowsePage() {
                 variantCount={members.length > 1 ? members.length : undefined}
                 ownedVariants={members.length > 1 ? members.filter((c) => c.isOwned).length : undefined}
                 imageCup={members.length > 1 ? representative : undefined}
+                onClick={markCupNavigation}
               />
             );
 
