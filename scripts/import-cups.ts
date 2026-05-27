@@ -266,8 +266,8 @@ async function main() {
         sub_collection: row.sub_collection,
         variant_notes: row.variant_notes,
         slug: toCupSlug(row),
-        // Only write variant_of when the CSV provides it — preserves admin-set values otherwise
-        ...(variantOfId !== undefined ? { variant_of: variantOfId } : {}),
+        // Write variant_of when CSV provides it; explicitly clear when is_unique overrides it
+        ...(variantOfId !== undefined ? { variant_of: variantOfId } : row.is_unique ? { variant_of: "" } : {}),
         // Only set is_unique when CSV explicitly says true — never reset an admin-set value
         ...(row.is_unique ? { is_unique: true } : {}),
       };
@@ -277,9 +277,11 @@ async function main() {
       }
 
       // variant_of is excluded from rowMatchesExisting (it's an ID, not a name).
-      // Check it separately so records are updated when a new variant link is resolved.
-      const variantOfChanged = variantOfId !== undefined &&
-        variantOfId !== String(existingRecord?.variant_of ?? "");
+      // Check it separately so records are updated when a new variant link is resolved,
+      // or when is_unique clears an existing link.
+      const variantOfChanged =
+        (variantOfId !== undefined && variantOfId !== String(existingRecord?.variant_of ?? "")) ||
+        (row.is_unique && String(existingRecord?.variant_of ?? "") !== "");
 
       if (existingId) {
         if (existingRecord && rowMatchesExisting(row, existingRecord) && !imageFile && !variantOfChanged) {

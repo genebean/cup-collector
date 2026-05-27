@@ -372,17 +372,20 @@ function applyOverrides(rows: CsvRow[], overridesPath: string): void {
     let changed = false;
     for (const field of OVERRIDE_STRING_FIELDS) {
       const val = col(parts, field);
-      if (val) { target[field] = val; changed = true; }
+      if (val === "-") { target[field] = ""; changed = true; } // "-" clears the field
+      else if (val) { target[field] = val; changed = true; }
     }
+    // is_unique is boolean — "true" sets it; anything else is ignored
+    if (col(parts, "is_unique") === "true") { target.is_unique = true; changed = true; }
     if (changed) count++;
   }
   console.log(`\nApplied ${count} override(s) from ${path.basename(overridesPath)}.`);
 }
 
 function writeCSV(rows: CsvRow[], filePath: string): void {
-  const header = "name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes,sub_collection,variant_of,variant_notes";
+  const header = "name,scope,venue_series,item_type,region,country,country_code,series,year,lat,lng,image_url,hobbydb_url,more_info_url,notes,sub_collection,variant_of,variant_notes,is_unique";
   const lines = [header, ...rows.map((r) =>
-    [r.name, r.scope, r.venue_series, r.item_type, r.region, r.country, r.country_code, r.series, r.year, r.lat, r.lng, r.image_url, "", r.more_info_url, r.notes, r.sub_collection, r.variant_of, r.variant_notes]
+    [r.name, r.scope, r.venue_series, r.item_type, r.region, r.country, r.country_code, r.series, r.year, r.lat, r.lng, r.image_url, "", r.more_info_url, r.notes, r.sub_collection, r.variant_of, r.variant_notes, r.is_unique ? "true" : ""]
       .map(csvField).join(",")
   )];
   fs.writeFileSync(filePath, lines.join("\n") + "\n", "utf-8");
