@@ -60,6 +60,13 @@ export default async function SettingsPage() {
             <span className="font-medium text-green-starbucks dark:text-green-400">Documentation</span>
             <span className="text-green-starbucks dark:text-green-400">→</span>
           </Link>
+          <Link
+            href="/changelog"
+            className="flex justify-between px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-colors"
+          >
+            <span className="font-medium text-green-starbucks dark:text-green-400">Changelog</span>
+            <span className="text-green-starbucks dark:text-green-400">→</span>
+          </Link>
         </Section>
 
         {/* Collection preferences — visible to all roles; editing is owner-only (enforced by the page) */}

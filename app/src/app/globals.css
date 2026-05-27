@@ -1,5 +1,6 @@
 /* Tailwind v4 — single import replaces @tailwind base/components/utilities */
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* Use .dark class on <html> for dark mode (set by useUiTheme hook) instead of
    the default prefers-color-scheme media query. This lets the user override

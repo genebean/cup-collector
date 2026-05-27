@@ -2,18 +2,28 @@
   pkgs,
   appSrc,
   docsDir,
+  changelogFile,
 }:
+let
+  # Merge CHANGELOG.md (repo root) into the app source tree so the Next.js
+  # server component can read it at build time via process.cwd()/CHANGELOG.md.
+  src = pkgs.runCommand "cup-collector-src" { } ''
+    cp -r ${appSrc}/. $out
+    chmod -R u+w $out
+    cp ${changelogFile} $out/CHANGELOG.md
+  '';
+in
 pkgs.buildNpmPackage {
   pname = "cup-collector";
-  version = "0.1.0";
-  src = appSrc;
+  version = "1.0.0";
+  inherit src;
   nodejs = pkgs.nodejs_24;
 
   # Recompute this hash after any package-lock.json change:
   #   1. Set npmDepsHash = pkgs.lib.fakeHash;
   #   2. Run `nix build` — it fails with "got: sha256-..."
   #   3. Copy that hash here and run `nix build` again.
-  npmDepsHash = "sha256-ByFS3ekSOU3FU8zZ01rJ+VmXO3Egpdcyhk3ekfSdIzQ=";
+  npmDepsHash = "sha256-OIKdKkFzsfAAxi3Am2zDc3XDxdMUgFEsy0tIg1eUVkc=";
 
   buildPhase = "npm run build";
 
