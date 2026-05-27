@@ -57,8 +57,8 @@ export default async function SettingsPage() {
             href="/docs"
             className="flex justify-between px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-colors"
           >
-            <span className="font-medium text-gray-800 dark:text-gray-100">Documentation</span>
-            <span className="text-gray-400">→</span>
+            <span className="font-medium text-green-starbucks dark:text-green-400">Documentation</span>
+            <span className="text-green-starbucks dark:text-green-400">→</span>
           </Link>
         </Section>
 
@@ -68,8 +68,8 @@ export default async function SettingsPage() {
               href="/settings/collection"
               className="flex justify-between px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-colors"
             >
-              <span className="font-medium text-gray-800 dark:text-gray-100">What I Collect</span>
-              <span className="text-gray-400">→</span>
+              <span className="font-medium text-green-starbucks dark:text-green-400">What I Collect</span>
+              <span className="text-green-starbucks dark:text-green-400">→</span>
             </Link>
         </Section>
 
