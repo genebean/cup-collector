@@ -13,7 +13,7 @@ pkgs.buildNpmPackage {
   #   1. Set npmDepsHash = pkgs.lib.fakeHash;
   #   2. Run `nix build` — it fails with "got: sha256-..."
   #   3. Copy that hash here and run `nix build` again.
-  npmDepsHash = "sha256-3yTrMpuVdZ45yErbzawPPtfGT3zk/PL4iKtpPPLXsPA=";
+  npmDepsHash = "sha256-ByFS3ekSOU3FU8zZ01rJ+VmXO3Egpdcyhk3ekfSdIzQ=";
 
   buildPhase = "npm run build";
 

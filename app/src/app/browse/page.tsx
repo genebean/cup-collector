@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -57,7 +58,6 @@ export default function BrowsePage() {
     if (returning) {
       try {
         const saved = JSON.parse(sessionStorage.getItem("browse_state") ?? "{}");
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (saved.statusFilter) setStatusFilter(saved.statusFilter as StatusFilter);
         if (saved.seriesFilter) setSeriesFilter(saved.seriesFilter);
         if (saved.countryFilter) setCountryFilter(saved.countryFilter);
@@ -221,6 +221,14 @@ export default function BrowsePage() {
 
     return groups;
   }, [displayableCups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, scopeFilter, subCollectionFilter, needsReplacingFilter, nearMe, search, userLocation]);
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: displayedGroups.length,
+    getScrollElement: () => mainRef.current,
+    estimateSize: () => 76,
+    overscan: 8,
+  });
 
   // Restore scroll position once after the list first renders with data
   useEffect(() => {
@@ -402,35 +410,46 @@ export default function BrowsePage() {
         {displayedGroups.length === 0 ? (
           <div className="text-center text-gray-400 dark:text-gray-500 py-16">No cups match your search.</div>
         ) : (
-          displayedGroups.map(({ base, members }) => {
-            const representative = findRepresentative(members);
-            const card = (
-              <CupCard
-                cup={base}
-                variantCount={members.length > 1 ? members.length : undefined}
-                ownedVariants={members.length > 1 ? members.filter((c) => c.isOwned).length : undefined}
-                imageCup={members.length > 1 ? representative : undefined}
-                onClick={markCupNavigation}
-              />
-            );
+          <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+            {virtualizer.getVirtualItems().map((virtualItem) => {
+              const { base, members } = displayedGroups[virtualItem.index];
+              const representative = findRepresentative(members);
+              const card = (
+                <CupCard
+                  cup={base}
+                  variantCount={members.length > 1 ? members.length : undefined}
+                  ownedVariants={members.length > 1 ? members.filter((c) => c.isOwned).length : undefined}
+                  imageCup={members.length > 1 ? representative : undefined}
+                  onClick={markCupNavigation}
+                />
+              );
 
-            if (!canWrite) return <Fragment key={base.id}>{card}</Fragment>;
+              const needsReplacing = representative.ownedRecord?.needs_replacing ?? false;
+              const actionLabel = needsReplacing ? "Replaced ✓" : representative.isOwned ? "Unmark" : "Mark Owned";
+              const actionColor = representative.isOwned && !needsReplacing ? "bg-orange-500" : "bg-green-starbucks";
 
-            const needsReplacing = representative.ownedRecord?.needs_replacing ?? false;
-            const actionLabel = needsReplacing ? "Replaced ✓" : representative.isOwned ? "Unmark" : "Mark Owned";
-            const actionColor = representative.isOwned && !needsReplacing ? "bg-orange-500" : "bg-green-starbucks";
-
-            return (
-              <SwipeableRow
-                key={base.id}
-                actionLabel={actionLabel}
-                actionColor={actionColor}
-                onAction={() => toggleOwnership(representative)}
-              >
-                {card}
-              </SwipeableRow>
-            );
-          })
+              return (
+                <div
+                  key={virtualItem.key}
+                  data-index={virtualItem.index}
+                  ref={virtualizer.measureElement}
+                  style={{ position: "absolute", top: 0, left: 0, width: "100%", transform: `translateY(${virtualItem.start}px)` }}
+                >
+                  {canWrite ? (
+                    <SwipeableRow
+                      actionLabel={actionLabel}
+                      actionColor={actionColor}
+                      onAction={() => toggleOwnership(representative)}
+                    >
+                      {card}
+                    </SwipeableRow>
+                  ) : (
+                    <Fragment>{card}</Fragment>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </main>
 

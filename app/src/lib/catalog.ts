@@ -153,10 +153,28 @@ export function buildSeriesFromSitemap(
     }
 
     // Marvel-themed mugs (e.g. Avengers Campus at Disney California Adventure).
-    // Skip ornament slugs (e.g. been-there-marvel-ornament-*) — not yet handled.
     if (locationSlug.startsWith("marvel-")) {
       const themeSlug = locationSlug.replace("marvel-", "");
-      if (themeSlug.startsWith("ornament-")) continue;
+      if (themeSlug.startsWith("ornament-")) {
+        // Marvel ornaments (e.g. been-there-marvel-ornament-wakanda)
+        const ornamentName = themeSlug.replace("ornament-", "")
+          .split("-")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+        entries.push({
+          city: `Ornament ${ornamentName}`,
+          region: "",
+          country: "",
+          series: seriesName,
+          year: defaultYear,
+          scope: "themed",
+          venue_series: "Been There Disney Parks",
+          notes: "Marvel ornament — available at Disney parks",
+          moreInfoUrl: url,
+          item_type: "ornament",
+        });
+        continue;
+      }
       const themeName = themeSlug
         .split("-")
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))

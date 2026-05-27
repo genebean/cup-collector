@@ -91,11 +91,12 @@ test.describe("browse page — real PocketBase data", () => {
     const main = page.locator("main");
 
     // Georgia is a state cup — should show a "state" badge
-    const georgiaRow = main.getByText("Georgia", { exact: false }).first().locator("..");
+    // Tags are now on row 3; traverse up to the <a> card element (3 levels) to scope the search
+    const georgiaRow = main.getByText("Georgia", { exact: false }).first().locator("../../..");
     await expect(georgiaRow.getByText("state", { exact: false })).toBeVisible();
 
     // Australia (country cup) should show a "country" badge
-    const australiaRow = main.getByText("Australia", { exact: false }).first().locator("..");
+    const australiaRow = main.getByText("Australia", { exact: false }).first().locator("../../..");
     await expect(australiaRow.getByText("country", { exact: false })).toBeVisible();
   });
 
