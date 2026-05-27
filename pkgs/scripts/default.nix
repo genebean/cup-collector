@@ -15,6 +15,7 @@
   (import ./play-e2e.nix { inherit pkgs; })
   (import ./import-cups.nix { inherit pkgs; })
   (import ./build-catalog.nix { inherit pkgs; })
+  (import ./dedup-cups.nix { inherit pkgs; })
   (import ./gen-auth-secret.nix { inherit pkgs; })
   (import ./create-household.nix { inherit pkgs; })
 ]
