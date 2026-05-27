@@ -129,9 +129,11 @@ export function buildSeriesFromSitemap(
 
     const locationSlug = slug.replace(`${slugPrefix}-`, "");
 
-    // Disney Parks mugs — include as themed under the Disney Parks venue series
+    // Disney Parks mugs — include as themed under the Disney Parks venue series.
+    // Skip ornament slugs (e.g. been-there-disney-ornament-*) — not yet handled.
     if (locationSlug.startsWith("disney-")) {
       const parkSlug = locationSlug.replace("disney-", "");
+      if (parkSlug.startsWith("ornament-")) continue;
       const parkName = parkSlug
         .split("-")
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -150,9 +152,11 @@ export function buildSeriesFromSitemap(
       continue;
     }
 
-    // Marvel-themed mugs (e.g. Avengers Campus at Disney California Adventure)
+    // Marvel-themed mugs (e.g. Avengers Campus at Disney California Adventure).
+    // Skip ornament slugs (e.g. been-there-marvel-ornament-*) — not yet handled.
     if (locationSlug.startsWith("marvel-")) {
       const themeSlug = locationSlug.replace("marvel-", "");
+      if (themeSlug.startsWith("ornament-")) continue;
       const themeName = themeSlug
         .split("-")
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -725,7 +729,10 @@ export function buildRows(filterSeries: string | null, mugsIndex: Map<string, st
   // over any auto-detected duplicates (e.g. Singapore appears as both city and country).
   // Year is excluded from the key because YAH/BT years are scraped later and
   // the same city could otherwise appear twice at different default years.
-  const seen = new Map<string, true>();
+  // Secondary dedup by moreInfoUrl prevents cases where the static CATALOG and the
+  // sitemap scraper both produce entries for the same source page (e.g. Wakanda).
+  const seenKey = new Map<string, true>();
+  const seenUrl = new Map<string, true>();
   const deduped: CupEntry[] = [];
   for (const e of [
     ...catalogEntries,
@@ -734,8 +741,10 @@ export function buildRows(filterSeries: string | null, mugsIndex: Map<string, st
     ...reliefEntries, ...iconMiniEntries,
   ]) {
     const key = `${e.city}|${e.series}|${e.item_type ?? "mug"}`;
-    if (!seen.has(key)) {
-      seen.set(key, true);
+    const urlAlreadySeen = e.moreInfoUrl ? seenUrl.has(e.moreInfoUrl) : false;
+    if (!seenKey.has(key) && !urlAlreadySeen) {
+      seenKey.set(key, true);
+      if (e.moreInfoUrl) seenUrl.set(e.moreInfoUrl, true);
       deduped.push(e);
     }
   }

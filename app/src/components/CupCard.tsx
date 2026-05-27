@@ -8,6 +8,7 @@ interface CupCardProps {
   variantCount?: number;   // total members in group (including base); omit or 1 for solo cups
   ownedVariants?: number;  // how many members are owned; only meaningful when variantCount > 1
   imageCup?: Cup;          // override the image source (e.g. newest variant); falls back to cup
+  onClick?: () => void;
 }
 
 // Series-specific accent colors for the placeholder when no image is available
@@ -18,7 +19,7 @@ const seriesColors: Record<string, string> = {
 
 // Displays a single cup in a list — used on Browse and Search screens.
 // Tapping the card navigates to the Cup Detail screen.
-export function CupCard({ cup, variantCount, ownedVariants, imageCup }: CupCardProps) {
+export function CupCard({ cup, variantCount, ownedVariants, imageCup, onClick }: CupCardProps) {
   const isGroup = variantCount !== undefined && variantCount > 1;
   const accentColor = seriesColors[cup.series] ?? (cup.item_type === "ornament" ? "bg-red-600" : "bg-gray-500");
   const imgSrc = imageCup ?? cup;
@@ -26,6 +27,7 @@ export function CupCard({ cup, variantCount, ownedVariants, imageCup }: CupCardP
   return (
     <Link
       href={`/cup/${cup.slug || cup.id}`}
+      onClick={onClick}
       className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 hover:bg-cream dark:hover:bg-gray-700 active:bg-gray-50 dark:active:bg-gray-600 transition-colors"
     >
       {/* Cup image or placeholder */}

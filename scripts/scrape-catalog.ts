@@ -51,6 +51,8 @@ const outPath = path.resolve(args[outIndex + 1]);
 
 // ── HTTP fetch helper ─────────────────────────────────────────────────────────
 
+const SITEMAP_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 1 day
+
 function cacheKeyFor(url: string): string {
   // Produce a readable filename from the URL path, e.g.:
   //   https://starbucks-mugs.com/sitemap.xml           → sitemap.xml
@@ -63,10 +65,28 @@ function cacheKeyFor(url: string): string {
   return key.endsWith(".xml") ? key : key + ".html";
 }
 
+// Returns the age of a cached sitemap file in ms. Uses the <!-- generated-on="..." -->
+// comment embedded in the XML as the primary source; falls back to file mtime.
+function sitemapCacheAgeMs(cachePath: string): number {
+  const content = fs.readFileSync(cachePath, "utf-8");
+  const m = content.match(/generated-on="([^"]+)"/);
+  if (m) {
+    const d = new Date(m[1]);
+    if (!isNaN(d.getTime())) return Date.now() - d.getTime();
+  }
+  return Date.now() - fs.statSync(cachePath).mtimeMs;
+}
+
 function fetchText(url: string): Promise<string> {
   if (cacheDir) {
     const cachePath = path.join(cacheDir, cacheKeyFor(url));
-    if (fs.existsSync(cachePath)) return Promise.resolve(fs.readFileSync(cachePath, "utf-8"));
+    if (fs.existsSync(cachePath)) {
+      const isSitemap = url.includes("sitemap");
+      if (!isSitemap || sitemapCacheAgeMs(cachePath) <= SITEMAP_MAX_AGE_MS) {
+        return Promise.resolve(fs.readFileSync(cachePath, "utf-8"));
+      }
+      console.log(`  Sitemap cache stale, re-fetching: ${url}`);
+    }
   }
   return new Promise((resolve, reject) => {
     const client = url.startsWith("https") ? https : http;
@@ -95,17 +115,24 @@ function fetchText(url: string): Promise<string> {
       });
     });
     req.on("error", reject);
-    req.setTimeout(20_000, () => { req.destroy(); reject(new Error(`Timeout: ${url}`)); });
+    req.setTimeout(45_000, () => { req.destroy(); reject(new Error(`Timeout: ${url}`)); });
   });
 }
 
 // ── starbucks-mugs.com URL index ──────────────────────────────────────────────
-// Fetches all sub-sitemaps and builds a lookup: slug → full URL.
-// Slug = the last path segment (e.g. "you-are-here-seattle").
+// Fetches all sub-sitemaps and builds:
+//   index      — slug → full URL (e.g. "you-are-here-seattle" → "https://...")
+//   urlLastmods — full URL → ISO lastmod string from the sitemap <lastmod> element
 
-async function buildMugsIndex(): Promise<Map<string, string>> {
+interface MugsIndex {
+  index: Map<string, string>;
+  urlLastmods: Map<string, string>;
+}
+
+async function buildMugsIndex(): Promise<MugsIndex> {
   console.log("Fetching starbucks-mugs.com sitemap…");
   const index = new Map<string, string>();
+  const urlLastmods = new Map<string, string>();
 
   const rootXml = await fetchText("https://starbucks-mugs.com/sitemap.xml");
   const subSitemaps = [...rootXml.matchAll(/https:\/\/starbucks-mugs\.com\/sitemap-pt-mug[^<"']*/g)]
@@ -115,10 +142,15 @@ async function buildMugsIndex(): Promise<Map<string, string>> {
   for (const sitemapUrl of subSitemaps) {
     try {
       const xml = await fetchText(sitemapUrl);
-      const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].trim());
-      for (const url of locs) {
+      // Extract both <loc> and <lastmod> from each <url> block
+      for (const m of xml.matchAll(/<url>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<lastmod>([^<]+)<\/lastmod>[\s\S]*?<\/url>/g)) {
+        const url = m[1].trim();
+        const lastmod = m[2].trim();
         const slug = url.replace(/\/$/, "").split("/").pop();
-        if (slug) index.set(slug, url);
+        if (slug) {
+          index.set(slug, url);
+          urlLastmods.set(url, lastmod);
+        }
       }
       fetched++;
     } catch (err) {
@@ -126,7 +158,7 @@ async function buildMugsIndex(): Promise<Map<string, string>> {
     }
   }
   console.log(`Loaded ${index.size} URLs from ${fetched} sitemaps.\n`);
-  return index;
+  return { index, urlLastmods };
 }
 
 // ── Page data scraper ─────────────────────────────────────────────────────────
@@ -144,7 +176,7 @@ interface PageData {
   description: string;
 }
 
-async function fetchPageData(pageUrl: string): Promise<PageData> {
+async function fetchPageData(pageUrl: string, attempt = 1): Promise<PageData> {
   try {
     const doc = parse(await fetchText(pageUrl));
 
@@ -190,7 +222,12 @@ async function fetchPageData(pageUrl: string): Promise<PageData> {
     }
 
     return { image_url, year, tags, description };
-  } catch {
+  } catch (err) {
+    if (attempt < 2 && `${err}`.includes("Timeout")) {
+      console.warn(`  [fetchPageData] timeout on attempt ${attempt}, retrying: ${pageUrl}`);
+      return fetchPageData(pageUrl, attempt + 1);
+    }
+    console.warn(`  [fetchPageData error] ${pageUrl}: ${err}`);
     return { image_url: "", year: null, tags: [], description: "" };
   }
 }
@@ -209,31 +246,28 @@ const SCOPE_TAGS = new Set([
 
 const VERSION_TAG_RE = /^v\d+$/;
 
+// Tags that don't end in "-collection" but still represent curated sub-collections
+// worth surfacing as a Browse filter.
+const EXTRA_SUBCOLLECTION_SLUGS = new Set([
+  "pike-place",
+  "pike-place-market",
+]);
+
 function slugToTitle(slug: string): string {
   return slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 
 // ── Sub-collection tag picker ─────────────────────────────────────────────────
-// Filters the raw tag list from a cup page down to the most relevant
-// sub-collection label, excluding series slugs, scope slugs, location slugs,
-// and version tags.
+// A tag qualifies as a sub-collection only if its slug ends with "-collection"
+// (e.g. campus-collection, pin-drop-collection) or is in EXTRA_SUBCOLLECTION_SLUGS.
+// Everything else — series abbreviations, geographic terms, colors, years, cup types
+// — is noise from the tag cloud and should be ignored.
 
-function pickSubCollection(tags: string[], row: OutputRow): string {
-  const locationSlugs = new Set<string>();
-  for (const text of [row.name, row.region, row.country]) {
-    if (!text) continue;
-    const slug = toSlug(text);
-    locationSlugs.add(slug);
-    // Also add individual words so "new-york" excludes "new" and "york" separately
-    for (const part of slug.split("-")) locationSlugs.add(part);
-  }
-
+function pickSubCollection(tags: string[], _row: OutputRow): string {
   for (const tag of tags) {
-    if (SERIES_SLUGS.has(tag)) continue;
-    if (SCOPE_TAGS.has(tag)) continue;
-    if (VERSION_TAG_RE.test(tag)) continue;
-    if (locationSlugs.has(tag)) continue;
-    return slugToTitle(tag);
+    if (tag.endsWith("-collection") || EXTRA_SUBCOLLECTION_SLUGS.has(tag)) {
+      return slugToTitle(tag);
+    }
   }
   return "";
 }
@@ -363,7 +397,7 @@ async function main() {
   if (cacheDir) console.log(`Cache:  ${cacheDir}`);
   console.log("");
 
-  const mugsIndex = await buildMugsIndex();
+  const { index: mugsIndex, urlLastmods } = await buildMugsIndex();
   const rows = buildRows(seriesArg, mugsIndex);
 
   const bySeries: Record<string, number> = {};
@@ -379,12 +413,31 @@ async function main() {
   const withoutUrl = rows.length - withUrl;
   console.log(`\nmore_info_url resolved: ${withUrl} / ${rows.length} (${withoutUrl} blank)`);
 
+  // Load the cache index — maps cache-key → lastmod that was current when the page was fetched.
+  // If the sitemap reports a newer lastmod, the cached file is deleted so fetchText re-fetches.
+  const cacheIndexPath = cacheDir ? path.join(cacheDir, "cache-index.json") : null;
+  const cacheIndex: Record<string, string> = cacheIndexPath && fs.existsSync(cacheIndexPath)
+    ? (() => { try { return JSON.parse(fs.readFileSync(cacheIndexPath, "utf-8")); } catch { return {}; } })()
+    : {};
+
   // Fetch image URLs, years, tags, and descriptions for every entry with a starbucks-mugs.com page
   const rowsWithUrl = rows.filter((r) => r.more_info_url);
   if (rowsWithUrl.length > 0) {
     console.log(`\nFetching page data for ${rowsWithUrl.length} entries (concurrency=5)…`);
     let done = 0;
+    let refreshed = 0;
     await withConcurrency(rowsWithUrl, 5, async (row) => {
+      // Invalidate cached cup page if sitemap reports a newer lastmod than what we last fetched.
+      if (cacheDir && row.more_info_url) {
+        const key = cacheKeyFor(row.more_info_url);
+        const cachePath = path.join(cacheDir, key);
+        const sitemapLastmod = urlLastmods.get(row.more_info_url);
+        if (sitemapLastmod && cacheIndex[key] !== sitemapLastmod && fs.existsSync(cachePath)) {
+          fs.unlinkSync(cachePath);
+          refreshed++;
+        }
+      }
+
       const { image_url, year, tags, description } = await fetchPageData(row.more_info_url);
       row.image_url = image_url;
       if (year !== null) row.year = year;
@@ -392,9 +445,27 @@ async function main() {
       row.sub_collection = pickSubCollection(tags, row);
       // Only store variant_notes on cups whose name ends in a number (e.g. "Atlanta 2")
       if (/\s+\d+$/.test(row.name) && description) row.variant_notes = description;
+
+      // Record the lastmod only if the HTML file was actually written to cache.
+      // If the fetch failed silently, we must NOT stamp the lastmod — otherwise the next
+      // run would see a matching lastmod, trust the (missing) cache, and also get empty data.
+      if (cacheDir && row.more_info_url) {
+        const key = cacheKeyFor(row.more_info_url);
+        const cachePath = path.join(cacheDir, key);
+        const sitemapLastmod = urlLastmods.get(row.more_info_url);
+        if (sitemapLastmod && fs.existsSync(cachePath)) {
+          cacheIndex[key] = sitemapLastmod;
+        }
+      }
+
       done++;
       process.stdout.write(`\r  ${done}/${rowsWithUrl.length}`);
     });
+    // Persist updated cache index so next run knows which pages are fresh.
+    if (cacheIndexPath) {
+      fs.writeFileSync(cacheIndexPath, JSON.stringify(cacheIndex, null, 2), "utf-8");
+    }
+
     const withImage = rows.filter((r) => r.image_url).length;
     const noImage = rows.filter((r) => r.more_info_url && !r.image_url);
     const withSubCollection = rows.filter((r) => r.sub_collection).length;
@@ -403,6 +474,7 @@ async function main() {
     if (noImage.length > 0) {
       noImage.forEach((r) => console.log(`    [no image] ${r.name} (${r.series})`));
     }
+    if (refreshed > 0) console.log(`  pages re-fetched (site updated): ${refreshed}`);
     console.log(`  sub_collection found: ${withSubCollection} / ${rowsWithUrl.length}`);
     console.log(`  variant_notes found:  ${withVariantNotes} cups`);
   }
