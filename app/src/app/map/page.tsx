@@ -155,16 +155,24 @@ export default function MapPage() {
               <p className="text-xs text-white/60 leading-tight">{session.user.householdName}</p>
             )}
           </div>
-          {/* Globe button — zooms to world view of full collection */}
-          <button
-            className="text-xl"
-            title="World view"
-            onClick={() => setWorldViewTick((t) => t + 1)}
-          >
-            🌍
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSearchHere}
+              className="text-xs px-2 py-0.5 rounded-full border border-white/30 text-white/70 hover:border-white/60 hover:text-white active:bg-white/20 transition-colors"
+            >
+              Search here
+            </button>
+            {/* Globe button — zooms to world view of full collection */}
+            <button
+              className="text-xl"
+              title="World view"
+              onClick={() => setWorldViewTick((t) => t + 1)}
+            >
+              🌍
+            </button>
+          </div>
         </div>
-        {/* Controls row — radius chips (GPS only) on left, Search here always on right */}
+        {/* Controls row — radius chips (GPS only) on left, Owned filter on right */}
         <div className="flex items-center justify-between mt-2">
           {userLocation ? (
             <div className="flex items-center gap-2">
@@ -187,24 +195,16 @@ export default function MapPage() {
             </div>
           ) : <div />}
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setOwnedOnly((v) => !v)}
-              className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                ownedOnly
-                  ? "bg-gold text-green-dark border-gold font-semibold"
-                  : "border-white/30 text-white/70 hover:border-white/60"
-              }`}
-            >
-              Owned
-            </button>
-            <button
-              onClick={handleSearchHere}
-              className="text-xs px-2 py-0.5 rounded-full border border-white/30 text-white/70 hover:border-white/60 hover:text-white active:bg-white/20 transition-colors"
-            >
-              Search here
-            </button>
-          </div>
+          <button
+            onClick={() => setOwnedOnly((v) => !v)}
+            className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+              ownedOnly
+                ? "bg-gold text-green-dark border-gold font-semibold"
+                : "border-white/30 text-white/70 hover:border-white/60"
+            }`}
+          >
+            Owned
+          </button>
         </div>
 
         {searchCenter && !isFetchingStores && stores.length === 0 && (
