@@ -97,7 +97,7 @@ gen-auth-secret</pre>
 <p>Or without the dev shell:</p>
 <pre>openssl rand -base64 32</pre>
 
-<p>Create the secrets file using your secrets manager (sops-nix, agenix, etc.). The module generates <code>NEXTAUTH_URL</code>, <code>POCKETBASE_URL</code>, and <code>POCKETID_ISSUER_URL</code> automatically, and household records are declared as a module option — only these six secrets are needed:</p>
+<p>Create the secrets file using your secrets manager (sops-nix, agenix, etc.). The module generates <code>NEXTAUTH_URL</code>, <code>POCKETBASE_URL</code>, <code>POCKETID_ISSUER_URL</code>, and <code>NEXT_CACHE_DIR</code> automatically, and household records are declared as a module option — only these six secrets are needed:</p>
 <pre>POCKETID_CLIENT_ID=cup-collector-abc123
 POCKETID_CLIENT_SECRET=your-client-secret
 AUTH_SECRET=&lt;output of gen-auth-secret&gt;

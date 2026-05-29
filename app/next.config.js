@@ -33,6 +33,11 @@ const nextConfig = {
   // Node server that doesn't need node_modules at runtime.
   output: "standalone",
 
+  // Redirect prerender cache to NEXT_CACHE_DIR (set by the systemd service).
+  // The Nix store is read-only, so the default .next/cache path would fail.
+  cacheHandler: new URL("./cache-handler.cjs", import.meta.url).pathname,
+  cacheMaxMemorySize: 0,
+
   // Allow Playwright's 127.0.0.1 origin and any extra dev origins to access
   // Next.js dev resources (HMR, etc.).
   // NEXT_DEV_ORIGIN  — single origin (e.g. a Tailscale IP)

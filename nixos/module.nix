@@ -13,6 +13,7 @@ let
       NEXTAUTH_URL=https://${cfg.domain}
       POCKETBASE_URL=http://localhost:${toString cfg.pbPort}
       POCKETID_ISSUER_URL=${cfg.pocketidIssuerUrl}
+      NEXT_CACHE_DIR=/var/cache/cup-collector
     ''
     + lib.optionalString (cfg.pbDomain != null) ''
       POCKETBASE_PUBLIC_URL=https://${cfg.pbDomain}
@@ -256,6 +257,7 @@ in
         ];
         DynamicUser = true;
         StateDirectory = "cup-collector";
+        CacheDirectory = "cup-collector";
         Restart = "on-failure";
         RestartSec = "5s";
       };

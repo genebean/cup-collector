@@ -45,3 +45,6 @@ scripts/data/*.geojson
 
 # Dev stack log files (written by cc-dev-stack; read by agents and tail)
 .dev-logs/
+
+# Next.js prerender cache (dev; production uses /var/cache/cup-collector via systemd)
+.next-cache/
