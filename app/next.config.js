@@ -49,6 +49,9 @@ const nextConfig = {
   ],
 
   images: {
+    // Route image optimization cache through the custom handler so it writes
+    // to NEXT_CACHE_DIR instead of the read-only Nix store.
+    customCacheHandler: true,
     // Allow Next.js Image component to load cup photos from PocketBase.
     remotePatterns: [
       {
