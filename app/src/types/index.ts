@@ -51,7 +51,7 @@ export interface OwnedCup {
   acquired_date: string; // ISO date string, optional
   own_photo: string; // PocketBase file token, optional
   // Condition tracking (added in migration 003)
-  needs_replacing: boolean; // true = action item; map pins and badges show orange like unowned
+  needs_replacing: boolean; // true = action item; shown in gold distinct from green (owned) and orange (unowned)
   replacement_note: string; // optional free-text reason (e.g. "cracked lid")
   // Where the cup was acquired — pre-populated from nearby Starbucks list
   acquired_store_name: string;

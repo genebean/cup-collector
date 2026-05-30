@@ -37,7 +37,7 @@ export function CupCard({ cup, variantCount, ownedVariants, imageCup, onClick }:
       <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">Needed</span>
     )
   ) : cup.isOwned && cup.ownedRecord?.needs_replacing ? (
-    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">Needs Replacing</span>
+    <span className="text-xs font-medium text-gold-dark dark:text-yellow-300 bg-gold-light dark:bg-yellow-900/30 px-2 py-0.5 rounded-full">Needs Replacing</span>
   ) : cup.isOwned ? (
     <span className="text-xs font-medium text-green-starbucks dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">Owned</span>
   ) : (

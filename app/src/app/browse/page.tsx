@@ -212,13 +212,37 @@ export default function BrowsePage() {
       );
     }
 
-    // Near Me — explicit opt-in sort toggle; use base cup coordinates
+    // Near Me — explicit opt-in sort toggle.
+    // State/country cups use the distance to the nearest city cup in their
+    // region/country rather than their own lat/lng (which is a geographic center
+    // that may rank them behind a neighbouring state's center even when the user
+    // is standing inside the state).
     if (nearMe && userLocation) {
+      const loc = userLocation;
+      const cityCupsByRegion = new Map<string, number>();
+      const cityCupsByCountry = new Map<string, number>();
+      for (const { base } of baseGroups) {
+        if (base.scope && base.scope !== "city") continue;
+        const d = haversineMi(loc, base);
+        if (base.region) {
+          const prev = cityCupsByRegion.get(base.region) ?? Infinity;
+          if (d < prev) cityCupsByRegion.set(base.region, d);
+        }
+        if (base.country_code) {
+          const prev = cityCupsByCountry.get(base.country_code) ?? Infinity;
+          if (d < prev) cityCupsByCountry.set(base.country_code, d);
+        }
+      }
+      const distanceTo = (base: (typeof baseGroups)[number]["base"]): number => {
+        if (base.scope === "state" && base.region) return cityCupsByRegion.get(base.region) ?? haversineMi(loc, base);
+        if (base.scope === "country" && base.country_code) return cityCupsByCountry.get(base.country_code) ?? haversineMi(loc, base);
+        return haversineMi(loc, base);
+      };
       groups.sort((a, b) => {
-        const aAllOwned = a.members.every((c) => c.isOwned);
-        const bAllOwned = b.members.every((c) => c.isOwned);
-        if (aAllOwned !== bAllOwned) return aAllOwned ? 1 : -1;
-        return haversineMi(userLocation, a.base) - haversineMi(userLocation, b.base);
+        const aAllGood = a.members.every((c) => c.isOwned && !c.ownedRecord?.needs_replacing);
+        const bAllGood = b.members.every((c) => c.isOwned && !c.ownedRecord?.needs_replacing);
+        if (aAllGood !== bAllGood) return aAllGood ? 1 : -1;
+        return distanceTo(a.base) - distanceTo(b.base);
       });
     }
 

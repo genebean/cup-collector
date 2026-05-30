@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CupWithOwnership } from "@/types";
-import { groupByVariant } from "@/lib/variants";
+import { groupByVariant, groupNeedsAction } from "@/lib/variants";
 
 interface Props {
   cups: CupWithOwnership[];
@@ -42,9 +42,10 @@ export function MapBottomSheet({ cups }: Props) {
           </p>
         ) : (
           groups.map(({ base, members }) => {
-            const anyNeedsReplacing = members.some((c) => c.isOwned && c.ownedRecord?.needs_replacing);
             const anyOwned = members.some((c) => c.isOwned);
-            const isGreen = anyOwned && !anyNeedsReplacing;
+            const needsAction = groupNeedsAction(members);
+            const isGreen = anyOwned && !needsAction;
+            const isGold  = anyOwned && needsAction;
             const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
             return (
               <button
@@ -55,7 +56,7 @@ export function MapBottomSheet({ cups }: Props) {
               >
                 <span
                   className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: isGreen ? "#00704A" : "#f97316" }}
+                  style={{ backgroundColor: isGreen ? "#00704A" : isGold ? "#CBA258" : "#f97316" }}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
@@ -77,10 +78,10 @@ export function MapBottomSheet({ cups }: Props) {
                 </div>
                 <span
                   className={`text-xs font-medium flex-shrink-0 ${
-                    isGreen ? "text-green-starbucks dark:text-green-400" : "text-map-orange dark:text-orange-400"
+                    isGreen ? "text-green-starbucks dark:text-green-400" : isGold ? "text-gold-dark dark:text-yellow-300" : "text-map-orange dark:text-orange-400"
                   }`}
                 >
-                  {anyNeedsReplacing ? "Needs Replacing" : anyOwned ? "Owned" : "Needed"}
+                  {isGold ? "Needs Replacing" : anyOwned ? "Owned" : "Needed"}
                 </span>
               </button>
             );
