@@ -52,7 +52,7 @@ export default async function SettingsPage() {
 
         {/* App info */}
         <Section title="App">
-          <Row label="Version" value={process.env.npm_package_version ?? "0.1.0"} />
+          <Row label="Version" value={process.env.APP_VERSION ?? "dev"} />
           <Link
             href="/docs"
             className="flex justify-between px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 transition-colors"
