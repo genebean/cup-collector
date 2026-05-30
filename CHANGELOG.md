@@ -2,6 +2,20 @@
 
 All notable changes to Cup Collector are documented here.
 
+## [1.0.2] - 2026-05-30
+
+### Bug Fixes
+
+- Replace sign-in server actions with next-auth/react client calls
+
+- Isolate server cache by build ID and propagate SW updates on deploy
+
+
+### Documentation
+
+- Document release workflow in AGENTS.md
+
+
 ## [1.0.1] - 2026-05-30
 
 ### Bug Fixes
@@ -16,6 +30,11 @@ All notable changes to Cup Collector are documented here.
 - Expand AGENTS.md with commit hygiene, verification, and branch workflow
 
 - Add Adding a Household operator guide
+
+
+### Miscellaneous
+
+- Release v1.0.1
 
 
 ## [1.0.0] - 2026-05-27
