@@ -73,7 +73,18 @@
   <li><strong>Near Me</strong> — sorts unowned cups closest to you first (only appears when location is active)</li>
 </ul>
 <p>The <strong>search bar</strong> at the top filters by cup name, country, or series as you type. Tap the <strong>×</strong> inside the box to clear it. All filters combine — for example, "You Are Here" series + "Japan" country + "Still Need" gives you only the Japanese You Are Here cups you still need.</p>
-<p>When you tap the <strong>⚠ needs replacing</strong> warning on the <a href="stats.html">Stats</a> page, Browse opens with a special <strong>Needs Replacing</strong> filter active. An orange banner at the top of the filter area shows this filter is on — tap <strong>✕</strong> on the banner to clear it and return to the normal view.</p>
+<p>When you tap the <strong>⚠ needs replacing</strong> warning on the <a href="stats.html">Stats</a> page, Browse opens with a special <strong>Needs Replacing</strong> filter active. A gold banner at the top of the filter area shows this filter is on — tap <strong>✕</strong> on the banner to clear it and return to the normal view.</p>
+
+<div class="screenshot-pair">
+  <figure>
+    <img class="phone-screenshot" src="../img/browse-needs-replacing-banner.webp" alt="Browse screen in light mode with the gold Showing cups that need replacing banner active, showing Clemson University and Oregon with gold Needs Replacing badges">
+    <figcaption>Light mode</figcaption>
+  </figure>
+  <figure>
+    <img class="phone-screenshot" src="../img/browse-needs-replacing-banner-dark.webp" alt="Browse screen in dark mode with the same gold banner and Needs Replacing badges">
+    <figcaption>Dark mode</figcaption>
+  </figure>
+</div>
 
 <div class="callout tip">
   <strong>Filters persist when you navigate away</strong>
@@ -115,6 +126,17 @@
 </ul>
 <p>In the Browse list, themed cups show a small <strong>"themed"</strong> badge next to their name. On the cup detail screen, the subtitle identifies the scope: <em>State Cup</em>, <em>Country Cup</em>, or <em>Special Edition</em>. City cups and ornaments have no scope prefix.</p>
 
+<div class="screenshot-pair">
+  <figure>
+    <img class="phone-screenshot" src="../img/browse-list.webp" alt="Browse screen showing cups list with Atlanta and Alabama partially owned, Auburn University and Alabama Discovery Series needed, and Clemson University showing a gold Needs Replacing badge">
+    <figcaption>Standard cups list</figcaption>
+  </figure>
+  <figure>
+    <img class="phone-screenshot" src="../img/browse-themed.webp" alt="Browse screen filtered to the Themed scope showing Disneyland Paris, Disneyland Park, Endor, and Epcot cups with a Themed badge on each row and Endor Been There marked as Owned">
+    <figcaption>Filtered to Themed cups</figcaption>
+  </figure>
+</div>
+
 <h2 id="cup-detail">Cup detail</h2>
 <p>Tap any cup in the Browse list to open the <strong>Cup Detail screen</strong>. The Browse thumbnail and the detail hero both show the image of the <strong>newest version</strong> (highest-numbered variant) when multiple versions exist. This shows:</p>
 <ul>
@@ -128,10 +150,15 @@
 </ul>
 <p>Tap the cup image to view it full-size. Tap anywhere outside it or swipe down to dismiss.</p>
 
-<div class="screenshot-placeholder">
-  <span class="ph-icon">📋</span>
-  <span class="ph-label">Screenshot: Cup Detail screen showing image, series info, external links, My Notes, and ownership card</span>
-</div>
+<figure>
+  <img class="phone-screenshot" src="../img/cup-detail.webp" alt="Cup Detail screen for Atlanta Discovery Series 2020 showing the cup photo, city and series metadata, a View on map link, the ownership card with an Owned badge and starbucks-mugs.com link, condition tracking showing In good condition, a Remove from Collection button, My Notes text area, and nearby Starbucks with Acquired here buttons">
+  <figcaption>Cup Detail screen — image, metadata, ownership status, condition, notes, and nearby stores</figcaption>
+</figure>
+
+<figure>
+  <img class="phone-screenshot" src="../img/cup-detail-needs-replacing.webp" alt="Cup Detail screen for Clemson University Been There 2019 showing the cup photo, metadata including Campus Collection, and an ownership card with a gold Needs Replacing badge">
+  <figcaption>When a cup needs replacing, the ownership card shows a gold "Needs Replacing" badge</figcaption>
+</figure>
 
 <h2 id="notes">My Notes</h2>
 <p>Each cup has a <strong>My Notes</strong> section on its detail screen — a free-text area for your household's personal notes about that cup (separate from the catalog notes that come from the import). For example: where you saw it in the wild, a note about a specific variant, or a reminder to look for it in a particular city.</p>
@@ -146,8 +173,24 @@
   <strong>Viewers cannot mark cups as owned</strong>
   The ownership button is only visible to household owners. If you don't see it, your account has Viewer access — ask the household owner to update your role in PocketID.
 </div>
-<p>On the Cup Detail screen, tap <strong>"✓ Mark as Owned"</strong>. The button changes immediately and all other household members' apps update within a second or two — no manual syncing needed.</p>
-<p>To remove a cup from your collection, tap <strong>"Remove from Collection"</strong> on a cup that's already owned.</p>
+<p>There are three ways to mark a cup as owned:</p>
+<ul>
+  <li><strong>Swipe in the Browse list</strong> — <a href="#swipe">swipe left</a> on any cup row to reveal a quick action button. Tap <strong>Mark Owned</strong> to add it, or <strong>Unmark</strong> to remove it. Fastest when working through a list.</li>
+  <li><strong>Mark as Owned button</strong> — open the Cup Detail screen and tap <strong>"✓ Mark as Owned"</strong>. To remove, tap <strong>"Remove from Collection"</strong>.</li>
+  <li><strong>Acquired here</strong> — on the Cup Detail screen, tap <strong>Acquired here</strong> next to a nearby Starbucks. This marks the cup as owned <em>and</em> records the store where you got it in one tap.</li>
+</ul>
+<p>Any of these changes take effect immediately and all other household members' apps update within a second or two — no manual syncing needed.</p>
+
+<div class="screenshot-pair">
+  <figure>
+    <img class="phone-screenshot" src="../img/browse-swipe.webp" alt="Browse screen filtered to Discovery Series with Auburn University swiped left, revealing a green Mark Owned button on the right side of the row">
+    <figcaption>Swipe to own from the Browse list</figcaption>
+  </figure>
+  <figure>
+    <img class="phone-screenshot" src="../img/cup-detail-mark-owned.webp" alt="Cup Detail screen for Auburn University showing a gold Mark as Owned button, My Notes section, and a Nearby Starbucks entry with an Acquired here button">
+    <figcaption>Mark as Owned button or Acquired here on the detail screen</figcaption>
+  </figure>
+</div>
 
 <h2 id="condition">Condition tracking</h2>
 <p>Once a cup is marked as owned, a <strong>Condition card</strong> appears on its detail screen. By default the status shows <em>In good condition</em>.</p>
@@ -157,19 +200,42 @@
   <li>Add an optional note explaining why (e.g. "cracked lid")</li>
   <li>Tap <strong>Save</strong> to commit, or <strong>Cancel</strong> to discard</li>
 </ul>
-<p>Cups flagged as needing replacement show a <strong>Needs Replacing</strong> badge in the Browse list so they're easy to spot.</p>
+<p>Cups flagged as needing replacement show a gold <strong>Needs Replacing</strong> badge in the Browse list and a gold map pin — easy to spot without being confused with cups you don't own at all.</p>
+
+<div class="screenshot-pair">
+  <figure>
+    <img class="phone-screenshot" src="../img/cup-detail-condition-edit.webp" alt="Cup Detail screen for Clemson University in condition edit mode — Needs replacing checkbox checked, a note reading Chipped entered, and Cancel and Save buttons visible">
+    <figcaption>Editing the condition — check Needs replacing and add an optional note</figcaption>
+  </figure>
+  <figure>
+    <img class="phone-screenshot" src="../img/cup-detail-condition-saved.webp" alt="Cup Detail screen for Clemson University after saving condition — showing Needs replacing — Chipped with an Edit button, and a Remove from Collection button below">
+    <figcaption>Saved condition — the reason note helps you remember what to look for</figcaption>
+  </figure>
+</div>
 
 <h2 id="provenance">Recording where you got it</h2>
 <p>When you mark a cup as owned, the Condition card shows a list of nearby Starbucks locations. Tap <strong>Acquired here</strong> next to the store where you found the cup. The store name and address are saved to the cup's record and shown on the detail screen for future reference.</p>
 
+<figure>
+  <img class="phone-screenshot" src="../img/cup-detail-acquired.webp" alt="Cup Detail screen for Auburn University Discovery Series 2020 scrolled to the Nearby Starbucks section, showing six Starbucks locations in Auburn and Opelika Alabama each with an Acquired here button and a Maps arrow button">
+  <figcaption>Nearby Starbucks on the cup detail — tap "Acquired here" to record where you got it</figcaption>
+</figure>
+
 <h2 id="photo">Uploading your own photo</h2>
-<p>Once a cup is owned, a <strong>camera button</strong> appears on the hero image. Tap it to choose or take a photo — your photo replaces the catalog image for that cup in your household's view.</p>
-<p>To remove your personal photo and revert to the catalog image, tap the <strong>trash button</strong> that appears alongside the camera button. Both buttons are owner-only.</p>
+<p>Once a cup is owned, a <strong>📷 camera button</strong> appears in the bottom-right corner of the cup thumbnail inside the version card. Tap it to choose or take a photo — your photo replaces the catalog image for that cup in your household's view.</p>
+
+<figure>
+  <img class="phone-screenshot" src="../img/cup-detail-owned.webp" alt="Cup Detail screen for Endor Been There 2019 — a Special Edition cup — showing the hero image, metadata with No map pin for this cup type, and the version card with Owned badge, Star Wars catalog note, starbucks-mugs.com link, and the condition card showing In good condition">
+  <figcaption>Cup detail for an owned Special Edition cup — the 📷 camera button appears on the thumbnail in the version card</figcaption>
+</figure>
+
+<p>To remove your personal photo and revert to the catalog image, tap the <strong>🗑️ trash button</strong> that appears in the bottom-left corner of the thumbnail. Both buttons are owner-only.</p>
 
 <nav class="page-nav">
   <a class="prev" href="map-view.html">Map View</a>
   <a class="next" href="stats.html">Collection Stats</a>
 </nav>
 
+<script src="../shared.js"></script>
 </body>
 </html>

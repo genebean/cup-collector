@@ -51,6 +51,8 @@
               deadnix # Nix dead-code linter — used by pre-commit nixfmt hook
               nixfmt-tree # Nix formatter — used by `nix fmt` and pre-commit
               git-cliff # changelog generator — used by cc-gen-changelog
+              libwebp # cwebp — convert screenshots to WebP for docs/img/
+              exiftool # strip EXIF metadata from screenshots before committing
               # PocketBase runs via podman (matches production; stays current automatically).
               # typescript and ts-node are installed as npm devDependencies in app/
               # and invoked via `npx` — this avoids node-version mismatches in nixpkgs.

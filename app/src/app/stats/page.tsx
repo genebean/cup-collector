@@ -384,7 +384,15 @@ export default function StatsPage() {
       <OfflineBanner />
 
       <header className="bg-green-dark text-white px-4 py-3 header-safe-top sticky top-0 z-10 flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-xl cursor-pointer">←</button>
+        <button
+          onClick={() => {
+            if (selectedRegion) { setSelectedRegion(null); }
+            else if (selectedCountry) { setSelectedCountry(null); }
+            else if (selectedTheme) { setSelectedTheme(null); }
+            else { router.back(); }
+          }}
+          className="text-xl cursor-pointer"
+        >←</button>
         <h1 className="font-bold text-lg">Collection Stats</h1>
       </header>
 

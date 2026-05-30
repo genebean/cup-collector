@@ -62,8 +62,19 @@
 </ul>
 <p>This preference is stored on your device only — it doesn't affect other household members' devices.</p>
 
+<div class="screenshot-pair">
+  <figure>
+    <img class="phone-screenshot" src="../img/settings-light.webp" alt="Settings screen in light mode showing Household name, Appearance toggle with System selected, App section with version and Documentation and Changelog links, Collection section with What I Collect, Admin section with Import Cups and Duplicate Cups, and a Sign Out button">
+    <figcaption>Light mode</figcaption>
+  </figure>
+  <figure>
+    <img class="phone-screenshot" src="../img/settings-dark.webp" alt="Settings screen in dark mode showing the same sections as light mode but with a dark background">
+    <figcaption>Dark mode</figcaption>
+  </figure>
+</div>
+
 <h2 id="app">App</h2>
-<p>The App section shows the current app version and a <strong>Documentation →</strong> link. Tapping it opens the in-app documentation at <code>/docs</code> — the same content as these pages, but served directly from the app without needing a separate browser tab. From within those docs pages, a <strong>← App</strong> link in the top bar takes you back.</p>
+<p>The App section shows the current app version, a <strong>Documentation →</strong> link, and a <strong>Changelog →</strong> link. Documentation opens the in-app docs at <code>/docs</code> — the same content as these pages, served directly from the app. Changelog shows what changed in each release. Both pages include a <strong>← App</strong> link in the top bar to return to the app.</p>
 
 <h2 id="what-i-collect">What I Collect</h2>
 <p>Tap <strong>"What I Collect"</strong> to open the collection preferences screen. This lets you tell the app which types of cups and series your household tracks.</p>
@@ -76,6 +87,11 @@
 
 <h3 id="series">Series</h3>
 <p>Each cup series (You Are Here, Been There, Discovery Series, etc.) has its own toggle. Turn off any series you don't collect and those cups disappear from Browse and the map — keeping the view focused on what matters to you.</p>
+
+<figure>
+  <img class="phone-screenshot" src="../img/settings-what-i-collect.webp" alt="What I Collect screen showing Item Types with Mugs always tracked and Ornaments off, and Series section with Been There, Been There Disney Parks, Been There Marvel, Discovery Series, and You Are Here toggled on, and Icon Mini and Relief toggled off">
+  <figcaption>What I Collect — choose which item types and series to track</figcaption>
+</figure>
 
 <div class="callout">
   <strong>Owned cups always stay visible</strong>
@@ -93,7 +109,11 @@
 </div>
 
 <h2 id="admin">Admin <span style="font-size:0.75rem; font-weight:400; color:#6b6457;">(owners only)</span></h2>
-<p>Owners see an <strong>Import Cups</strong> link in the Admin section. This opens the in-app cup import tool — upload a CSV file, preview what will change, and apply the import. For large catalog updates, the CLI script in the dev shell is faster; see <a href="../maintenance/adding-cups.html">Adding Cups</a>.</p>
+<p>Owners see two links in the Admin section:</p>
+<ul>
+  <li><strong>Import Cups →</strong> — opens the in-app cup import tool. Upload a CSV file, preview what will change, and apply the import. For large catalog updates, the CLI script in the dev shell is faster; see <a href="../maintenance/adding-cups.html">Adding Cups</a>.</li>
+  <li><strong>Duplicate Cups →</strong> — opens a tool to find and merge duplicate cup records in the catalog.</li>
+</ul>
 
 <h2 id="sign-out">Sign Out</h2>
 <p>Tap <strong>Sign Out</strong> to end your session. You'll be returned to the login screen. Your collection data stays on the server.</p>
@@ -103,5 +123,6 @@
   <a class="next" href="../index.html">Docs Home</a>
 </nav>
 
+<script src="../shared.js"></script>
 </body>
 </html>

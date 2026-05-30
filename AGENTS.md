@@ -252,8 +252,9 @@ Which cups the household has collected. Ownership = record existence.
 A cup is owned if and only if a record exists in `owned_cups` with the matching
 household ID and cup ID. To un-own, delete the record.
 
-Cups with `needs_replacing: true` are visually treated like unowned cups (orange
-map pins, orange badge) because they are action items requiring attention.
+Cups with `needs_replacing: true` are shown with gold map pins and a gold badge
+because they are action items requiring attention — distinct from orange (unowned)
+so they stand out without being confused with cups you don't have at all.
 
 ### PocketBase Access Rules
 

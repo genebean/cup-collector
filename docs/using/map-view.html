@@ -45,16 +45,17 @@
 
 <h2 id="pin-colors" class="no-rule">Pin colors</h2>
 <div class="pin-legend">
-  <div class="pin-row"><div class="pin-cell"><div class="pin pin-green"></div></div><span><strong>Green</strong> — a cup you own</span></div>
+  <div class="pin-row"><div class="pin-cell"><div class="pin pin-green"></div></div><span><strong>Green</strong> — a cup you own, in good condition</span></div>
+  <div class="pin-row"><div class="pin-cell"><div class="pin pin-gold"></div></div><span><strong>Gold</strong> — a cup you own that needs replacing</span></div>
   <div class="pin-row"><div class="pin-cell"><div class="pin pin-orange"></div></div><span><strong>Orange</strong> — a cup you still need</span></div>
   <div class="pin-row"><div class="pin-cell"><div class="pin pin-blue"></div></div><span><strong>Blue</strong> — a nearby Starbucks store</span></div>
   <div class="pin-row"><div class="pin-cell"><div class="pin-you"></div></div><span><strong>Pulsing blue dot</strong> — your current location</span></div>
 </div>
 
-<div class="screenshot-placeholder">
-  <span class="ph-icon">🗺️</span>
-  <span class="ph-label">Screenshot: map showing green pins (owned), orange pins (needed), and blue store pins</span>
-</div>
+<figure>
+  <img class="phone-screenshot" src="../img/map-pin-colors.webp" alt="Map showing a green owned pin near Atlanta, a gold needs-replacing pin near Clemson, an orange needed pin near Columbus, and several blue Starbucks store pins, with 19 cups in view shown in the bottom sheet handle">
+  <figcaption>All pin colors visible — green (owned), gold (needs replacing), orange (still needed), blue (Starbucks stores)</figcaption>
+</figure>
 
 <h2 id="navigating">Zooming and navigating</h2>
 <ul>
@@ -66,9 +67,25 @@
 
 <h2 id="tapping">Tapping pins</h2>
 <ul>
-  <li><strong>Tap a cup pin</strong> (green or orange) — opens a popup with the cup name, series, and year. Tap <strong>"View details"</strong> to go to the full Cup Detail screen. City cup popups also list any themed cups associated with that location.</li>
+  <li><strong>Tap a cup pin</strong> (green, gold, or orange) — opens a popup with the cup name, series, and year. Tap <strong>"View details"</strong> to go to the full Cup Detail screen. City cup popups also list any themed cups associated with that location.</li>
   <li><strong>Tap a Starbucks pin</strong> (blue) — opens a popup with the store name and address, a list of cups you still need that might be sold there, and a "Get directions" link that opens Apple Maps.</li>
 </ul>
+
+<figure>
+  <img class="phone-screenshot" src="../img/map-pin-tap.webp" alt="Map with an orange Auburn University pin tapped, showing a popup listing Auburn University Discovery Series 2020 as Needed, Alabama Discovery Series 2020 as Needed, and two Alabama variants under Already owned">
+  <figcaption>Tapping an orange pin — the popup shows what's needed and what you already own at that location</figcaption>
+</figure>
+
+<div class="screenshot-pair">
+  <figure>
+    <img class="phone-screenshot" src="../img/map-starbucks-popup.webp" alt="Map in light mode with a blue Starbucks pin tapped, showing a popup for Starbucks Coffee Company on S College St Auburn AL, listing Auburn University Discovery Series 2020 and Alabama Discovery Series 2020 as Needed, and two Alabama variants under Already owned, with a Get directions link">
+    <figcaption>Tapping a blue Starbucks pin — light mode</figcaption>
+  </figure>
+  <figure>
+    <img class="phone-screenshot" src="../img/map-starbucks-popup-dark.webp" alt="Same Starbucks popup in dark mode">
+    <figcaption>Dark mode</figcaption>
+  </figure>
+</div>
 
 <div class="callout tip">
   <strong>Themed cups have no map pin</strong>
@@ -77,12 +94,28 @@
 
 <h2 id="cups-in-view">Cups in view</h2>
 <p>A collapsible <strong>bottom sheet</strong> is always present at the bottom of the map screen. It shows a handle labeled <em>"X cups in view"</em> — the number of cup pins visible in the current map viewport.</p>
-<p>Tap the handle to expand the panel. It lists every cup currently visible on the map — both owned (green) and still needed (orange) — including a <strong>Needs Replacing</strong> badge for any owned cups flagged with condition issues. Tap any row to open that cup's detail screen.</p>
+<p>Tap the handle to expand the panel. It lists every cup currently visible on the map — owned (green), needing replacement (gold), and still needed (orange) — with a <strong>⚠ Needs replacing</strong> label in gold for any cups flagged with condition issues. Tap any row to open that cup's detail screen.</p>
 <p>The count and list update automatically as you pan or zoom.</p>
+
+<figure>
+  <img class="phone-screenshot" src="../img/map-needs-replacing.webp" alt="Map bottom sheet expanded showing Charlotte owned in green, two Charlotte versions needed in orange, and Clemson University flagged as needing replacement with gold text">
+  <figcaption>Bottom sheet expanded — the gold "⚠ Needs replacing" label identifies cups that need attention</figcaption>
+</figure>
 
 <h2 id="owned-filter">Showing only owned cups</h2>
 <p>Tap the <strong>Owned</strong> chip in the map header to hide all unowned cup pins and show only the cups already in your collection. The chip turns gold when active. Tap it again to restore the full view.</p>
 <p>This is useful for quickly seeing your collection's geographic spread, or for checking which cups you already have before visiting a new city.</p>
+
+<div class="screenshot-pair">
+  <figure>
+    <img class="phone-screenshot" src="../img/map-owned-filter.webp" alt="Map in light mode with the Owned filter chip highlighted in gold, showing only green owned pins and gold needs-replacing pins across the eastern United States, with 52 cups in view">
+    <figcaption>Light mode</figcaption>
+  </figure>
+  <figure>
+    <img class="phone-screenshot" src="../img/map-owned-filter-dark.webp" alt="Map in dark mode with the Owned filter chip highlighted in gold, showing the same green and gold pins on a dark map background">
+    <figcaption>Dark mode</figcaption>
+  </figure>
+</div>
 
 <h2 id="location">Location permission</h2>
 <p>The app asks for your location when it first opens. If you allow it:</p>
@@ -113,5 +146,6 @@
   <a class="next" href="browsing.html">Browsing &amp; Searching</a>
 </nav>
 
+<script src="../shared.js"></script>
 </body>
 </html>
