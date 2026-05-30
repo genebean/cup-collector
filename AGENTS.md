@@ -407,6 +407,45 @@ server-side only, personal use stays in free tier.
 
 ---
 
+## Release Workflow
+
+Patch and minor releases follow this exact sequence. Do not deviate.
+
+### Before opening the PR
+1. **Bump versions** in three files — all must match:
+   - `app/package.json` → `"version"` field
+   - `app/package-lock.json` → top-level `"version"` and the `""` package entry (two spots)
+   - `pkgs/app.nix` → `version` attribute
+2. **Update `npmDepsHash`** in `pkgs/app.nix` — bumping the version in
+   `package-lock.json` changes the hash. Set it to `pkgs.lib.fakeHash`, run
+   `nix build`, copy the `got:` hash from the error, paste it in, run again.
+3. **Generate the changelog**: `cc-gen-changelog --tag vX.Y.Z` — rewrites
+   `CHANGELOG.md` in place. Run `cc-check` after to fix the trailing-newline
+   hook if it fires.
+4. **Commit** everything as a single `chore: release vX.Y.Z` commit.
+5. **Tag locally only**: `git tag vX.Y.Z` — do NOT push the tag yet.
+6. **Open the PR** and wait for CI. If nix build fails with a hash mismatch,
+   amend the commit with the correct hash, re-tag with `git tag -f vX.Y.Z`,
+   and force-push.
+
+### After the PR merges
+7. **Pull main**: `git checkout main && git pull`
+8. **Push the tag**: `git push origin vX.Y.Z`
+9. **Create the GitHub release**:
+   ```
+   gh release create vX.Y.Z --generate-notes --title "v X.Y.Z"
+   ```
+   Review the generated notes and edit if needed.
+10. **Clean up** the local release branch: `git branch -d release/vX.Y.Z`
+
+### Key gotchas
+- `package-lock.json` has the version in **two places** — root and the `""` packages entry
+- `npmDepsHash` must always be recomputed after any `package-lock.json` change
+- Tag stays local until after merge — pushing it early triggers CI/CD on a moving target
+- Do not `git push --tags` — push the specific tag by name to avoid accidentally pushing stale tags
+
+---
+
 ## NixOS Module Pattern
 
 - Module lives in `nixos/module.nix`, exported as `nixosModules.default` from `flake.nix`
