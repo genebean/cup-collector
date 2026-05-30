@@ -272,6 +272,17 @@ in
           extraConfig = ''
             client_max_body_size ${cfg.maxBodySize};
           '';
+          # Service worker script must never be served from HTTP cache —
+          # stale sw.js prevents SW updates from reaching installed PWAs.
+          # Browsers cap SW script max-age at 24h, but no-cache forces a
+          # revalidation request on every page load instead.
+          locations."= /sw.js" = {
+            proxyPass = "http://127.0.0.1:${toString cfg.port}";
+            extraConfig = ''
+              add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+              expires 0;
+            '';
+          };
           locations."/" = {
             proxyPass = "http://127.0.0.1:${toString cfg.port}";
             # proxyWebsockets covers both WebSocket upgrades and SSE (realtime sync)

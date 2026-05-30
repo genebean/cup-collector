@@ -1,4 +1,7 @@
+import { createRequire } from "node:module";
 import nextPWA from "@ducanh2912/next-pwa";
+
+const _require = createRequire(import.meta.url);
 
 const withPWA = nextPWA({
   dest: "public",
@@ -6,6 +9,11 @@ const withPWA = nextPWA({
   // plugin, which conflicted with Next.js 16 and forced Turbopack on. The SW is
   // only useful in production anyway (offline caching, installability).
   disable: process.env.NODE_ENV === "development",
+  // Activate new service workers immediately on deploy so stale client bundles
+  // (which cause "Server Action not found" mismatches) are replaced right away.
+  // clientsClaim takes control of already-open tabs without waiting for a reload.
+  skipWaiting: true,
+  clientsClaim: true,
   // Network First for API/data routes — always try live data, fall back to cache
   // Cache First for static assets — icons, fonts, cup images load fast offline
   runtimeCaching: [
@@ -35,7 +43,7 @@ const nextConfig = {
 
   // Redirect prerender cache to NEXT_CACHE_DIR (set by the systemd service).
   // The Nix store is read-only, so the default .next/cache path would fail.
-  cacheHandler: new URL("./cache-handler.cjs", import.meta.url).pathname,
+  cacheHandler: _require.resolve("./cache-handler.cjs"),
   cacheMaxMemorySize: 0,
 
   // Allow Playwright's 127.0.0.1 origin and any extra dev origins to access
