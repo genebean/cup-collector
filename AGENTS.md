@@ -120,10 +120,13 @@ cup-collector/
 | `nix build` | Builds the Next.js app as a Nix package (standalone output) |
 | `nixosModules.default` | NixOS module consumed by the `genebean/dots` repo |
 
-**Getting/updating npmDepsHash in flake.nix:**
-After any `package-lock.json` change, run `nix build` from the repo root. It
-will fail and print the correct hash in the error output. Copy that value into
-`flake.nix` as `npmDepsHash`.
+**Getting/updating npmDepsHash in pkgs/app.nix:**
+After any `package-lock.json` change, compute the hash directly — no failed
+build needed:
+```
+nix run nixpkgs#prefetch-npm-deps app/package-lock.json
+```
+Copy the printed `sha256-...` value into `pkgs/app.nix` as `npmDepsHash`.
 
 **Run `nix build` before pushing** any change to `flake.nix`, `next.config.js`,
 `package.json`, or `package-lock.json`. The Nix sandbox is the authoritative
@@ -417,25 +420,29 @@ Patch and minor releases follow this exact sequence. Do not deviate.
    - `app/package-lock.json` → top-level `"version"` and the `""` package entry (two spots)
    - `pkgs/app.nix` → `version` attribute
 2. **Update `npmDepsHash`** in `pkgs/app.nix` — bumping the version in
-   `package-lock.json` changes the hash. Set it to `pkgs.lib.fakeHash`, run
-   `nix build`, copy the `got:` hash from the error, paste it in, run again.
+   `package-lock.json` changes the hash. Compute the new hash directly:
+   ```
+   nix run nixpkgs#prefetch-npm-deps app/package-lock.json
+   ```
+   Copy the printed `sha256-...` value into `pkgs/app.nix`.
 3. **Generate the changelog**: `cc-gen-changelog --tag vX.Y.Z` — rewrites
    `CHANGELOG.md` in place. Run `cc-check` after to fix the trailing-newline
    hook if it fires.
 4. **Commit** everything as a single `chore: release vX.Y.Z` commit.
 5. **Tag locally only**: `git tag vX.Y.Z` — do NOT push the tag yet.
 6. **Open the PR** and wait for CI. If nix build fails with a hash mismatch,
-   amend the commit with the correct hash, re-tag with `git tag -f vX.Y.Z`,
-   and force-push.
+   re-run `prefetch-npm-deps`, amend the commit with the correct hash,
+   re-tag with `git tag -f vX.Y.Z`, and force-push.
 
 ### After the PR merges
 7. **Pull main**: `git checkout main && git pull`
 8. **Push the tag**: `git push origin vX.Y.Z`
-9. **Create the GitHub release**:
+9. **Create the GitHub release** using the changelog entry as release notes:
    ```
-   gh release create vX.Y.Z --generate-notes --title "v X.Y.Z"
+   awk '/^## \[X\.Y\.Z\]/{found=1} found && /^## \[PREV\]/{exit} found{print}' CHANGELOG.md \
+     | gh release create vX.Y.Z --title "vX.Y.Z" --notes-file -
    ```
-   Review the generated notes and edit if needed.
+   Replace `X.Y.Z` with the new version and `PREV` with the previous version in both the awk pattern and the `gh` command.
 10. **Clean up** the local release branch: `git branch -d release/vX.Y.Z`
 
 ### Key gotchas
