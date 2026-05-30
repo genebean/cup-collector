@@ -813,7 +813,7 @@ function VariantMemberCard({
         <div className="flex-shrink-0">
           {isOwned && ownedRecord?.id !== "optimistic" && (
             ownedRecord?.needs_replacing ? (
-              <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-medium text-gold-dark dark:text-yellow-300 bg-gold-light dark:bg-yellow-900/30 px-2 py-0.5 rounded-full">
                 Needs Replacing
               </span>
             ) : (
@@ -945,7 +945,7 @@ function VariantMemberCard({
           ) : (
             <div className="space-y-1">
               {ownedRecord.needs_replacing ? (
-                <div className="text-orange-600 dark:text-orange-400 font-medium">
+                <div className="text-gold-dark dark:text-yellow-300 font-medium">
                   ⚠ Needs replacing
                   {ownedRecord.replacement_note && (
                     <span className="font-normal text-gray-500 dark:text-gray-400"> — {ownedRecord.replacement_note}</span>

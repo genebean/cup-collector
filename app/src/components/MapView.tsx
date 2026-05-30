@@ -201,13 +201,25 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
   const tiles = isDark ? TILES.dark : TILES.light;
   const [visibleCups, setVisibleCups] = useState<CupWithOwnership[]>([]);
   const visibleCupIdsRef = useRef<Set<string>>(new Set());
-  const handleVisibleCupsChange = useCallback((c: CupWithOwnership[]) => {
-    const newIds = new Set(c.map((cup) => cup.id));
+  const handleVisibleCupsChange = useCallback((inBounds: CupWithOwnership[]) => {
+    // State/country cups have lat/lng at the region center, which may fall outside
+    // the viewport when zoomed to a city. Include them in the bottom sheet when any
+    // city cup from the same region/country is already visible.
+    const visibleRegions  = new Set(inBounds.filter((c) => !c.scope || c.scope === "city").map((c) => c.region).filter(Boolean));
+    const visibleCountries = new Set(inBounds.filter((c) => !c.scope || c.scope === "city").map((c) => c.country_code).filter(Boolean));
+    const extra = cups.filter(
+      (c) =>
+        (c.scope === "state"   && visibleRegions.has(c.region))   ||
+        (c.scope === "country" && visibleCountries.has(c.country_code))
+    );
+    const byId = new Map([...inBounds, ...extra].map((c) => [c.id, c]));
+    const merged = [...byId.values()];
+    const newIds = new Set(merged.map((c) => c.id));
     const prev = visibleCupIdsRef.current;
     if (newIds.size === prev.size && [...newIds].every((id) => prev.has(id))) return;
     visibleCupIdsRef.current = newIds;
-    setVisibleCups(c);
-  }, []);
+    setVisibleCups(merged);
+  }, [cups]);
 
   // Restore saved map position (set when user previously panned/zoomed); fall back to world view.
   const savedPos = (() => {
@@ -260,11 +272,11 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
           Green  = everything at this location is owned and in good condition.
           Orange = anything unowned OR owned but needs replacing. */}
       {locationGroups.map((group) => {
-        const isNeededCup = (c: CupWithOwnership) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false);
         // Group variants before checking color: owning any version of a cup counts as owned.
         const allVariantGroups = groupByVariant([...group.cityCups, ...group.stateCups, ...group.countryCups]);
-        const needsAction = allVariantGroups.some(({ members }) => members.every(isNeededCup));
-        const isGreen = !needsAction;
+        const anyUnowned    = allVariantGroups.some(({ members }) => groupNeedsAction(members) && members.every((c) => !c.isOwned));
+        const anyReplacing  = !anyUnowned && allVariantGroups.some(({ members }) => groupNeedsAction(members));
+        const pinColor = anyUnowned ? "#f97316" : anyReplacing ? "#CBA258" : "#00704A";
 
         // Header for the first city cup's location name
         const locationName = group.cityCups[0].name;
@@ -275,8 +287,8 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
             center={[group.lat, group.lng]}
             radius={12}
             pathOptions={{
-              color: isGreen ? "#00704A" : "#f97316",
-              fillColor: isGreen ? "#00704A" : "#f97316",
+              color: pinColor,
+              fillColor: pinColor,
               fillOpacity: 0.85,
               weight: 2,
             }}
@@ -319,9 +331,9 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                       </button>
                       <div className="text-gray-500">
                         {base.series} · {base.year}
-                        {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
+                        {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark">ornament</span>}
                       </div>
-                      <div className="text-map-orange">
+                      <div className={anyNeedsReplacing ? "text-gold-dark" : "text-map-orange"}>
                         {anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}
                       </div>
                     </div>
@@ -335,9 +347,9 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                     </button>
                     <div className="text-gray-500">
                       {cup.series} · {cup.year}
-                      {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
+                      {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark">ornament</span>}
                     </div>
-                    <div className="text-map-orange">
+                    <div className={cup.ownedRecord?.needs_replacing ? "text-gold-dark" : "text-map-orange"}>
                       {cup.ownedRecord?.needs_replacing ? "⚠ Needs replacing" : "Needed"}
                     </div>
                   </div>
@@ -400,7 +412,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {base.name}{versionSuffix}
                               </button>
                               {" "}· {base.series} · {base.year}
-                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark">ornament</span>}
                             </div>
                           );
                         })}
@@ -414,7 +426,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {base.name}{versionSuffix}{scopeSuffix}
                               </button>
                               {" "}· {base.series} · {base.year}
-                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark">ornament</span>}
                             </div>
                           );
                         })}
@@ -425,7 +437,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                               {cup.name}
                             </button>
                             {" "}· {cup.series} · {cup.year}
-                            {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
+                            {cup.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark">ornament</span>}
                           </div>
                         ))}
                       </>
@@ -528,9 +540,9 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                   </button>
                                   <div className="text-gray-500 text-xs">
                                     {base.series} · {base.year}
-                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
+                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark">ornament</span>}
                                   </div>
-                                  <div className="text-map-orange text-xs">{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
+                                  <div className={`${anyNeedsReplacing ? "text-gold-dark" : "text-map-orange"} text-xs`}>{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
                                 </div>
                               );
                             })}
@@ -551,9 +563,9 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                   </button>
                                   <div className="text-gray-500 text-xs">
                                     {base.series} · {base.year}
-                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
+                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark">ornament</span>}
                                   </div>
-                                  <div className="text-map-orange text-xs">{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
+                                  <div className={`${anyNeedsReplacing ? "text-gold-dark" : "text-map-orange"} text-xs`}>{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
                                 </div>
                               );
                             })}
@@ -574,9 +586,9 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                   </button>
                                   <div className="text-gray-500 text-xs">
                                     {base.series} · {base.year}
-                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
+                                    {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark">ornament</span>}
                                   </div>
-                                  <div className="text-map-orange text-xs">{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
+                                  <div className={`${anyNeedsReplacing ? "text-gold-dark" : "text-map-orange"} text-xs`}>{anyNeedsReplacing ? "⚠ Needs replacing" : "Needed"}</div>
                                 </div>
                               );
                             })}
@@ -600,8 +612,8 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {base.name}{versionSuffix}
                               </button>
                               {" "}· {base.series} · {base.year}
-                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
-                              {anyNeedsReplacing && <span className="ml-1 text-orange-500">⚠ Needs replacing</span>}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark">ornament</span>}
+                              {anyNeedsReplacing && <span className="ml-1 text-gold-dark dark:text-yellow-300">⚠ Needs replacing</span>}
                             </div>
                           );
                         })}
@@ -616,8 +628,8 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                                 {base.name}{versionSuffix}{scopeLabel}
                               </button>
                               {" "}· {base.series} · {base.year}
-                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
-                              {anyNeedsReplacing && <span className="ml-1 text-orange-500">⚠ Needs replacing</span>}
+                              {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark">ornament</span>}
+                              {anyNeedsReplacing && <span className="ml-1 text-gold-dark dark:text-yellow-300">⚠ Needs replacing</span>}
                             </div>
                           );
                         })}
