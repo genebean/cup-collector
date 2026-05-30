@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/app/auth";
 import { getAdminPocketBase } from "@/lib/pocketbase";
 import { detectDuplicateGroups } from "@/lib/duplicate-detection";
+import { requireWriter } from "@/lib/api-auth";
 import type { Cup } from "@/types";
-
-async function requireOwner() {
-  const session = await auth();
-  if (!session?.user?.pocketIdSub) return null;
-  if (session.user.householdRole !== "owner") return null;
-  return session;
-}
 
 // GET /api/admin/duplicates
 // Returns { groups: DuplicateGroup[], marked: Cup[] }
 // groups = auto-detected potential duplicates
 // marked = cups already flagged is_duplicate=true
 export async function GET() {
-  if (!await requireOwner()) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!await requireWriter()) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const pb = await getAdminPocketBase();
   const all = await pb.collection("cups").getFullList({ sort: "series,name" }) as unknown as Cup[];
@@ -31,7 +24,7 @@ export async function GET() {
 // Body: { cup_id: string; is_duplicate: boolean }
 //   OR: { cup_ids: string[]; duplicate_ok: boolean }
 export async function PATCH(req: NextRequest) {
-  if (!await requireOwner()) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!await requireWriter()) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const pb = await getAdminPocketBase();
   const body = await req.json() as

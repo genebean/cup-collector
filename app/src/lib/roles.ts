@@ -35,3 +35,19 @@ export function roleFromMembership(membership: HouseholdMembership | null | unde
 export function canWrite(role: UserRole): boolean {
   return role === "owner";
 }
+
+// Minimal session shape needed to evaluate writer access.
+// Structural type so isAuthorizedWriter stays pure and testable without
+// importing the full next-auth Session (which requires Auth.js context).
+export interface WriterSession {
+  user?: {
+    pocketIdSub?: string | null;
+    householdRole?: string | null;
+  } | null;
+}
+
+// Pure function — returns true when the session is an authenticated owner.
+// Used by requireWriter() in lib/api-auth.ts.
+export function isAuthorizedWriter(session: WriterSession | null): boolean {
+  return !!session?.user?.pocketIdSub && session.user.householdRole === "owner";
+}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { getAdminPocketBase } from "@/lib/pocketbase";
+import { requireWriter } from "@/lib/api-auth";
 
 // GET /api/cup-note?cup_id=<id>
 // Returns the note record for the current household + cup, or null if none exists.
@@ -34,13 +35,8 @@ export async function GET(req: NextRequest) {
 // Body: { cup_id: string; note: string }
 // Upserts the note for the current household + cup. Owner-only.
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.pocketIdSub) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (session.user.householdRole !== "owner") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const session = await requireWriter();
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const householdId = session.user.householdId;
   if (!householdId) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/app/auth";
 import { getAdminPocketBase } from "@/lib/pocketbase";
+import { requireWriter } from "@/lib/api-auth";
 import type { CollectionPrefs } from "@/types";
 
 // GET /api/household-prefs
@@ -19,9 +20,11 @@ export async function GET() {
 // Owner-only. Replaces collection_prefs for the current household.
 // Body: { excluded_series?: string[]; excluded_types?: string[] }
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.householdId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (session.user.householdRole !== "owner") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const session = await requireWriter();
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const householdId = session.user.householdId;
+  if (!householdId) return NextResponse.json({ error: "No household" }, { status: 403 });
 
   const body = await req.json();
   const prefs: CollectionPrefs = {};
@@ -33,6 +36,6 @@ export async function POST(req: NextRequest) {
   }
 
   const pb = await getAdminPocketBase();
-  await pb.collection("households").update(session.user.householdId, { collection_prefs: prefs });
+  await pb.collection("households").update(householdId, { collection_prefs: prefs });
   return NextResponse.json(prefs);
 }

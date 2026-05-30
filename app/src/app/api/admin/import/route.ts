@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/app/auth";
 import { getAdminPocketBase } from "@/lib/pocketbase";
 import { parseCSV, rowMatchesExisting } from "@/lib/cup-import";
+import { requireWriter } from "@/lib/api-auth";
 
 async function downloadImage(url: string): Promise<File | null> {
   if (!url?.startsWith("http")) return null;
@@ -19,14 +19,8 @@ async function downloadImage(url: string): Promise<File | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.pocketIdSub) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (session.user.householdRole !== "owner") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const session = await requireWriter();
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const form = await req.formData();
   const csvFile = form.get("csv") as File | null;
