@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Operator guide for adding a new household (family collection) to Cup Collector — PocketID groups, OIDC client, NixOS module, and rebuild.">
+<link rel="icon" href="../favicon.ico">
+<link rel="stylesheet" href="../shared.css">
+<title>Adding a Household — Cup Collector</title>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="../index.html" class="topbar-brand">☕ Cup Collector</a>
+  <nav class="topbar-nav">
+    <a href="../index.html">Docs home</a>
+  </nav>
+</div>
+
+<nav class="breadcrumb">
+  <a href="../index.html">Docs</a>
+  <span class="sep">/</span>
+  <span>Maintenance</span>
+  <span class="sep">/</span>
+  Adding a Household
+  <span class="guide-badge badge-operator">Operator Guide</span>
+</nav>
+
+<h1>Adding a Household</h1>
+<p>A <em>household</em> is a named collection shared by one or more users. Each household is backed by a PocketID group pair and a PocketBase record. Adding a second (or third) household involves five steps: create the groups, assign users, authorize the groups in the OIDC client, declare the household in Nix, and rebuild.</p>
+
+<nav class="toc">
+  <div class="toc-title">On this page</div>
+  <ol>
+    <li><a href="#step-1">Step 1 — Create the PocketID groups</a></li>
+    <li><a href="#step-2">Step 2 — Add users to the groups</a></li>
+    <li><a href="#step-3">Step 3 — Authorize the groups in the OIDC client</a></li>
+    <li><a href="#step-4">Step 4 — Declare the household in the NixOS module</a></li>
+    <li><a href="#step-5">Step 5 — Rebuild and verify</a></li>
+  </ol>
+</nav>
+
+<h2 id="step-1">Step 1 — Create the PocketID groups</h2>
+<p>Every household needs two PocketID groups — one for owners (can mark cups as owned, upload photos) and one for viewers (read-only access). The group names must follow the exact naming convention the app expects:</p>
+<pre>cup_collector_{slug}_owner
+cup_collector_{slug}_viewer</pre>
+<p>Where <code>{slug}</code> is a short identifier for the household — lowercase letters, numbers, and underscores only, no spaces.</p>
+<ol class="steps">
+  <li>Open the PocketID admin UI → <strong>Groups → New Group</strong>.</li>
+  <li>Set the <strong>Name</strong> to <code>cup_collector_{slug}_owner</code> (e.g. <code>cup_collector_smith_family_owner</code>).</li>
+  <li>Set a human-readable <strong>Friendly Name</strong> (e.g. <em>Cup Collector Smith Family Owner</em>).</li>
+  <li>Save, then repeat for <code>cup_collector_{slug}_viewer</code>.</li>
+</ol>
+<div class="callout tip">
+  <strong>Slug must match exactly</strong>
+  The app strips the <code>cup_collector_</code> prefix and <code>_owner</code> / <code>_viewer</code> suffix from the user's group claims at sign-in to recover the slug. A typo here means the household will never resolve. Double-check the name before saving.
+</div>
+
+<h2 id="step-2">Step 2 — Add users to the groups</h2>
+<ol class="steps">
+  <li>In PocketID admin → <strong>Users</strong>, open each user you want to add.</li>
+  <li>Assign them to the appropriate group: <code>_owner</code> for full access, <code>_viewer</code> for read-only.</li>
+  <li>A user can belong to groups for multiple households — they'll see a household switcher in Settings.</li>
+</ol>
+
+<h2 id="step-3">Step 3 — Authorize the groups in the OIDC client</h2>
+<p>PocketID's OIDC client has an <strong>Allowed User Groups</strong> list. If any groups are selected, only users in those groups can sign in to that client. You must add the new groups here or they won't appear in the <code>groups</code> claim of the OIDC token.</p>
+<ol class="steps">
+  <li>Open PocketID admin → <strong>Applications → Cup Collector → Allowed User Groups</strong>.</li>
+  <li>Check both <code>cup_collector_{slug}_owner</code> and <code>cup_collector_{slug}_viewer</code>.</li>
+  <li>Click <strong>Save</strong>.</li>
+</ol>
+<div class="callout">
+  <strong>Existing users must sign out and back in</strong>
+  The <code>groups</code> claim is embedded in the session token at sign-in time. Users who were already signed in won't see the new household until they sign out and authenticate again.
+</div>
+
+<h2 id="step-4">Step 4 — Declare the household in the NixOS module</h2>
+<p>Add an entry to the <code>households</code> list in your host's NixOS configuration. The <code>slug</code> must match exactly what you used in the PocketID group names.</p>
+<pre>services.cupCollector = {
+  households = [
+    {
+      name = "Smith Family";
+      slug = "smith_family";
+    }
+    {
+      name = "Doe Family";   <span class="cm"># new</span>
+      slug = "doe_family";   <span class="cm"># must match cup_collector_doe_family_{role}</span>
+    }
+  ];
+};</pre>
+<p>The <code>name</code> is the display name shown in the app header and household switcher. The <code>slug</code> is the internal identifier used to match PocketID group claims to PocketBase records.</p>
+
+<h2 id="step-5">Step 5 — Rebuild and verify</h2>
+<ol class="steps">
+  <li>Apply the NixOS configuration:
+    <pre>sudo nixos-rebuild switch --flake .#your-hostname</pre>
+  </li>
+  <li>The <code>cup-collector-pb-init</code> oneshot service runs automatically after the rebuild and creates the new household record in PocketBase. It is idempotent — existing records are not modified.</li>
+  <li>Confirm the record was created: open the PocketBase admin UI → Collections → <strong>households</strong>. The new entry should appear with the correct <code>name</code> and <code>group_slug</code>.</li>
+  <li>Have a user in the new household sign in (or sign out and back in if already signed in). They should land in the app and see the correct household name in the header.</li>
+  <li>Users belonging to multiple households will see a <strong>Switch household</strong> option in Settings.</li>
+</ol>
+<div class="callout tip">
+  <strong>Something wrong?</strong>
+  If a user gets redirected to the access-denied page, check in order: (1) are they in a PocketID group with the correct name? (2) is that group checked in the OIDC client's Allowed User Groups? (3) did they sign out and back in after the group assignment? (4) does the slug in the Nix config exactly match the slug in the PocketID group name?
+</div>
+
+<nav class="page-nav">
+  <a class="prev" href="backup.html">Backups</a>
+  <a class="next" href="../index.html">Docs Home</a>
+</nav>
+
+</body>
+</html>
