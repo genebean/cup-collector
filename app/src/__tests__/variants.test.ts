@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { groupByVariant, findRepresentative } from "@/lib/variants";
-import type { Cup } from "@/types";
+import { groupByVariant, groupNeedsAction, findRepresentative } from "@/lib/variants";
+import type { Cup, CupWithOwnership, OwnedCup } from "@/types";
 
 function cup(overrides: Partial<Cup> & Pick<Cup, "id" | "name" | "series">): Cup {
   return {
@@ -106,6 +106,55 @@ describe("groupByVariant", () => {
     expect(groups).toHaveLength(2);
     expect(groups.find((g) => g.base.id === "atl")!.members.map((c) => c.id)).toEqual(["atl", "atl2"]);
     expect(groups.find((g) => g.base.id === "yatl")!.members.map((c) => c.id)).toEqual(["yatl", "yatl2"]);
+  });
+});
+
+function owned(c: Cup, needsReplacing = false): CupWithOwnership {
+  const rec: OwnedCup = {
+    id: `owned-${c.id}`, collectionId: "owned_cups", household_id: "hh1", cup_id: c.id,
+    marked_by_sub: "sub1", acquired_date: "", own_photo: "",
+    needs_replacing: needsReplacing, replacement_note: "",
+    acquired_store_name: "", acquired_store_address: "",
+    acquired_store_lat: 0, acquired_store_lng: 0, created: "",
+  };
+  return { ...c, isOwned: true, ownedRecord: rec };
+}
+
+function unowned(c: Cup): CupWithOwnership {
+  return { ...c, isOwned: false };
+}
+
+describe("groupNeedsAction", () => {
+  it("single unowned cup — needs action", () => {
+    expect(groupNeedsAction([unowned(ATL)])).toBe(true);
+  });
+
+  it("single owned cup in good condition — no action needed", () => {
+    expect(groupNeedsAction([owned(ATL)])).toBe(false);
+  });
+
+  it("single owned cup that needs replacing — needs action", () => {
+    expect(groupNeedsAction([owned(ATL, true)])).toBe(true);
+  });
+
+  it("two variants: one owned good, one unowned — covered by the good copy", () => {
+    expect(groupNeedsAction([owned(ATL), unowned(ATL2)])).toBe(false);
+  });
+
+  it("two variants: one owned good, one owned needs-replacing — still covered", () => {
+    expect(groupNeedsAction([owned(ATL), owned(ATL2, true)])).toBe(false);
+  });
+
+  it("two variants: both unowned — needs action", () => {
+    expect(groupNeedsAction([unowned(ATL), unowned(ATL2)])).toBe(true);
+  });
+
+  it("two variants: both owned but both need replacing — needs action", () => {
+    expect(groupNeedsAction([owned(ATL, true), owned(ATL2, true)])).toBe(true);
+  });
+
+  it("two variants: one unowned, one owned needs-replacing — needs action", () => {
+    expect(groupNeedsAction([unowned(ATL), owned(ATL2, true)])).toBe(true);
   });
 });
 

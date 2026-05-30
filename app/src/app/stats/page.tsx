@@ -255,8 +255,14 @@ export default function StatsPage() {
   const mugTotal = statsMugs.length;
   const mugOwned = statsMugs.filter((c) => statsOwnedIds.has(c.id)).length;
 
-  const ornTotal = displayableOrnaments.length;
-  const ornOwned = displayableOrnaments.filter((c) => ownedCupIds.has(c.id)).length;
+  const stateOrnaments = useMemo(() =>
+    showVariants
+      ? displayableOrnaments
+      : displayableOrnaments.filter((c) => !c.variant_of),
+    [displayableOrnaments, showVariants]);
+
+  const ornTotal = stateOrnaments.length;
+  const ornOwned = stateOrnaments.filter((c) => statsOwnedIds.has(c.id)).length;
 
   const seriesStats = useMemo(() => SERIES_LABELS.map(({ series, label }) => {
     // Exclude themed cups — they're in the Themed card, not By Series
@@ -358,18 +364,18 @@ export default function StatsPage() {
 
   const ornamentCountryStats = useMemo(() => {
     const map = new Map<string, { code: string; tot: number; own: number }>();
-    for (const c of displayableOrnaments) {
+    for (const c of stateOrnaments) {
       if (!c.country) continue;
       const s = map.get(c.country) ?? { code: c.country_code, tot: 0, own: 0 };
       s.tot++;
-      if (ownedCupIds.has(c.id)) s.own++;
+      if (statsOwnedIds.has(c.id)) s.own++;
       map.set(c.country, s);
     }
     return [...map.entries()]
       .map(([country, s]) => ({ country, ...s }))
       .sort((a, b) => b.tot - a.tot)
       .slice(0, 12);
-  }, [displayableOrnaments, ownedCupIds]);
+  }, [stateOrnaments, statsOwnedIds]);
 
   const needsReplacing = ownedCups.filter((o) => o.needs_replacing).length;
 
