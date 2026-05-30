@@ -18,6 +18,7 @@ app/next-env.d.ts
 app/tsconfig.tsbuildinfo
 app/public/sw.js
 app/public/workbox-*.js
+app/public/worker-*.js
 
 # Test output (kept outside app/ so Turbopack doesn't watch it)
 coverage/

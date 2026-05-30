@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import SWUpdateHandler from "@/components/SWUpdateHandler";
 
 export const metadata: Metadata = {
   title: "Cup Collector",
@@ -72,6 +73,7 @@ export default function RootLayout({
       <body>
         {/* Providers wraps everything in SessionProvider and QueryClientProvider */}
         <Providers>{children}</Providers>
+        <SWUpdateHandler />
       </body>
     </html>
   );
