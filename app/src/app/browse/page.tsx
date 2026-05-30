@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { getPocketBase } from "@/lib/pocketbase";
 import { haversineMi } from "@/lib/geo";
 import { buildSeriesOptions } from "@/lib/browse";
-import { groupByVariant, findRepresentative } from "@/lib/variants";
+import { groupByVariant, groupNeedsAction, findRepresentative } from "@/lib/variants";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { CupCard } from "@/components/CupCard";
@@ -163,14 +163,19 @@ export default function BrowsePage() {
     return { pinnedCountries: pinned, otherCountries: all.filter((c) => !pinned.includes(c)).sort() };
   }, [displayableCups]);
 
-  const displayedGroups = useMemo(() => {
+  // All displayable groups before any filter — used for owned/total counts so the
+  // header stays accurate regardless of which filters are active.
+  const baseGroups = useMemo(() => {
     const withOwnership: CupWithOwnership[] = displayableCups.map((cup) => ({
       ...cup,
       isOwned: ownedCupIds.has(cup.id),
       ownedRecord: ownedCups.find((o) => o.cup_id === cup.id),
     }));
+    return groupByVariant(withOwnership);
+  }, [displayableCups, ownedCups, ownedCupIds]);
 
-    let groups = groupByVariant(withOwnership);
+  const displayedGroups = useMemo(() => {
+    let groups = baseGroups;
 
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -186,9 +191,7 @@ export default function BrowsePage() {
 
     // Status filter operates at group level: "needed" = any member unowned/needs-replacing
     if (statusFilter === "needed") {
-      groups = groups.filter(({ members }) =>
-        members.some((c) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false))
-      );
+      groups = groups.filter(({ members }) => groupNeedsAction(members));
     }
     if (statusFilter === "owned") {
       groups = groups.filter(({ members }) => members.some((c) => c.isOwned));
@@ -220,7 +223,7 @@ export default function BrowsePage() {
     }
 
     return groups;
-  }, [displayableCups, ownedCups, ownedCupIds, statusFilter, seriesFilter, countryFilter, scopeFilter, subCollectionFilter, needsReplacingFilter, nearMe, search, userLocation]);
+  }, [baseGroups, statusFilter, seriesFilter, countryFilter, scopeFilter, subCollectionFilter, needsReplacingFilter, nearMe, search, userLocation]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
@@ -240,8 +243,11 @@ export default function BrowsePage() {
     didRestoreScroll.current = true;
   }, [displayedGroups]);
 
-  const ownedCount = useMemo(() => displayableCups.filter((c) => ownedCupIds.has(c.id)).length, [displayableCups, ownedCupIds]);
-  const totalCount = displayableCups.length;
+  const ownedCount = useMemo(
+    () => baseGroups.filter(({ members }) => members.some((c) => c.isOwned)).length,
+    [baseGroups]
+  );
+  const totalCount = baseGroups.length;
   const hasScopedCups = displayableCups.some((c) => c.scope === "state" || c.scope === "country" || c.scope === "themed");
   const hasSubCollections = subCollectionOptions.length > 0;
 

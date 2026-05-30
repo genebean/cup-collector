@@ -10,7 +10,7 @@ import type { CupWithOwnership, NearbyStore } from "@/types";
 import { useRouter } from "next/navigation";
 import { useUiTheme } from "@/hooks/useUiTheme";
 import { MapBottomSheet } from "@/components/MapBottomSheet";
-import { groupByVariant } from "@/lib/variants";
+import { groupByVariant, groupNeedsAction } from "@/lib/variants";
 import { getCupsForStore } from "@/lib/store-cups";
 
 const MAP_POSITION_KEY = "map_position";
@@ -294,8 +294,8 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                 // Collapse city cups into variant groups.
                 // "Already owned" wins if ANY member is owned — owning one version covers the group.
                 const cityGroups = groupByVariant(group.cityCups);
-                const neededCityGroups = cityGroups.filter(({ members }) => members.every((c) => !c.isOwned));
-                const ownedCityGroups  = cityGroups.filter(({ members }) => members.some((c) => c.isOwned));
+                const neededCityGroups = cityGroups.filter(({ members }) => groupNeedsAction(members));
+                const ownedCityGroups  = cityGroups.filter(({ members }) => !groupNeedsAction(members));
 
                 const neededThemed  = group.themedCups.filter(isNeeded);
                 const ownedThemed   = group.themedCups.filter((c) => !isNeeded(c));
@@ -304,10 +304,10 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                 // and its variant in the other are always shown together.
                 const allStateGroups    = groupByVariant(group.stateCups);
                 const allCountryGroups  = groupByVariant(group.countryCups);
-                const neededStateGroups  = allStateGroups.filter(({ members }) => members.every((c) => !c.isOwned));
-                const ownedStateGroups   = allStateGroups.filter(({ members }) => members.some((c) => c.isOwned));
-                const neededCountryGroups = allCountryGroups.filter(({ members }) => members.every((c) => !c.isOwned));
-                const ownedCountryGroups  = allCountryGroups.filter(({ members }) => members.some((c) => c.isOwned));
+                const neededStateGroups  = allStateGroups.filter(({ members }) => groupNeedsAction(members));
+                const ownedStateGroups   = allStateGroups.filter(({ members }) => !groupNeedsAction(members));
+                const neededCountryGroups = allCountryGroups.filter(({ members }) => groupNeedsAction(members));
+                const ownedCountryGroups  = allCountryGroups.filter(({ members }) => !groupNeedsAction(members));
 
                 const cityGroupRow = ({ base, members }: { base: CupWithOwnership; members: CupWithOwnership[] }) => {
                   const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
@@ -461,16 +461,16 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
             locationBuckets.set(key, { locationName: anchor.name, neededGroups: [], ownedGroups: [] });
           }
           const bucket = locationBuckets.get(key)!;
-          if (group.members.every((c) => !c.isOwned)) bucket.neededGroups.push(group);
-          if (group.members.some((c) => c.isOwned))   bucket.ownedGroups.push(group);
+          if (groupNeedsAction(group.members)) bucket.neededGroups.push(group);
+          else                                 bucket.ownedGroups.push(group);
         }
         const cityLocations = Array.from(locationBuckets.values());
         const allStoreStateGroups   = groupByVariant([...neededState, ...ownedState]);
         const allStoreCountryGroups = groupByVariant([...neededCountry, ...ownedCountry]);
-        const neededStateGroups  = allStoreStateGroups.filter(({ members }) => members.every((c) => !c.isOwned));
-        const ownedStateGroups   = allStoreStateGroups.filter(({ members }) => members.some((c) => c.isOwned));
-        const neededCountryGroups = allStoreCountryGroups.filter(({ members }) => members.every((c) => !c.isOwned));
-        const ownedCountryGroups  = allStoreCountryGroups.filter(({ members }) => members.some((c) => c.isOwned));
+        const neededStateGroups  = allStoreStateGroups.filter(({ members }) => groupNeedsAction(members));
+        const ownedStateGroups   = allStoreStateGroups.filter(({ members }) => !groupNeedsAction(members));
+        const neededCountryGroups = allStoreCountryGroups.filter(({ members }) => groupNeedsAction(members));
+        const ownedCountryGroups  = allStoreCountryGroups.filter(({ members }) => !groupNeedsAction(members));
         const hasNeeded = cityLocations.some((l) => l.neededGroups.length > 0) || neededStateGroups.length > 0 || neededCountryGroups.length > 0;
         const hasOwned  = cityLocations.some((l) => l.ownedGroups.length > 0)  || ownedStateGroups.length > 0  || ownedCountryGroups.length > 0;
         const hasCups = hasNeeded || hasOwned;
@@ -592,6 +592,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                         </div>
                         {cityLocations.flatMap(({ ownedGroups }) => ownedGroups).map(({ base, members }) => {
                           const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
+                          const anyNeedsReplacing = members.some((c) => c.ownedRecord?.needs_replacing);
                           return (
                             <div key={base.id} className="text-xs text-gray-500 mb-0.5">
                               ✓{" "}
@@ -600,12 +601,14 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                               </button>
                               {" "}· {base.series} · {base.year}
                               {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
+                              {anyNeedsReplacing && <span className="ml-1 text-orange-500">⚠ Needs replacing</span>}
                             </div>
                           );
                         })}
                         {[...ownedStateGroups, ...ownedCountryGroups].map(({ base, members }) => {
                           const versionSuffix = members.length > 1 ? ` (${members.length} versions)` : "";
                           const scopeLabel = ` (${base.scope})`;
+                          const anyNeedsReplacing = members.some((c) => c.ownedRecord?.needs_replacing);
                           return (
                             <div key={base.id} className="text-xs text-gray-500 mb-0.5">
                               ✓{" "}
@@ -614,6 +617,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
                               </button>
                               {" "}· {base.series} · {base.year}
                               {base.item_type === "ornament" && <span className="ml-1 text-[10px] font-medium px-1 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">ornament</span>}
+                              {anyNeedsReplacing && <span className="ml-1 text-orange-500">⚠ Needs replacing</span>}
                             </div>
                           );
                         })}

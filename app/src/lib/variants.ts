@@ -1,4 +1,4 @@
-import type { Cup } from "@/types";
+import type { Cup, CupWithOwnership } from "@/types";
 
 // A group of cups that are variants of the same physical location cup.
 // `base` is the canonical entry (no variant_of set, or an orphaned variant
@@ -50,6 +50,12 @@ export function groupByVariant<T extends Cup>(cups: T[]): VariantGroup<T>[] {
   }
 
   return groups;
+}
+
+// A group "needs action" when there is no good owned copy — every member is either
+// unowned or owned but flagged for replacement. Owning any member in good condition covers the group.
+export function groupNeedsAction(members: CupWithOwnership[]): boolean {
+  return members.every((c) => !c.isOwned || (c.ownedRecord?.needs_replacing ?? false));
 }
 
 // Returns the member with the highest trailing variant number (e.g. "Atlanta 3" > "Atlanta 2" > "Atlanta").

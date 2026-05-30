@@ -32,7 +32,7 @@ export function CupCard({ cup, variantCount, ownedVariants, imageCup, onClick }:
     ownedVariants === variantCount ? (
       <span className="text-xs font-medium text-green-starbucks dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">All owned</span>
     ) : ownedVariants && ownedVariants > 0 ? (
-      <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">{ownedVariants}/{variantCount} owned</span>
+      <span className="text-xs font-medium text-green-starbucks dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">{ownedVariants}/{variantCount} owned</span>
     ) : (
       <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">Needed</span>
     )
