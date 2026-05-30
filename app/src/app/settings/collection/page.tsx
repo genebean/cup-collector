@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { getPocketBase } from "@/lib/pocketbase";
+import { canWrite } from "@/lib/roles";
 import { BottomNav } from "@/components/BottomNav";
 import type { CollectionPrefs } from "@/types";
 
@@ -86,7 +87,7 @@ export default function CollectionPrefsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const isOwner = session?.user?.householdRole === "owner";
+  const isOwner = canWrite(session?.user?.householdRole ?? "none");
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/sign-in");

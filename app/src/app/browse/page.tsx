@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { getPocketBase } from "@/lib/pocketbase";
 import { haversineMi } from "@/lib/geo";
 import { buildSeriesOptions } from "@/lib/browse";
+import { canWrite as checkCanWrite } from "@/lib/roles";
 import { groupByVariant, groupNeedsAction, findRepresentative } from "@/lib/variants";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -25,7 +26,7 @@ export default function BrowsePage() {
   const router = useRouter();
   const { data: session } = useSession();
   const householdId = session?.user?.householdId ?? null;
-  const canWrite = session?.user?.householdRole === "owner";
+  const canWrite = checkCanWrite(session?.user?.householdRole ?? "none");
 
   // All filter state initializes to defaults — sessionStorage and URL params are
   // client-only and cannot be read during SSR; reading them in lazy initializers
