@@ -15,7 +15,7 @@ let
 in
 pkgs.buildNpmPackage {
   pname = "cup-collector";
-  version = "1.0.0";
+  version = "1.0.1";
   inherit src;
   nodejs = pkgs.nodejs_24;
 
@@ -23,7 +23,7 @@ pkgs.buildNpmPackage {
   #   1. Set npmDepsHash = pkgs.lib.fakeHash;
   #   2. Run `nix build` — it fails with "got: sha256-..."
   #   3. Copy that hash here and run `nix build` again.
-  npmDepsHash = "sha256-OIKdKkFzsfAAxi3Am2zDc3XDxdMUgFEsy0tIg1eUVkc=";
+  npmDepsHash = "sha256-advoxylhp3snFmYthPXCg3b/+h1Zf89btBG0M5Oqrtk=";
 
   buildPhase = "npm run build";
 

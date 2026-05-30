@@ -2,6 +2,22 @@
 
 All notable changes to Cup Collector are documented here.
 
+## [1.0.1] - 2026-05-30
+
+### Bug Fixes
+
+- Redirect Next.js prerender cache out of the read-only Nix store
+
+- Route image optimization cache through custom cache handler
+
+
+### Documentation
+
+- Expand AGENTS.md with commit hygiene, verification, and branch workflow
+
+- Add Adding a Household operator guide
+
+
 ## [1.0.0] - 2026-05-27
 
 ### Bug Fixes
