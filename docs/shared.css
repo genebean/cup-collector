@@ -454,6 +454,67 @@ tbody tr:nth-child(even) { background: rgba(0,0,0,0.018); }
 .required { background: #fde8d5; color: #6b2c08; }
 .optional  { background: #e5e0f2; color: #4a2880; }
 
+/* ── App screenshots ───────────────────────────────────────────────────────── */
+/*
+  Phone screenshots are constrained to ~iPhone display width so they look
+  proportional on a desktop doc page. Center them via margin auto.
+*/
+.phone-screenshot {
+  display: block;
+  width: 100%;
+  max-width: calc(50% - 0.5rem);
+  height: auto;
+  margin: 0 auto;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.img-zoomable { cursor: zoom-in; }
+
+.img-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  cursor: zoom-out;
+  padding: 1rem;
+}
+
+.img-lightbox[hidden] { display: none; }
+
+.img-lightbox img {
+  max-width: min(390px, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  height: auto;
+  border-radius: 14px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  object-fit: contain;
+}
+
+/* ── Side-by-side screenshot pair ─────────────────────────────────────────── */
+.screenshot-pair {
+  display: flex;
+  gap: 1rem;
+  margin: 1.25rem 0;
+  align-items: flex-start;
+}
+
+.screenshot-pair figure {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+/* Inside a pair the image fills its flex slot rather than capping at 390px */
+.screenshot-pair .phone-screenshot {
+  max-width: 100%;
+  margin: 0;
+}
+
 /* ── Map pin legend ────────────────────────────────────────────────────────── */
 .pin-legend {
   display: flex;
@@ -489,6 +550,7 @@ tbody tr:nth-child(even) { background: rgba(0,0,0,0.018); }
 }
 
 .pin-green  { background: #00704A; }
+.pin-gold   { background: #CBA258; }
 .pin-orange { background: #f97316; }
 .pin-blue   { background: #3b82f6; }
 

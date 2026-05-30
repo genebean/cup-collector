@@ -403,15 +403,15 @@ export default function BrowsePage() {
         )}
 
         {/* Needs-replacing filter banner — always in DOM, shown/hidden via CSS to avoid hydration mismatch */}
-        <div className={`items-center justify-between mt-2 px-3 py-1.5 rounded-lg bg-orange-500/20 border border-orange-500/40 ${needsReplacingFilter ? "flex" : "hidden"}`}>
-          <span className="text-xs font-medium text-orange-200">⚠ Showing cups that need replacing</span>
+        <div className={`items-center justify-between mt-2 px-3 py-1.5 rounded-lg bg-gold-light dark:bg-yellow-900/30 border border-gold dark:border-yellow-700 ${needsReplacingFilter ? "flex" : "hidden"}`}>
+          <span className="text-xs font-medium text-gold-dark dark:text-yellow-300">⚠ Showing cups that need replacing</span>
           <button
             type="button"
             onClick={() => {
               setNeedsReplacingFilter(false);
               router.replace("/browse", { scroll: false });
             }}
-            className="text-xs text-orange-200 hover:text-white ml-2"
+            className="text-xs text-gold-dark dark:text-yellow-300 hover:opacity-70 ml-2"
             aria-label="Clear needs-replacing filter"
           >
             ✕
