@@ -2,6 +2,18 @@
 
 All notable changes to Cup Collector are documented here.
 
+## [1.1.0] - 2026-05-30
+
+### Bug Fixes
+
+- Treat variant groups as owned when any variant is owned (closes [#148](https://github.com/genebean/cup-collector/issues/148))
+
+
+### Features
+
+- Gold color for needs-replacing state, fix state cup sort/display
+
+
 ## [1.0.2] - 2026-05-30
 
 ### Bug Fixes
@@ -14,6 +26,11 @@ All notable changes to Cup Collector are documented here.
 ### Documentation
 
 - Document release workflow in AGENTS.md
+
+
+### Miscellaneous
+
+- Release v1.0.2
 
 
 ## [1.0.1] - 2026-05-30
