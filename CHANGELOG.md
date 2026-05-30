@@ -2,6 +2,13 @@
 
 All notable changes to Cup Collector are documented here.
 
+## [1.1.1] - 2026-05-30
+
+### Documentation
+
+- Add screenshots, lightbox, gold updates, stats back-nav fix (closes [#82](https://github.com/genebean/cup-collector/issues/82))
+
+
 ## [1.1.0] - 2026-05-30
 
 ### Bug Fixes
@@ -12,6 +19,11 @@ All notable changes to Cup Collector are documented here.
 ### Features
 
 - Gold color for needs-replacing state, fix state cup sort/display
+
+
+### Miscellaneous
+
+- Release v1.1.0
 
 
 ## [1.0.2] - 2026-05-30

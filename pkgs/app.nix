@@ -15,13 +15,13 @@ let
 in
 pkgs.buildNpmPackage {
   pname = "cup-collector";
-  version = "1.1.0";
+  version = "1.1.1";
   inherit src;
   nodejs = pkgs.nodejs_24;
 
   # Recompute this hash after any package-lock.json change:
   #   nix run nixpkgs#prefetch-npm-deps app/package-lock.json
-  npmDepsHash = "sha256-/pysnzwPoZef8nUd6gJgVorHP3GRZ0/rp/hqb9W4FOk=";
+  npmDepsHash = "sha256-xXE2cU1K7dSfoPf1PIkTDPh18jVQGMkOGxEXQ8WAAtc=";
 
   buildPhase = "npm run build";
 
