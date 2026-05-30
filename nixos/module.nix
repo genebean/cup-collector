@@ -254,6 +254,7 @@ in
           "NODE_ENV=production"
           "AUTH_TRUST_HOST=true"
           "DOCS_DIR=${cfg.appPackage}/standalone/docs"
+          "APP_VERSION=${cfg.appPackage.version}"
         ];
         DynamicUser = true;
         StateDirectory = "cup-collector";
