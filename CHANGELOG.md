@@ -2,11 +2,47 @@
 
 All notable changes to Cup Collector are documented here.
 
+## [1.1.2] - 2026-05-31
+
+### Bug Fixes
+
+- Settings screen always showed 0.1.0 instead of real version
+
+- Search page no longer restores state on fresh navigation
+
+- Pass through all Google Places results instead of filtering to radius (closes [#159](https://github.com/genebean/cup-collector/issues/159))
+
+- Exclude variant cups from potential-duplicate detection (closes [#158](https://github.com/genebean/cup-collector/issues/158))
+
+
+### Miscellaneous
+
+- Track Claude's skills (.claude/skills)
+
+
+### Refactoring
+
+- Eliminate low-risk code duplication across four areas
+
+- Centralize owner auth guard into lib/api-auth.ts
+
+- Extract pure logic from pages into src/lib/
+
+- Extract scroll restoration to useScrollRestoration hook
+
+- Use shared lib abstractions in remaining missed call-sites
+
+
 ## [1.1.1] - 2026-05-30
 
 ### Documentation
 
 - Add screenshots, lightbox, gold updates, stats back-nav fix (closes [#82](https://github.com/genebean/cup-collector/issues/82))
+
+
+### Miscellaneous
+
+- Release v1.1.1
 
 
 ## [1.1.0] - 2026-05-30
