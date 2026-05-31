@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { getPocketBase } from "@/lib/pocketbase";
 import { groupedStoreCups } from "@/lib/store-cups";
 import { isDisplayableCup } from "@/lib/collection-prefs";
+import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { BottomNav } from "@/components/BottomNav";
 import type { Cup, OwnedCup, CupWithOwnership, CollectionPrefs, NearbyStore } from "@/types";
 
@@ -215,7 +216,6 @@ export default function StoreLocatorPage() {
     try { return sessionStorage.getItem("search_submitted") ?? ""; } catch { return ""; }
   });
   const mainRef = useRef<HTMLElement>(null);
-  const didRestoreScroll = useRef(false);
 
   useEffect(() => {
     try { sessionStorage.setItem("search_query", query); } catch {}
@@ -256,14 +256,7 @@ export default function StoreLocatorPage() {
 
   const stores: NearbyStore[] = useMemo(() => storeData?.stores ?? [], [storeData]);
 
-  useEffect(() => {
-    if (didRestoreScroll.current || !mainRef.current || stores.length === 0) return;
-    try {
-      const pos = Number(sessionStorage.getItem("search_scroll") ?? 0);
-      if (pos > 0) mainRef.current.scrollTop = pos;
-    } catch {}
-    didRestoreScroll.current = true;
-  }, [stores]);
+  const { onScroll: onSearchScroll } = useScrollRestoration("search_scroll", stores.length > 0, mainRef);
 
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
 
@@ -331,10 +324,7 @@ export default function StoreLocatorPage() {
       <main
         ref={mainRef}
         className="flex-1 overflow-y-auto pt-3 pb-24"
-        onScroll={() => {
-          try { sessionStorage.setItem("search_scroll", String(mainRef.current?.scrollTop ?? 0)); }
-          catch {}
-        }}
+        onScroll={onSearchScroll}
       >
         {!submittedQuery && (
           <div className="text-center text-gray-400 dark:text-gray-500 py-16 px-6">
