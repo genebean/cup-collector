@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { canWrite } from "@/lib/roles";
 import { BottomNav } from "@/components/BottomNav";
 import Link from "next/link";
 
@@ -45,7 +46,7 @@ export default function AdminImportPage() {
   }
 
   if (!session) return null;
-  if (session.user.householdRole !== "owner") {
+  if (!canWrite(session.user.householdRole ?? "none")) {
     router.replace("/access-denied");
     return null;
   }

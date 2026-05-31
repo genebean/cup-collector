@@ -11,6 +11,7 @@ import type { DuplicateGroup } from "@/lib/duplicate-detection";
 import { getFileUrl } from "@/lib/pocketbase";
 import { buildSeriesOptions } from "@/lib/browse";
 import { buildCsv } from "@/lib/csv";
+import { canWrite } from "@/lib/roles";
 
 interface DuplicatesData {
   groups: DuplicateGroup[];
@@ -25,7 +26,7 @@ export default function AdminDuplicatesPage() {
   const [activeTab, setActiveTab] = useState<"potential" | "marked" | "find">("potential");
 
   if (status === "loading") return null;
-  if (status === "unauthenticated" || session?.user?.householdRole !== "owner") {
+  if (status === "unauthenticated" || !canWrite(session?.user?.householdRole ?? "none")) {
     router.push("/");
     return null;
   }

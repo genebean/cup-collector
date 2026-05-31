@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
 import { isDisplayableCup } from "@/lib/collection-prefs";
+import { tryParseJson } from "@/lib/session-state";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { getThemeGroup } from "@/lib/theme-group";
 import { BottomNav } from "@/components/BottomNav";
@@ -19,10 +20,12 @@ const EMPTY_PREFS: CollectionPrefs = {};
 
 
 function readStatsDrill(): { country: { name: string; code: string } | null; region: string | null; theme: string | null } {
-  try {
-    const saved = JSON.parse(sessionStorage.getItem("stats_drill") ?? "{}");
-    return { country: saved.country ?? null, region: saved.region ?? null, theme: saved.theme ?? null };
-  } catch { return { country: null, region: null, theme: null }; }
+  const saved = tryParseJson(sessionStorage.getItem("stats_drill"), {} as Record<string, unknown>);
+  return {
+    country: (saved.country as { name: string; code: string } | null) ?? null,
+    region: (saved.region as string | null) ?? null,
+    theme: (saved.theme as string | null) ?? null,
+  };
 }
 const R_LARGE = 45;
 const R_SMALL = 32;

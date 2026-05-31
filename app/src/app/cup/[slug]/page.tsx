@@ -8,6 +8,7 @@ import Image from "next/image";
 import { getPocketBase, getFileUrl } from "@/lib/pocketbase";
 import { looksLikeId } from "@/lib/slug";
 import { displayHostname } from "@/lib/url";
+import { canWrite as checkCanWrite } from "@/lib/roles";
 import { findRepresentative } from "@/lib/variants";
 import { useNearbyRadius } from "@/hooks/useNearbyRadius";
 import { BottomNav } from "@/components/BottomNav";
@@ -36,7 +37,7 @@ export default function CupDetailPage() {
   const [duplicateConfirm, setDuplicateConfirm] = useState(false);
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
 
-  const canWrite = session?.user?.householdRole === "owner";
+  const canWrite = checkCanWrite(session?.user?.householdRole ?? "none");
   const { radiusMeters } = useNearbyRadius();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
