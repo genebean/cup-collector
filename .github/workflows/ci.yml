@@ -8,10 +8,10 @@ jobs:
     name: pre-commit hooks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v14
-      - uses: DeterminateSystems/magic-nix-cache-action@v8
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/magic-nix-cache-action@v14
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
       - uses: pre-commit/action@v3.0.1
@@ -20,15 +20,15 @@ jobs:
     name: dependency review
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/checkout@v6
+      - uses: actions/dependency-review-action@v5.0.0
 
   npm-audit:
     name: npm audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: "24"
       - name: Audit for critical vulnerabilities
@@ -42,10 +42,10 @@ jobs:
     name: nix build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v14
-      - uses: DeterminateSystems/magic-nix-cache-action@v8
-      - uses: DeterminateSystems/flake-checker-action@v9
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/magic-nix-cache-action@v14
+      - uses: DeterminateSystems/flake-checker-action@v12
         with:
           # Fail the PR if nixpkgs is more than 30 days stale.
           # The update-flake-lock workflow keeps it fresh on a weekly cadence.
@@ -71,8 +71,8 @@ jobs:
       checks: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: npm
@@ -84,14 +84,14 @@ jobs:
         run: npm run test:coverage -- --reporter=default --reporter=junit --outputFile=test-results/junit.xml
         working-directory: app
       - name: Publish test results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: success() || failure()
         with:
           name: unit test results
           path: app/test-results/junit.xml
           reporter: java-junit
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage
@@ -101,8 +101,8 @@ jobs:
     name: next lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: npm
@@ -118,7 +118,7 @@ jobs:
     name: container image scan (PocketBase)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Extract PocketBase image reference
         id: image
         run: |
@@ -126,7 +126,7 @@ jobs:
           # the flake.nix dev shell was aligned to the same version.
           TAG=$(grep -oP 'ghcr\.io/muchobien/pocketbase:\K[^\s"\\]+' nixos/module.nix | head -1)
           echo "ref=ghcr.io/muchobien/pocketbase:${TAG}" >> "$GITHUB_OUTPUT"
-      - uses: anchore/scan-action@v5
+      - uses: anchore/scan-action@v7
         with:
           image: ${{ steps.image.outputs.ref }}
           fail-build: true
@@ -136,7 +136,7 @@ jobs:
     name: PocketBase migrations (fresh instance)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Extract PocketBase image reference
         id: image
         run: |
@@ -183,8 +183,8 @@ jobs:
     name: playwright e2e tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: npm
@@ -199,7 +199,7 @@ jobs:
         run: npm run test:e2e
         working-directory: app
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
