@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -21,7 +21,7 @@ function OrnamentBadge() {
   );
 }
 
-function StoreCard({ store, cups }: { store: NearbyStore; cups: CupWithOwnership[] }) {
+function StoreCard({ store, cups, onCupClick }: { store: NearbyStore; cups: CupWithOwnership[]; onCupClick: () => void }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
 
@@ -110,7 +110,7 @@ function StoreCard({ store, cups }: { store: NearbyStore; cups: CupWithOwnership
                       return (
                         <button
                           key={base.id}
-                          onClick={() => router.push(`/cup/${base.slug || base.id}`)}
+                          onClick={() => { onCupClick(); router.push(`/cup/${base.slug || base.id}`); }}
                           className="block w-full text-left py-1"
                         >
                           <span className="font-medium text-green-starbucks underline">
@@ -135,7 +135,7 @@ function StoreCard({ store, cups }: { store: NearbyStore; cups: CupWithOwnership
                   {neededStateGroups.map(({ base, members }) => (
                     <button
                       key={base.id}
-                      onClick={() => router.push(`/cup/${base.slug || base.id}`)}
+                      onClick={() => { onCupClick(); router.push(`/cup/${base.slug || base.id}`); }}
                       className="block w-full text-left py-1"
                     >
                       <span className="font-medium text-green-starbucks underline">
@@ -155,7 +155,7 @@ function StoreCard({ store, cups }: { store: NearbyStore; cups: CupWithOwnership
                   {neededCountryGroups.map(({ base, members }) => (
                     <button
                       key={base.id}
-                      onClick={() => router.push(`/cup/${base.slug || base.id}`)}
+                      onClick={() => { onCupClick(); router.push(`/cup/${base.slug || base.id}`); }}
                       className="block w-full text-left py-1"
                     >
                       <span className="font-medium text-green-starbucks underline">
@@ -179,7 +179,7 @@ function StoreCard({ store, cups }: { store: NearbyStore; cups: CupWithOwnership
               {cityLocations.flatMap((l) => l.ownedGroups).map(({ base, members }) => (
                 <button
                   key={base.id}
-                  onClick={() => router.push(`/cup/${base.slug || base.id}`)}
+                  onClick={() => { onCupClick(); router.push(`/cup/${base.slug || base.id}`); }}
                   className="block w-full text-left py-0.5 text-xs text-gray-500 dark:text-gray-400"
                 >
                   ✓ {base.name}{members.length > 1 ? ` (${members.length} versions)` : ""}
@@ -190,7 +190,7 @@ function StoreCard({ store, cups }: { store: NearbyStore; cups: CupWithOwnership
               {[...ownedStateGroups, ...ownedCountryGroups].map(({ base, members }) => (
                 <button
                   key={base.id}
-                  onClick={() => router.push(`/cup/${base.slug || base.id}`)}
+                  onClick={() => { onCupClick(); router.push(`/cup/${base.slug || base.id}`); }}
                   className="block w-full text-left py-0.5 text-xs text-gray-500 dark:text-gray-400"
                 >
                   ✓ {base.name}{members.length > 1 ? ` (${members.length} versions)` : ""} ({base.scope})
@@ -209,13 +209,26 @@ function StoreCard({ store, cups }: { store: NearbyStore; cups: CupWithOwnership
 export default function StoreLocatorPage() {
   const { data: session } = useSession();
   const householdId = session?.user?.householdId ?? null;
-  const [query, setQuery] = useState(() => {
-    try { return sessionStorage.getItem("search_query") ?? ""; } catch { return ""; }
-  });
-  const [submittedQuery, setSubmittedQuery] = useState(() => {
-    try { return sessionStorage.getItem("search_submitted") ?? ""; } catch { return ""; }
-  });
+  const [query, setQuery] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const mainRef = useRef<HTMLElement>(null);
+
+  // Restore search state only when returning from a cup detail page.
+  // On fresh navigation the page starts empty, matching user expectation.
+  useEffect(() => {
+    const returning = sessionStorage.getItem("search_return_pending") === "1";
+    sessionStorage.removeItem("search_return_pending");
+    if (returning) {
+      try {
+        const q = sessionStorage.getItem("search_query") ?? "";
+        const s = sessionStorage.getItem("search_submitted") ?? "";
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (q) setQuery(q);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (s) setSubmittedQuery(s);
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     try { sessionStorage.setItem("search_query", query); } catch {}
@@ -224,6 +237,10 @@ export default function StoreLocatorPage() {
   useEffect(() => {
     try { sessionStorage.setItem("search_submitted", submittedQuery); } catch {}
   }, [submittedQuery]);
+
+  const markSearchNavigation = useCallback(() => {
+    try { sessionStorage.setItem("search_return_pending", "1"); } catch {}
+  }, []);
 
   const { data: cups = [] } = useQuery<Cup[]>({
     queryKey: ["cups"],
@@ -352,7 +369,7 @@ export default function StoreLocatorPage() {
               {stores.length} store{stores.length !== 1 ? "s" : ""} near {submittedQuery}
             </p>
             {stores.map((store) => (
-              <StoreCard key={store.place_id} store={store} cups={cupsWithOwnership} />
+              <StoreCard key={store.place_id} store={store} cups={cupsWithOwnership} onCupClick={markSearchNavigation} />
             ))}
           </>
         )}
