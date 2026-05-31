@@ -90,6 +90,7 @@ jobs:
           name: unit test results
           path: app/test-results/junit.xml
           reporter: java-junit
+          use-actions-summary: false
       - name: Upload coverage report
         uses: actions/upload-artifact@v7
         if: always()
