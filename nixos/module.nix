@@ -140,7 +140,7 @@ in
 
     pbImage = lib.mkOption {
       type = lib.types.str;
-      default = "ghcr.io/muchobien/pocketbase:0.38.0";
+      default = "ghcr.io/muchobien/pocketbase:0.39.0";
       description = "OCI image for PocketBase. Pin to a specific version for reproducible deployments.";
     };
 
