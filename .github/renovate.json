@@ -44,17 +44,16 @@
     {
       "description": "Group the PocketBase container image across both files it appears in",
       "groupName": "PocketBase container",
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchPackageNames": ["ghcr.io/muchobien/pocketbase"]
     }
   ],
-  "regexManagers": [
+  "customManagers": [
     {
+      "customType": "regex",
       "description": "Track PocketBase container tag in flake.nix and nixos/module.nix",
-      "fileMatch": ["^flake\\.nix$", "^nixos/module\\.nix$"],
-      "matchStrings": [
-        "ghcr\\.io/muchobien/pocketbase:(?<currentValue>[^\\s\"\\\\]+)"
-      ],
+      "managerFilePatterns": ["/^flake\\.nix$/", "/^nixos/module\\.nix$/"],
+      "matchStrings": ["ghcr\\.io/muchobien/pocketbase:(?<currentValue>[^\\s\"\\\\]+)"],
       "depNameTemplate": "ghcr.io/muchobien/pocketbase",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
