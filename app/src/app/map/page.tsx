@@ -7,6 +7,8 @@ import { useEffect, useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
+import { isDisplayableCup } from "@/lib/collection-prefs";
+import { tryParseJson } from "@/lib/session-state";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { useNearbyRadius, RADIUS_OPTIONS } from "@/hooks/useNearbyRadius";
@@ -88,7 +90,7 @@ export default function MapPage() {
 
   function handleSearchHere() {
     try {
-      const pos = JSON.parse(sessionStorage.getItem("map_position") ?? "null");
+      const pos = tryParseJson<{ lat: number; lng: number } | null>(sessionStorage.getItem("map_position"), null);
       if (pos?.lat !== undefined && pos?.lng !== undefined) {
         // Capture the zoom-based chip radius into searchRadius — avoids calling
         // setRadius (which changes targetZoom and triggers ZoomUpdater's flyTo).
@@ -119,9 +121,7 @@ export default function MapPage() {
         if (ownedOnly && !owned) return false;
         // Owned cups always show; only hide unowned cups from excluded series/types
         if (!owned) {
-          if (c.is_duplicate) return false;
-          if (prefs.excluded_series?.includes(c.series)) return false;
-          if (prefs.excluded_types?.includes(c.item_type || "mug")) return false;
+          if (!isDisplayableCup(c, prefs)) return false;
         }
         // City cups need real coords for a pin; state/country/themed appear in city popups
         return c.scope === "state" || c.scope === "country" || c.scope === "themed" || (!!c.lat && !!c.lng);

@@ -1,11 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
+import { isDisplayableCup } from "@/lib/collection-prefs";
+import { tryParseJson } from "@/lib/session-state";
+import { useScrollRestoration } from "@/hooks/useScrollRestoration";
+import { getThemeGroup } from "@/lib/theme-group";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { countryCodeToFlag } from "@/lib/country";
@@ -14,23 +18,14 @@ import type { Cup, OwnedCup, CollectionPrefs } from "@/types";
 
 const EMPTY_PREFS: CollectionPrefs = {};
 
-// Derive a display-friendly theme group from a themed cup's notes/series/venue fields.
-function getThemeGroup(cup: Cup): string {
-  const notes = cup.notes?.toLowerCase() ?? "";
-  const series = cup.series?.toLowerCase() ?? "";
-  if (notes.includes("star wars")) return "Star Wars";
-  if (notes.includes("avengers campus") || notes.includes("black panther") || series === "been there marvel") return "Marvel";
-  if (notes.includes("cruise ship")) return "Cruise Ships";
-  if (cup.venue_series === "Been There Disney Parks") return "Disney Parks";
-  if (cup.venue_series) return cup.venue_series;
-  return cup.series;
-}
 
 function readStatsDrill(): { country: { name: string; code: string } | null; region: string | null; theme: string | null } {
-  try {
-    const saved = JSON.parse(sessionStorage.getItem("stats_drill") ?? "{}");
-    return { country: saved.country ?? null, region: saved.region ?? null, theme: saved.theme ?? null };
-  } catch { return { country: null, region: null, theme: null }; }
+  const saved = tryParseJson(sessionStorage.getItem("stats_drill"), {} as Record<string, unknown>);
+  return {
+    country: (saved.country as { name: string; code: string } | null) ?? null,
+    region: (saved.region as string | null) ?? null,
+    theme: (saved.theme as string | null) ?? null,
+  };
 }
 const R_LARGE = 45;
 const R_SMALL = 32;
@@ -133,8 +128,6 @@ export default function StatsPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const householdId = session?.user?.householdId ?? null;
-  const didRestoreScroll = useRef(false);
-
   const [countrySeries, setCountrySeries] = useState("all");
   const [selectedCountry, setSelectedCountry] = useState<{ name: string; code: string } | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
@@ -164,14 +157,7 @@ export default function StatsPage() {
     enabled: !!householdId,
   });
 
-  // Save window scroll position for back-navigation restore
-  useEffect(() => {
-    const handler = () => {
-      try { sessionStorage.setItem("stats_scroll", String(Math.round(window.scrollY))); } catch {}
-    };
-    window.addEventListener("scroll", handler, { passive: true });
-    return () => window.removeEventListener("scroll", handler);
-  }, []);
+  useScrollRestoration("stats_scroll", cups.length > 0);
 
   // Restore drill-down state post-mount, but ONLY when returning from a cup detail page.
   // Same flag pattern as browse: markCupNavigation sets stats_return_pending before navigating.
@@ -202,26 +188,11 @@ export default function StatsPage() {
     try { sessionStorage.setItem("stats_return_pending", "1"); } catch {}
   }, []);
 
-  // Restore scroll once data loads (after navigating back from cup detail)
-  useEffect(() => {
-    if (didRestoreScroll.current || cups.length === 0) return;
-    requestAnimationFrame(() => {
-      try {
-        const pos = Number(sessionStorage.getItem("stats_scroll") ?? 0);
-        if (pos > 0) window.scrollTo(0, pos);
-      } catch {}
-    });
-    didRestoreScroll.current = true;
-  }, [cups]);
-
   const ownedCupIds = useMemo(() => new Set(ownedCups.map((o) => o.cup_id)), [ownedCups]);
 
   const displayable = useMemo(() => cups.filter((c) => {
     if (ownedCupIds.has(c.id)) return true;
-    if (c.is_duplicate) return false;
-    if (prefs.excluded_series?.includes(c.series)) return false;
-    if (prefs.excluded_types?.includes(c.item_type || "mug")) return false;
-    return true;
+    return isDisplayableCup(c, prefs);
   }), [cups, ownedCupIds, prefs]);
 
   const displayableMugs = useMemo(() =>

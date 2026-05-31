@@ -5,17 +5,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { getPocketBase } from "@/lib/pocketbase";
+import { canWrite } from "@/lib/roles";
+import { isExcludedSeries, isExcludedType } from "@/lib/collection-prefs";
 import { BottomNav } from "@/components/BottomNav";
 import type { CollectionPrefs } from "@/types";
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function isExcludedSeries(prefs: CollectionPrefs, series: string) {
-  return (prefs.excluded_series ?? []).includes(series);
-}
-function isExcludedType(prefs: CollectionPrefs, type: string) {
-  return (prefs.excluded_types ?? []).includes(type);
-}
 
 // ── Toggle component ───────────────────────────────────────────────────────
 
@@ -86,7 +79,7 @@ export default function CollectionPrefsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const isOwner = session?.user?.householdRole === "owner";
+  const isOwner = canWrite(session?.user?.householdRole ?? "none");
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/sign-in");

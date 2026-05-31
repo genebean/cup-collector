@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/app/auth";
 import { getAdminPocketBase } from "@/lib/pocketbase";
-
-async function requireWriter() {
-  const session = await auth();
-  if (!session?.user?.pocketIdSub) return null;
-  if (session.user.householdRole !== "owner") return null;
-  return session;
-}
+import { requireWriter } from "@/lib/api-auth";
 
 // POST /api/owned-cups
 // Body: { cup_id: string }

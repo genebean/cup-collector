@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Cup, CupWithOwnership } from "@/types";
 import { getFileUrl } from "@/lib/pocketbase";
 import { countryCodeToFlag } from "@/lib/country";
+import { CupTypeTags } from "@/components/CupTypeTags";
 
 interface CupCardProps {
   cup: CupWithOwnership;
@@ -87,16 +88,7 @@ export function CupCard({ cup, variantCount, ownedVariants, imageCup, onClick }:
         {hasTags && (
           <div className="flex items-center justify-between gap-2 mt-0.5">
             <div className="flex items-center gap-1 flex-wrap">
-              {cup.item_type === "ornament" && (
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-green-dark dark:bg-amber-900/40 dark:text-amber-300">
-                  ornament
-                </span>
-              )}
-              {(cup.scope === "state" || cup.scope === "country" || cup.scope === "themed") && (
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 capitalize">
-                  {cup.scope}
-                </span>
-              )}
+              <CupTypeTags item_type={cup.item_type} scope={cup.scope} />
               {isGroup && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                   {variantCount} versions

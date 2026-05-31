@@ -9,6 +9,10 @@ import { useRouter } from "next/navigation";
 import { getPocketBase } from "@/lib/pocketbase";
 import { haversineMi } from "@/lib/geo";
 import { buildSeriesOptions } from "@/lib/browse";
+import { canWrite as checkCanWrite } from "@/lib/roles";
+import { isDisplayableCup } from "@/lib/collection-prefs";
+import { tryParseJson } from "@/lib/session-state";
+import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { groupByVariant, groupNeedsAction, findRepresentative } from "@/lib/variants";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -25,7 +29,7 @@ export default function BrowsePage() {
   const router = useRouter();
   const { data: session } = useSession();
   const householdId = session?.user?.householdId ?? null;
-  const canWrite = session?.user?.householdRole === "owner";
+  const canWrite = checkCanWrite(session?.user?.householdRole ?? "none");
 
   // All filter state initializes to defaults — sessionStorage and URL params are
   // client-only and cannot be read during SSR; reading them in lazy initializers
@@ -39,7 +43,6 @@ export default function BrowsePage() {
   const [search, setSearch] = useState("");
   const [needsReplacingFilter, setNeedsReplacingFilter] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
-  const didRestoreScroll = useRef(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
@@ -57,7 +60,7 @@ export default function BrowsePage() {
     sessionStorage.removeItem("browse_return_pending");
     if (returning) {
       try {
-        const saved = JSON.parse(sessionStorage.getItem("browse_state") ?? "{}");
+        const saved = tryParseJson(sessionStorage.getItem("browse_state"), {} as Record<string, string>);
         if (saved.statusFilter) setStatusFilter(saved.statusFilter as StatusFilter);
         if (saved.seriesFilter) setSeriesFilter(saved.seriesFilter);
         if (saved.countryFilter) setCountryFilter(saved.countryFilter);
@@ -146,10 +149,7 @@ export default function BrowsePage() {
   // Owned cups always show; unowned cups from excluded series/types or marked as duplicates are hidden.
   const displayableCups = useMemo(() => cups.filter((c) => {
     if (ownedCupIds.has(c.id)) return true;
-    if (c.is_duplicate) return false;
-    if (prefs.excluded_series?.includes(c.series)) return false;
-    if (prefs.excluded_types?.includes(c.item_type || "mug")) return false;
-    return true;
+    return isDisplayableCup(c, prefs);
   }), [cups, ownedCupIds, prefs]);
 
   const seriesOptions = useMemo(() => buildSeriesOptions(displayableCups), [displayableCups]);
@@ -257,15 +257,9 @@ export default function BrowsePage() {
     overscan: 8,
   });
 
-  // Restore scroll position once after the list first renders with data
-  useEffect(() => {
-    if (didRestoreScroll.current || !mainRef.current || displayedGroups.length === 0) return;
-    try {
-      const pos = Number(sessionStorage.getItem("browse_scroll") ?? 0);
-      if (pos > 0) mainRef.current.scrollTop = pos;
-    } catch {}
-    didRestoreScroll.current = true;
-  }, [displayedGroups]);
+  const { onScroll: onBrowseScroll } = useScrollRestoration(
+    "browse_scroll", displayedGroups.length > 0, mainRef
+  );
 
   const ownedCount = useMemo(
     () => baseGroups.filter(({ members }) => members.some((c) => c.isOwned)).length,
@@ -432,10 +426,7 @@ export default function BrowsePage() {
       <main
         ref={mainRef}
         className="flex-1 overflow-y-auto pb-20"
-        onScroll={() => {
-          try { sessionStorage.setItem("browse_scroll", String(mainRef.current?.scrollTop ?? 0)); }
-          catch {}
-        }}
+        onScroll={onBrowseScroll}
       >
         {displayedGroups.length === 0 ? (
           <div className="text-center text-gray-400 dark:text-gray-500 py-16">No cups match your search.</div>
