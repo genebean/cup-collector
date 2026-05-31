@@ -22,9 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v4
-        # Requires "Dependency graph" enabled in repo Settings → Security & Analysis.
-        # Non-blocking until that is enabled.
-        continue-on-error: true
 
   npm-audit:
     name: npm audit
@@ -132,7 +129,7 @@ jobs:
       - uses: anchore/scan-action@v5
         with:
           image: ${{ steps.image.outputs.ref }}
-          fail-build: false
+          fail-build: true
           severity-cutoff: critical
 
   pb-migrations:
