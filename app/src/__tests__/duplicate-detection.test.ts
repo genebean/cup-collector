@@ -101,4 +101,35 @@ describe("detectDuplicateGroups", () => {
     const groups = detectDuplicateGroups(cups);
     expect(groups[0].cups[0].name).toBe("Atlanta");
   });
+
+  it("does not flag a base cup and its variant as duplicates", () => {
+    const base = cup({ name: "Atlanta", series: "Been There" });
+    const variant = cup({ name: "Atlanta 2", series: "Been There", variant_of: base.id });
+    expect(detectDuplicateGroups([base, variant])).toHaveLength(0);
+  });
+
+  it("does not flag multiple variants of the same base as duplicates", () => {
+    const base = cup({ name: "Atlanta", series: "Been There" });
+    const v1 = cup({ name: "Atlanta 2", series: "Been There", variant_of: base.id });
+    const v2 = cup({ name: "Atlanta 3", series: "Been There", variant_of: base.id });
+    expect(detectDuplicateGroups([base, v1, v2])).toHaveLength(0);
+  });
+
+  it("still flags two distinct base cups at the same location", () => {
+    const a = cup({ name: "Atlanta",   series: "Been There" });
+    const b = cup({ name: "Atlanta 2", series: "Been There" });
+    const groups = detectDuplicateGroups([a, b]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].cups.map((c) => c.name).sort()).toEqual(["Atlanta", "Atlanta 2"]);
+  });
+
+  it("flags true duplicate base cups even when variants of one exist", () => {
+    const a  = cup({ name: "Atlanta",   series: "Been There" });
+    const b  = cup({ name: "Atlanta 2", series: "Been There" });
+    const av = cup({ name: "Atlanta (Matte)", series: "Been There", variant_of: a.id });
+    const groups = detectDuplicateGroups([a, b, av]);
+    expect(groups).toHaveLength(1);
+    // av is excluded; only the two base cups appear in the group
+    expect(groups[0].cups.map((c) => c.name).sort()).toEqual(["Atlanta", "Atlanta 2"]);
+  });
 });
