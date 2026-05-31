@@ -15,11 +15,13 @@ export function baseName(name: string): string {
 // scope, region, item_type, AND their names share the same base (one is "Atlanta",
 // the other is "Atlanta 2"). A mug and an ornament are never duplicates of each other.
 // Owned-cup status is irrelevant here — the admin sees all.
+// Variant cups (variant_of !== "") are intentional entries and are excluded — only
+// distinct base cups can be true duplicates of each other.
 export function detectDuplicateGroups(cups: Cup[]): DuplicateGroup[] {
   type BucketKey = string;
   const buckets = new Map<BucketKey, Cup[]>();
 
-  for (const cup of cups) {
+  for (const cup of cups.filter((c) => !c.variant_of)) {
     const scope    = cup.scope     || "city";
     const region   = cup.region    || "";
     const itemType = cup.item_type || "mug";
