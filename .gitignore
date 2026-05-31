@@ -4,6 +4,8 @@ pocketid/
 
 # Claude Code personal settings (permissions, MCP config) — not for public repos
 .claude/
+!.claude/skills/
+!.claude/skills/**
 .mcp.json
 
 # Claude Code auto-memory (belongs in ~/.claude/projects/..., never in the repo)
