@@ -46,15 +46,30 @@
       "groupName": "PocketBase container",
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["ghcr.io/muchobien/pocketbase"]
+    },
+    {
+      "description": "Track pocket-id major version tag in dev script",
+      "groupName": "pocket-id container",
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["ghcr.io/pocket-id/pocket-id"]
     }
   ],
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Track PocketBase container tag in flake.nix and nixos/module.nix",
+      "description": "Track PocketBase container tag in nixos/module.nix and dev scripts",
       "managerFilePatterns": ["/^flake\\.nix$/", "/^nixos/module\\.nix$/", "/^pkgs/scripts/pb-serve\\.nix$/"],
       "matchStrings": ["ghcr\\.io/muchobien/pocketbase:(?<currentValue>[^\\s\"\\\\]+)"],
       "depNameTemplate": "ghcr.io/muchobien/pocketbase",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Track pocket-id major version tag in dev script",
+      "managerFilePatterns": ["/^pkgs/scripts/pocketid-serve\\.nix$/"],
+      "matchStrings": ["ghcr\\.io/pocket-id/pocket-id:(?<currentValue>[^\\s\"\\\\]+)"],
+      "depNameTemplate": "ghcr.io/pocket-id/pocket-id",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
     }
