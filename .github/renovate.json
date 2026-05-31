@@ -52,7 +52,7 @@
     {
       "customType": "regex",
       "description": "Track PocketBase container tag in flake.nix and nixos/module.nix",
-      "managerFilePatterns": ["/^flake\\.nix$/", "/^nixos/module\\.nix$/"],
+      "managerFilePatterns": ["/^flake\\.nix$/", "/^nixos/module\\.nix$/", "/^pkgs/scripts/pb-serve\\.nix$/"],
       "matchStrings": ["ghcr\\.io/muchobien/pocketbase:(?<currentValue>[^\\s\"\\\\]+)"],
       "depNameTemplate": "ghcr.io/muchobien/pocketbase",
       "datasourceTemplate": "docker",
