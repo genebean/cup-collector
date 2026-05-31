@@ -10,6 +10,7 @@ import type { Cup } from "@/types";
 import type { DuplicateGroup } from "@/lib/duplicate-detection";
 import { getFileUrl } from "@/lib/pocketbase";
 import { buildSeriesOptions } from "@/lib/browse";
+import { buildCsv } from "@/lib/csv";
 
 interface DuplicatesData {
   groups: DuplicateGroup[];
@@ -88,15 +89,11 @@ function DuplicatesContent({
 
   function downloadReport() {
     if (!data?.marked.length) return;
-    const rows = [
-      "name,series,year,item_type,country,region,more_info_url,hobbydb_url",
-      ...data.marked.map((c) =>
-        [c.name, c.series, c.year, c.item_type || "mug", c.country, c.region, c.more_info_url, c.hobbydb_url]
-          .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
-          .join(",")
-      ),
-    ].join("\n");
-    const blob = new Blob([rows], { type: "text/csv" });
+    const csv = buildCsv(
+      ["name", "series", "year", "item_type", "country", "region", "more_info_url", "hobbydb_url"],
+      data.marked.map((c) => [c.name, c.series, c.year, c.item_type || "mug", c.country, c.region, c.more_info_url, c.hobbydb_url])
+    );
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

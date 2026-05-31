@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { getPocketBase } from "@/lib/pocketbase";
+import { isDisplayableCup } from "@/lib/collection-prefs";
+import { getThemeGroup } from "@/lib/theme-group";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { countryCodeToFlag } from "@/lib/country";
@@ -14,17 +16,6 @@ import type { Cup, OwnedCup, CollectionPrefs } from "@/types";
 
 const EMPTY_PREFS: CollectionPrefs = {};
 
-// Derive a display-friendly theme group from a themed cup's notes/series/venue fields.
-function getThemeGroup(cup: Cup): string {
-  const notes = cup.notes?.toLowerCase() ?? "";
-  const series = cup.series?.toLowerCase() ?? "";
-  if (notes.includes("star wars")) return "Star Wars";
-  if (notes.includes("avengers campus") || notes.includes("black panther") || series === "been there marvel") return "Marvel";
-  if (notes.includes("cruise ship")) return "Cruise Ships";
-  if (cup.venue_series === "Been There Disney Parks") return "Disney Parks";
-  if (cup.venue_series) return cup.venue_series;
-  return cup.series;
-}
 
 function readStatsDrill(): { country: { name: string; code: string } | null; region: string | null; theme: string | null } {
   try {
@@ -218,10 +209,7 @@ export default function StatsPage() {
 
   const displayable = useMemo(() => cups.filter((c) => {
     if (ownedCupIds.has(c.id)) return true;
-    if (c.is_duplicate) return false;
-    if (prefs.excluded_series?.includes(c.series)) return false;
-    if (prefs.excluded_types?.includes(c.item_type || "mug")) return false;
-    return true;
+    return isDisplayableCup(c, prefs);
   }), [cups, ownedCupIds, prefs]);
 
   const displayableMugs = useMemo(() =>

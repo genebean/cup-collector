@@ -10,6 +10,7 @@ import { getPocketBase } from "@/lib/pocketbase";
 import { haversineMi } from "@/lib/geo";
 import { buildSeriesOptions } from "@/lib/browse";
 import { canWrite as checkCanWrite } from "@/lib/roles";
+import { isDisplayableCup } from "@/lib/collection-prefs";
 import { groupByVariant, groupNeedsAction, findRepresentative } from "@/lib/variants";
 import { BottomNav } from "@/components/BottomNav";
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -147,10 +148,7 @@ export default function BrowsePage() {
   // Owned cups always show; unowned cups from excluded series/types or marked as duplicates are hidden.
   const displayableCups = useMemo(() => cups.filter((c) => {
     if (ownedCupIds.has(c.id)) return true;
-    if (c.is_duplicate) return false;
-    if (prefs.excluded_series?.includes(c.series)) return false;
-    if (prefs.excluded_types?.includes(c.item_type || "mug")) return false;
-    return true;
+    return isDisplayableCup(c, prefs);
   }), [cups, ownedCupIds, prefs]);
 
   const seriesOptions = useMemo(() => buildSeriesOptions(displayableCups), [displayableCups]);

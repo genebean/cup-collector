@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getPocketBase } from "@/lib/pocketbase";
 import { groupedStoreCups } from "@/lib/store-cups";
+import { isDisplayableCup } from "@/lib/collection-prefs";
 import { BottomNav } from "@/components/BottomNav";
 import type { Cup, OwnedCup, CupWithOwnership, CollectionPrefs, NearbyStore } from "@/types";
 
@@ -270,9 +271,7 @@ export default function StoreLocatorPage() {
     cups
       .filter(
         (c) =>
-          !c.is_duplicate &&
-          !prefs.excluded_series?.includes(c.series) &&
-          !prefs.excluded_types?.includes(c.item_type || "mug")
+          isDisplayableCup(c, prefs)
       )
       .map((cup) => ({
         ...cup,

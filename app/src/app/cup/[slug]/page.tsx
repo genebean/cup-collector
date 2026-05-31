@@ -7,6 +7,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { getPocketBase, getFileUrl } from "@/lib/pocketbase";
 import { looksLikeId } from "@/lib/slug";
+import { displayHostname } from "@/lib/url";
 import { findRepresentative } from "@/lib/variants";
 import { useNearbyRadius } from "@/hooks/useNearbyRadius";
 import { BottomNav } from "@/components/BottomNav";
@@ -792,20 +793,16 @@ function VariantMemberCard({
                   HobbyDB ↗
                 </a>
               )}
-              {cup.more_info_url && (() => {
-                let host = "More info";
-                try { host = new URL(cup.more_info_url).hostname.replace(/^www\./, ""); } catch { /* use fallback */ }
-                return (
-                  <a
-                    href={cup.more_info_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    {host} ↗
-                  </a>
-                );
-              })()}
+              {cup.more_info_url && (
+                <a
+                  href={cup.more_info_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  {displayHostname(cup.more_info_url) || "More info"} ↗
+                </a>
+              )}
             </div>
           )}
         </div>
