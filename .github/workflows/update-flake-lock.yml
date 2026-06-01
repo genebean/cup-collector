@@ -22,4 +22,4 @@ jobs:
           pr-title: "chore: update flake.lock"
           pr-labels: "dependencies,nix"
           commit-msg: "chore: update flake.lock"
-          # Sign commits so they pass any branch-protection signature requirements
+          token: ${{ secrets.CI_FLAKE_UPDATES }}
