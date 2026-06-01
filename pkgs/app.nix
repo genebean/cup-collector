@@ -21,7 +21,13 @@ pkgs.buildNpmPackage {
 
   # Recompute this hash after any package-lock.json change:
   #   nix run nixpkgs#prefetch-npm-deps app/package-lock.json
-  npmDepsHash = "sha256-ktctSavO+/82aA7lJFSZCtvCcPni2mqvxIRgKHNXyiE=";
+  npmDepsHash = "sha256-Sf/gK1ESaFfgabc8Bb3Bc4DNZcqU6yiY4CwtFuzAnMQ=";
+
+  # eslint-plugin-import (bundled in eslint-config-next) declares peer deps up
+  # to eslint v9 only. --legacy-peer-deps skips peer dep validation and uses
+  # the lock file as-is, matching what the lint CI job already does. Remove
+  # this once eslint-config-next upgrades eslint-plugin-import to v10-aware.
+  npmFlags = [ "--legacy-peer-deps" ];
 
   buildPhase = "npm run build";
 
