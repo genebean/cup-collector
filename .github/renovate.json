@@ -45,7 +45,7 @@
       "description": "Group the PocketBase container image across both files it appears in",
       "groupName": "PocketBase container",
       "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["ghcr.io/muchobien/pocketbase"]
+      "matchPackageNames": ["ghcr.io/genebean/pocketbase"]
     },
     {
       "description": "Track pocket-id major version tag in dev script",
@@ -59,8 +59,8 @@
       "customType": "regex",
       "description": "Track PocketBase container tag in nixos/module.nix and dev scripts",
       "managerFilePatterns": ["/^flake\\.nix$/", "/^nixos/module\\.nix$/", "/^pkgs/scripts/pb-serve\\.nix$/"],
-      "matchStrings": ["ghcr\\.io/muchobien/pocketbase:(?<currentValue>[^\\s\"\\\\]+)"],
-      "depNameTemplate": "ghcr.io/muchobien/pocketbase",
+      "matchStrings": ["ghcr\\.io/genebean/pocketbase:(?<currentValue>[^\\s\"\\\\]+)"],
+      "depNameTemplate": "ghcr.io/genebean/pocketbase",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
     },
