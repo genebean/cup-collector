@@ -5,16 +5,13 @@ on:
 
 jobs:
   pre-commit:
-    name: pre-commit hooks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: DeterminateSystems/nix-installer-action@v22
-      - uses: DeterminateSystems/magic-nix-cache-action@v14
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.x"
-      - uses: pre-commit/action@v3.0.1
+    uses: genebean/.github/.github/workflows/pre-commit-nix.yml@main
+
+  nix-build:
+    uses: genebean/.github/.github/workflows/nix-build.yml@main
+    with:
+      npmDepsHash-glob: flake.nix
+      nixos-config-test: true
 
   dependency-review:
     name: dependency review
@@ -37,32 +34,6 @@ jobs:
         # Blocking on critical only; Renovate will surface fixes when they land.
         run: npm audit --audit-level=critical
         working-directory: app
-
-  nix-build:
-    name: nix build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: DeterminateSystems/nix-installer-action@v22
-      - uses: DeterminateSystems/magic-nix-cache-action@v14
-      - uses: DeterminateSystems/flake-checker-action@v12
-        with:
-          # Fail the PR if nixpkgs is more than 30 days stale.
-          # The update-flake-lock workflow keeps it fresh on a weekly cadence.
-          fail-mode: true
-      - name: Ensure npmDepsHash is not the placeholder value
-        run: |
-          if grep -qF 'sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' flake.nix; then
-            echo "::error file=flake.nix::npmDepsHash is still the placeholder. Run 'nix build', copy the 'got:' hash into flake.nix, and commit."
-            exit 1
-          fi
-      - name: nix build
-        run: nix build
-      - name: NixOS module evaluation (nix build nixosConfigurations.test)
-        # Builds the full NixOS system closure using the module to catch evaluation
-        # errors (missing options, type mismatches, callPackage failures) without
-        # deploying to production.
-        run: nix build .#nixosConfigurations.test.config.system.build.toplevel
 
   unit-tests:
     name: unit tests
@@ -144,13 +115,15 @@ jobs:
           REF=$(grep -oP 'default = "\Kghcr\.io/[^"]+' nixos/module.nix | grep pocketbase | head -1)
           echo "ref=${REF}" >> "$GITHUB_OUTPUT"
       - name: Start PocketBase on a fresh instance with migrations
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
         run: |
           mkdir -p /tmp/pb_data
           docker run -d --name pb-test \
             -v "${{ github.workspace }}/pocketbase/migrations:/pb/pb_migrations:ro" \
             -v "/tmp/pb_data:/pb/pb_data" \
             -p 127.0.0.1:8090:8090 \
-            ${{ steps.image.outputs.ref }} \
+            "${IMAGE_REF}" \
             serve \
             --dir=/pb/pb_data \
             --migrationsDir=/pb/pb_migrations \
