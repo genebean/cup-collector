@@ -7,7 +7,7 @@ pkgs.writeShellScriptBin "cc-pb-serve" ''
     -p 127.0.0.1:8090:8090 \
     -v "$PROJ_ROOT/pocketbase/pb_data:/pb/pb_data:Z" \
     -v "$PROJ_ROOT/pocketbase/migrations:/pb/pb_migrations:ro,Z" \
-    ghcr.io/muchobien/pocketbase:0.39.0 \
+    ghcr.io/genebean/pocketbase:0.39.4 \
     serve \
     --dir=/pb/pb_data \
     --migrationsDir=/pb/pb_migrations \

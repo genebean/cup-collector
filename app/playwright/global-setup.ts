@@ -11,9 +11,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Read the image tag from nixos/module.nix — single source of truth, kept current by Renovate.
 function getPbImage(): string {
   const moduleNix = readFileSync(resolve(__dirname, "../../nixos/module.nix"), "utf-8");
-  const match = moduleNix.match(/ghcr\.io\/muchobien\/pocketbase:([\d.]+)/);
+  const match = moduleNix.match(/ghcr\.io\/[^"\/]+\/pocketbase:[^\s"\\]+/);
   if (!match) throw new Error("Cannot determine PocketBase image version from nixos/module.nix");
-  return `ghcr.io/muchobien/pocketbase:${match[1]}`;
+  return match[0];
 }
 const PB_IMAGE = getPbImage();
 const MIGRATIONS_DIR = resolve(__dirname, "../../pocketbase/migrations");

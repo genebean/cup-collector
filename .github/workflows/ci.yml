@@ -125,8 +125,8 @@ jobs:
         run: |
           # Pull the image tag from the module default — single source of truth after
           # the flake.nix dev shell was aligned to the same version.
-          TAG=$(grep -oP 'ghcr\.io/muchobien/pocketbase:\K[^\s"\\]+' nixos/module.nix | head -1)
-          echo "ref=ghcr.io/muchobien/pocketbase:${TAG}" >> "$GITHUB_OUTPUT"
+          REF=$(grep -oP 'default = "\Kghcr\.io/[^"]+' nixos/module.nix | grep pocketbase | head -1)
+          echo "ref=${REF}" >> "$GITHUB_OUTPUT"
       - uses: anchore/scan-action@v7
         with:
           image: ${{ steps.image.outputs.ref }}
@@ -141,8 +141,8 @@ jobs:
       - name: Extract PocketBase image reference
         id: image
         run: |
-          TAG=$(grep -oP 'ghcr\.io/muchobien/pocketbase:\K[^\s"\\]+' nixos/module.nix | head -1)
-          echo "ref=ghcr.io/muchobien/pocketbase:${TAG}" >> "$GITHUB_OUTPUT"
+          REF=$(grep -oP 'default = "\Kghcr\.io/[^"]+' nixos/module.nix | grep pocketbase | head -1)
+          echo "ref=${REF}" >> "$GITHUB_OUTPUT"
       - name: Start PocketBase on a fresh instance with migrations
         run: |
           mkdir -p /tmp/pb_data
