@@ -47,7 +47,7 @@ describe("searchPlaces", () => {
     });
   });
 
-  it("falls back to 'Starbucks' when displayName is missing", async () => {
+  it("filters out places with missing displayName", async () => {
     process.env.GOOGLE_PLACES_API_KEY = "test-key";
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
@@ -64,7 +64,7 @@ describe("searchPlaces", () => {
     }));
 
     const result = await searchPlaces({ textQuery: "Starbucks" });
-    expect(result[0].name).toBe("Starbucks");
+    expect(result).toEqual([]);
   });
 
   it("returns empty array when places is absent in the response", async () => {

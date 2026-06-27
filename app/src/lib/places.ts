@@ -60,7 +60,9 @@ export async function searchPlaces(requestBody: object): Promise<NearbyStore[]> 
     }
 
     const data = await response.json() as { places?: GooglePlace[] };
-    return (data.places ?? []).map(toStore);
+    return (data.places ?? [])
+      .filter(p => p.displayName?.text?.toLowerCase().includes("starbucks"))
+      .map(toStore);
   } catch (err) {
     console.error("Failed to fetch from Google Places:", err);
     return [];
