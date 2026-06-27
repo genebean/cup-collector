@@ -2,6 +2,62 @@
 
 All notable changes to Cup Collector are documented here.
 
+## [1.1.3] - 2026-06-27
+
+### Bug Fixes
+
+- Make dependency-review and container-scan actually blocking
+
+- Add pb-serve.nix to Renovate coverage and sync version to 0.39.0
+
+- Add Renovate coverage for pocket-id container
+
+- Restore unit test results check after dorny/test-reporter v3 upgrade
+
+- **deps:** Update dependency pocketbase to ^0.27.0
+
+- Filter non-Starbucks results from Google Places API response
+
+
+### Miscellaneous
+
+- **config:** Migrate config .github/renovate.json
+
+- **deps:** Update ghcr.io/muchobien/pocketbase docker tag to v0.39.0
+
+- **deps:** Update github actions
+
+- **deps:** Update dependency @tanstack/react-query to v5.100.14
+
+- **deps:** Update dependency @types/react to v19.2.15
+
+- **deps:** Update dependency postcss to v8.5.15
+
+- **deps:** Update vitest monorepo to v4.1.7
+
+- **deps:** Update dependency @types/node to v25.9.1
+
+- Update npmDepsHash for combined Renovate npm bumps
+
+- Update flake.lock
+
+- Bump nixpkgs to nixos-26.05
+
+- Switch PocketBase image to genebean fork built on Alpine 3.24.1
+
+
+### Other Changes
+
+- Remove sign-commits option from update-flake-lock.yml
+
+- Add token for flake.lock workflow
+
+
+### Refactoring
+
+- Delegate docs, flake-lock, and CI to reusable workflows
+
+
 ## [1.1.2] - 2026-05-31
 
 ### Bug Fixes
@@ -18,6 +74,8 @@ All notable changes to Cup Collector are documented here.
 ### Miscellaneous
 
 - Track Claude's skills (.claude/skills)
+
+- Release v1.1.2
 
 
 ### Refactoring
