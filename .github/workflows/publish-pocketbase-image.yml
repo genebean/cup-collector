@@ -31,7 +31,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
           REVISION: ${{ steps.version.outputs.revision }}
-          IMAGE: ghcr.io/${{ github.repository_owner }}/pocketbase
+          IMAGE: ghcr.io/${{ github.repository_owner }}/cup-collector-pocketbase
         run: |
           TAG="${VERSION}-r${REVISION}"
           docker build --pull \
