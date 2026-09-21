@@ -1,0 +1,43 @@
+name: Publish PocketBase image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - pocketbase-image/**
+      - .github/workflows/publish-pocketbase-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Read image version
+        id: version
+        run: |
+          echo "version=$(cat pocketbase-image/VERSION)" >> "$GITHUB_OUTPUT"
+          echo "revision=$(cat pocketbase-image/REVISION)" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+      - name: Build and publish
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          REVISION: ${{ steps.version.outputs.revision }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/cup-collector-pocketbase
+        run: |
+          TAG="${VERSION}-r${REVISION}"
+          docker build --pull \
+            --build-arg "PB_VERSION=${VERSION}" \
+            --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+            --tag "${IMAGE}:${TAG}" \
+            --file pocketbase-image/Dockerfile \
+            .
+          docker push "${IMAGE}:${TAG}"
