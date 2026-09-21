@@ -140,7 +140,7 @@ in
 
     pbImage = lib.mkOption {
       type = lib.types.str;
-      default = "ghcr.io/genebean/pocketbase:0.39.11-r1";
+      default = "ghcr.io/genebean/cup-collector-pocketbase:0.39.11-r1";
       description = "OCI image for PocketBase. Pin to a specific version for reproducible deployments.";
     };
 
