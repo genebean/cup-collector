@@ -6,6 +6,25 @@
   "labels": ["dependencies"],
   "packageRules": [
     {
+      "description": "Wait three days before proposing npm releases",
+      "matchDatasources": ["npm"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Group non-breaking npm minor and patch updates so the lockfile and Nix hash update once",
+      "groupName": "npm non-breaking updates",
+      "groupSlug": "npm-non-breaking",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchJsonata": ["isBreaking != true"]
+    },
+    {
+      "description": "Require explicit Dependency Dashboard approval for npm major updates",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
       "description": "Group Next.js core and its companion packages to avoid version skew",
       "groupName": "Next.js ecosystem",
       "matchPackageNames": [
@@ -13,7 +32,8 @@
         "next-auth",
         "eslint-config-next",
         "@ducanh2912/next-pwa"
-      ]
+      ],
+      "matchUpdateTypes": ["major"]
     },
     {
       "description": "Group React packages — they release together",
@@ -24,7 +44,8 @@
         "react-leaflet",
         "@types/react",
         "@types/react-dom"
-      ]
+      ],
+      "matchUpdateTypes": ["major"]
     },
     {
       "description": "Group Tailwind and its PostCSS companion",
@@ -34,7 +55,8 @@
         "@tailwindcss/postcss",
         "autoprefixer",
         "postcss"
-      ]
+      ],
+      "matchUpdateTypes": ["major"]
     },
     {
       "description": "Group GitHub Actions updates into a single PR",
