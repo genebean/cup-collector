@@ -4,6 +4,7 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened]
     paths:
+      - app/package.json
       - app/package-lock.json
 
 permissions:
