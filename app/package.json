@@ -29,7 +29,7 @@
     "remark-gfm": "^4.0.1"
   },
   "overrides": {
-    "serialize-javascript": "7.0.5"
+    "serialize-javascript": "7.1.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
