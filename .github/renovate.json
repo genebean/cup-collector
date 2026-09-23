@@ -4,6 +4,7 @@
   "timezone": "America/New_York",
   "schedule": ["before 6am on monday"],
   "labels": ["dependencies"],
+  "gitIgnoredAuthors": ["41898282+github-actions[bot]@users.noreply.github.com"],
   "packageRules": [
     {
       "description": "Wait three days before proposing npm releases",
