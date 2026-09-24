@@ -17,7 +17,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": resolve(__dirname, "./src"),
+      // import.meta.dirname (not __dirname) — required by Vite's native config
+      // loader, which Vitest 5 warns about and will require in a future major.
+      "@": resolve(import.meta.dirname, "./src"),
     },
   },
 });
