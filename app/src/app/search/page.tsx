@@ -224,7 +224,6 @@ export default function StoreLocatorPage() {
         const s = sessionStorage.getItem("search_submitted") ?? "";
         // eslint-disable-next-line react-hooks/set-state-in-effect
         if (q) setQuery(q);
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (s) setSubmittedQuery(s);
       } catch {}
     }
