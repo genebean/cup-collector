@@ -69,8 +69,8 @@ jobs:
           name: coverage
           path: coverage/
 
-  lint:
-    name: next lint
+  check-lint:
+    name: "check:lint"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -83,7 +83,51 @@ jobs:
         run: npm ci
         working-directory: app
       - name: Run ESLint
-        run: npm run lint
+        run: npm run check:lint
+        working-directory: app
+
+  check-tsc-app:
+    name: "check:tsc-app"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: app
+      # `next build` (in nix-build) typechecks app/src implicitly, but that's an
+      # indirect signal (it depends on Next's own build config and could be
+      # silenced by a future `typescript.ignoreBuildErrors`). This runs the same
+      # explicit `tsc --noEmit` that `nix develop`'s `check` command already runs
+      # locally, so the two can't quietly drift apart.
+      - name: Typecheck app/
+        run: npm run check:tsc-app
+        working-directory: app
+
+  check-tsc-scripts:
+    name: "check:tsc-scripts"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: app
+      # scripts/ (scrape-catalog.ts, import-cups.ts, etc.) has its own tsconfig.json
+      # and isn't covered by `next build`'s typecheck or `npm run lint` (both scoped
+      # to app/src). `nix develop`'s `check` command already runs this locally —
+      # this mirrors that so a dependency bump touching scripts/ can't merge green
+      # without it, the way node-html-parser's v9 repackaging could have.
+      - name: Typecheck scripts/
+        run: npm run check:tsc-scripts
         working-directory: app
 
   container-scan:

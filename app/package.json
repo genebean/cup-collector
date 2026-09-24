@@ -11,7 +11,10 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "check:lint": "npm run lint",
+    "check:tsc-app": "tsc --noEmit",
+    "check:tsc-scripts": "tsc --project ../scripts/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
