@@ -48,6 +48,7 @@
               python3 # used by cc-docs-serve (stdlib http.server, no extra deps)
               sqlite # used to inspect PocketBase's SQLite database directly
               tmux # used by cc-dev-stack to manage the dev service windows
+              pre-commit # used by cc-check to run repository hooks
               deadnix # Nix dead-code linter — used by pre-commit nixfmt hook
               nixfmt-tree # Nix formatter — used by `nix fmt` and pre-commit
               git-cliff # changelog generator — used by cc-gen-changelog
