@@ -26,6 +26,10 @@ export default tseslint.config(
         argsIgnorePattern: "^_",
         caughtErrorsIgnorePattern: "^_",
       }],
+      // ESLint v10 rules are not inherited through the TypeScript base config.
+      "no-useless-assignment": "error",
+      "no-unassigned-vars": "error",
+      "preserve-caught-error": "error",
     },
   },
 

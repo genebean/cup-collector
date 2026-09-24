@@ -1,0 +1,19 @@
+name: Validate rebased ESLint 10 update
+on:
+  push:
+    branches:
+      - codex/eslint-v10-lock-gen
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - name: Install exact npm dependencies
+        run: nix develop -c bash -euc 'cd app && npm ci --no-audit --no-fund'
+      - name: Run repository checks
+        run: nix develop -c cc-check
+      - name: Build the Nix package
+        run: nix build

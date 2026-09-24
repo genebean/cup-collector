@@ -31,7 +31,7 @@
       "matchPackageNames": [
         "next",
         "next-auth",
-        "eslint-config-next",
+        "@next/eslint-plugin-next",
         "@ducanh2912/next-pwa"
       ],
       "matchUpdateTypes": ["major"]
