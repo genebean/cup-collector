@@ -32,7 +32,19 @@
     "remark-gfm": "^4.0.1"
   },
   "overrides": {
-    "serialize-javascript": "7.1.2"
+    "serialize-javascript": "7.1.2",
+    "sharp": "0.35.5",
+    "source-map-js": "1.2.2",
+    "postcss-selector-parser": "7.1.6",
+    "fast-uri": "3.1.8",
+    "minimatch": {
+      "brace-expansion": "1.1.21"
+    },
+    "filelist": {
+      "minimatch": {
+        "brace-expansion": "2.1.7"
+      }
+    }
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^16.3.6",
