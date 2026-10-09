@@ -2,6 +2,78 @@
 
 All notable changes to Cup Collector are documented here.
 
+## [1.1.4] - 2026-10-09
+
+### Bug Fixes
+
+- Clear dependency security blockers
+
+- Trigger Renovate lock repair for manifest changes
+
+- **deps:** Update dependency pocketbase to ^0.28.0
+
+- Correct Lisboa Relief country and backfill Boracay Sky Blue region
+
+- Add CARTO Basemaps API key for dark-mode map tiles
+
+
+### CI
+
+- Keep scripts/ and app/ typechecking in sync with local check
+
+
+### Miscellaneous
+
+- Batch routine npm updates
+
+- **deps:** Update github actions to v7
+
+- Make npm install policy consistent
+
+- **deps:** Update npm non-breaking updates
+
+- Refresh npm dependency hash
+
+- **deps:** Update dependency @tailwindcss/typography to v0.5.20
+
+- Refresh npm dependency hash
+
+- Adopt ESLint 10 with strict validation
+
+- **deps:** Update dependency node-html-parser to v9
+
+- Refresh npm dependency hash
+
+- Refresh npm dependency hash
+
+- **deps:** Update dependency @tanstack/react-query to v5.103.2
+
+- Refresh npm dependency hash
+
+- Update Nix dependencies
+
+- **deps:** Update npm non-breaking updates
+
+- Refresh npm dependency hash
+
+- **deps:** Update dependency serialize-javascript to v7.1.2 [security]
+
+- Refresh npm dependency hash
+
+- Update Nix dependencies
+
+
+### Other Changes
+
+- Keep automated Nix dependency updates buildable
+
+- Add Renovate npm hash repair workflow
+
+- Pin serialize-javascript override for Renovate
+
+- **deps:** Bump vitest and @vitest/coverage-v8 to v5
+
+
 ## [1.1.3] - 2026-06-27
 
 ### Bug Fixes
@@ -44,6 +116,8 @@ All notable changes to Cup Collector are documented here.
 - Bump nixpkgs to nixos-26.05
 
 - Switch PocketBase image to genebean fork built on Alpine 3.24.1
+
+- Release v1.1.3
 
 
 ### Other Changes
