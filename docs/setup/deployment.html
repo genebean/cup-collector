@@ -97,13 +97,19 @@ gen-auth-secret</pre>
 <p>Or without the dev shell:</p>
 <pre>openssl rand -base64 32</pre>
 
-<p>Create the secrets file using your secrets manager (sops-nix, agenix, etc.). The module generates <code>NEXTAUTH_URL</code>, <code>POCKETBASE_URL</code>, <code>POCKETID_ISSUER_URL</code>, and <code>NEXT_CACHE_DIR</code> automatically, and household records are declared as a module option — only these six secrets are needed:</p>
+<p>Create the secrets file using your secrets manager (sops-nix, agenix, etc.). The module generates <code>NEXTAUTH_URL</code>, <code>POCKETBASE_URL</code>, <code>POCKETID_ISSUER_URL</code>, and <code>NEXT_CACHE_DIR</code> automatically, and household records are declared as a module option — only these seven secrets are needed:</p>
 <pre>POCKETID_CLIENT_ID=cup-collector-abc123
 POCKETID_CLIENT_SECRET=your-client-secret
 AUTH_SECRET=&lt;output of gen-auth-secret&gt;
 POCKETBASE_ADMIN_EMAIL=admin@example.com
 POCKETBASE_ADMIN_PASSWORD=your-pocketbase-admin-password
-GOOGLE_PLACES_API_KEY=your-google-places-key</pre>
+GOOGLE_PLACES_API_KEY=your-google-places-key
+CARTO_API_KEY=your-carto-basemaps-key</pre>
+
+<div class="callout tip">
+  <strong>CARTO_API_KEY is free</strong>
+  Powers the dark-mode map tiles. Get a free key (no account, email only) at <a href="https://carto.com/basemaps/apikey/">carto.com/basemaps/apikey</a> — free tier covers up to 5M tile requests/month for non-commercial use.
+</div>
 
 <div class="callout tip">
   <strong>Choose your PocketBase admin credentials here</strong>

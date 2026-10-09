@@ -22,7 +22,9 @@ const TILES = {
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   },
   dark: {
-    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    // CARTO's new keyed raster endpoint — the old host-prefixed
+    // {s}.basemaps.cartocdn.com/dark_all URL (no key) now serves a watermark.
+    url: "https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png",
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
   },
@@ -36,6 +38,7 @@ interface MapViewProps {
   worldViewTick?: number;
   flyTick?: number;
   onZoomChange?: (zoom: number) => void;
+  cartoApiKey?: string;
 }
 
 // Stores a ref to the underlying Leaflet map so event handlers outside
@@ -194,11 +197,14 @@ function buildLocationGroups(cups: CupWithOwnership[]): LocationGroup[] {
   });
 }
 
-export default function MapView({ cups, stores, userLocation, targetZoom, worldViewTick = 0, flyTick = 0, onZoomChange }: MapViewProps) {
+export default function MapView({ cups, stores, userLocation, targetZoom, worldViewTick = 0, flyTick = 0, onZoomChange, cartoApiKey }: MapViewProps) {
   const router = useRouter();
   const { isDark } = useUiTheme();
   const mapRef = useRef<ReturnType<typeof useMap> | null>(null);
   const tiles = isDark ? TILES.dark : TILES.light;
+  // CARTO's dark basemap requires an API key (https://carto.com/basemaps/apikey/).
+  // The light basemap is OpenStreetMap's own tile server and needs no key.
+  const tileUrl = isDark && cartoApiKey ? `${tiles.url}?key=${cartoApiKey}` : tiles.url;
   const [visibleCups, setVisibleCups] = useState<CupWithOwnership[]>([]);
   const visibleCupIdsRef = useRef<Set<string>>(new Set());
   const handleVisibleCupsChange = useCallback((inBounds: CupWithOwnership[]) => {
@@ -241,7 +247,7 @@ export default function MapView({ cups, stores, userLocation, targetZoom, worldV
       attributionControl={true}
     >
       {/* key forces a remount when switching so stale tiles don't linger */}
-      <TileLayer key={isDark ? "dark" : "light"} attribution={tiles.attribution} url={tiles.url} />
+      <TileLayer key={isDark ? "dark" : "light"} attribution={tiles.attribution} url={tileUrl} />
 
       <MapRefSetter mapRef={mapRef} />
       <MapPositionSaver />
