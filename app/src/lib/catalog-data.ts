@@ -1354,6 +1354,7 @@ export const CITY_TO_REGION: Record<string, string> = {
   // Philippines
   "Boracay": "Western Visayas", "Boracay 2": "Western Visayas",
   "Boracay 2 Summer Edition 2023": "Western Visayas",
+  "Boracay Sky Blue": "Western Visayas",
   "Cavite": "Cavite",
   // Romania
   "Constanta": "Constanta",
