@@ -188,7 +188,7 @@ in
         The module generates NEXTAUTH_URL, POCKETBASE_URL, and POCKETID_ISSUER_URL
         automatically, so this file only needs: POCKETID_CLIENT_ID,
         POCKETID_CLIENT_SECRET, AUTH_SECRET, POCKETBASE_ADMIN_EMAIL,
-        POCKETBASE_ADMIN_PASSWORD, GOOGLE_PLACES_API_KEY.
+        POCKETBASE_ADMIN_PASSWORD, GOOGLE_PLACES_API_KEY, CARTO_API_KEY.
         See .env.example and docs/reference/spec.html §04 for details.
       '';
     };

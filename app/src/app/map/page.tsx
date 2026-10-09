@@ -72,6 +72,15 @@ export default function MapPage() {
     enabled: !!householdId,
   });
 
+  // CARTO's dark basemap requires an API key — fetched server-side so it's
+  // injected at request time rather than baked into the build (see
+  // /api/map-config). Only needed once per session; it doesn't change.
+  const { data: mapConfig } = useQuery<{ cartoApiKey: string }>({
+    queryKey: ["map-config"],
+    queryFn: () => fetch("/api/map-config").then((r) => r.json()),
+    staleTime: Infinity,
+  });
+
   // "Search here" uses the current map center; falls back to GPS location for auto-fetch.
   // Changing the radius clears the manual search so it reverts to GPS mode.
   const storeLat = searchCenter?.lat ?? userLocation?.lat;
@@ -224,6 +233,7 @@ export default function MapPage() {
           worldViewTick={worldViewTick}
           flyTick={flyTick}
           onZoomChange={setMapZoom}
+          cartoApiKey={mapConfig?.cartoApiKey}
         />
       </div>
 

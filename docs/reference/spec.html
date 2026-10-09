@@ -423,6 +423,13 @@ code { color: var(--code-text); }
 <span class="cm"># Google Places (New) — server-side only, never exposed to browser</span>
 <span class="ck">GOOGLE_PLACES_API_KEY</span>=<span class="cs">your-key-here</span>
 
+<span class="cm"># CARTO Basemaps — powers the dark-mode map tile layer. Free key, no account,</span>
+<span class="cm"># at https://carto.com/basemaps/apikey/. Read server-side via /api/map-config</span>
+<span class="cm"># and handed to the client at request time — NOT a NEXT_PUBLIC_ var, since</span>
+<span class="cm"># those get inlined into the client bundle during `next build`, which runs in</span>
+<span class="cm"># the Nix build sandbox with no access to the runtime envFile.</span>
+<span class="ck">CARTO_API_KEY</span>=<span class="cs">your-carto-basemaps-key</span>
+
 <span class="cm"># Role group names (optional — defaults shown; override if you use different group names)</span>
 <span class="cm"># ROLE_GROUP_OWNER=cup-owner</span>
 <span class="cm"># ROLE_GROUP_COLLABORATOR=cup-collaborator</span>

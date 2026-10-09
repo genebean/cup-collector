@@ -112,3 +112,50 @@ test.describe("map — pin interactions", () => {
     await expect(page.locator("path.leaflet-interactive")).toHaveCount(0);
   });
 });
+
+test.describe("map — CARTO dark-mode tile key", () => {
+  test.use({ storageState: join(authDir, "owner.json") });
+
+  // 1x1 transparent PNG — just enough for Leaflet to accept the tile response.
+  const FAKE_TILE_PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    "base64"
+  );
+
+  // Intercepts both /api/map-config and the real CARTO host so the test
+  // doesn't depend on a real key — in CI, CARTO_API_KEY isn't set at all.
+  test("dark mode appends the key from /api/map-config to tile requests", async ({ page }) => {
+    await page.route("**/api/map-config", (route) =>
+      route.fulfill({ contentType: "application/json", body: JSON.stringify({ cartoApiKey: "test-carto-key" }) })
+    );
+    let tileRequestUrl: string | null = null;
+    await page.route("**/rastertiles/dark_all/**", (route) => {
+      tileRequestUrl = route.request().url();
+      route.fulfill({ contentType: "image/png", body: FAKE_TILE_PNG });
+    });
+
+    await page.goto("/map");
+    await page.evaluate(() => localStorage.setItem("ui_theme", "dark"));
+    await page.reload();
+
+    await expect.poll(() => tileRequestUrl, { timeout: 10_000 }).not.toBeNull();
+    expect(tileRequestUrl).toContain("key=test-carto-key");
+  });
+
+  // Light mode uses OpenStreetMap's own tile server, which takes no key —
+  // guards against accidentally appending the CARTO key to the wrong layer.
+  test("light mode tile requests carry no key param", async ({ page }) => {
+    let tileRequestUrl: string | null = null;
+    await page.route("**tile.openstreetmap.org/**", (route) => {
+      tileRequestUrl = route.request().url();
+      route.fulfill({ contentType: "image/png", body: FAKE_TILE_PNG });
+    });
+
+    await page.goto("/map");
+    await page.evaluate(() => localStorage.setItem("ui_theme", "light"));
+    await page.reload();
+
+    await expect.poll(() => tileRequestUrl, { timeout: 10_000 }).not.toBeNull();
+    expect(tileRequestUrl).not.toContain("key=");
+  });
+});
