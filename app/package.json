@@ -36,7 +36,7 @@
     "sharp": "0.35.5",
     "source-map-js": "1.2.2",
     "postcss-selector-parser": "7.1.6",
-    "fast-uri": "3.1.8",
+    "fast-uri": "4.2.1",
     "minimatch": {
       "brace-expansion": "1.1.21"
     },
