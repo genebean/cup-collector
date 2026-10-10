@@ -21,7 +21,7 @@ pkgs.buildNpmPackage {
 
   # Recompute this hash after any package-lock.json change:
   #   nix run nixpkgs#prefetch-npm-deps app/package-lock.json
-  npmDepsHash = "sha256-wwtcsZwkeCOGR25pUgmY0G3ycTtUq/6VBFleS0eTAto=";
+  npmDepsHash = "sha256-h2hSDxtoUAbDsK7bQVByM/M0dw5a3NXm7810+5sInBU=";
 
   buildPhase = "npm run build";
 
