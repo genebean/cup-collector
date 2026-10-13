@@ -68,7 +68,7 @@
       "description": "Group the PocketBase container image across both files it appears in",
       "groupName": "PocketBase container",
       "matchManagers": ["custom.regex"],
-      "matchPackageNames": ["ghcr.io/genebean/pocketbase"]
+      "matchPackageNames": ["ghcr.io/genebean/cup-collector-pocketbase"]
     },
     {
       "description": "Track pocket-id major version tag in dev script",
@@ -80,12 +80,21 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Track PocketBase container tag in nixos/module.nix and dev scripts",
+      "description": "Track PocketBase container tag in nixos/module.nix and dev scripts. NOTE: depNameTemplate must stay in sync with the actual image name (ghcr.io/genebean/cup-collector-pocketbase, not ghcr.io/genebean/pocketbase) — a prior mismatch here silently meant this manager never matched anything.",
       "managerFilePatterns": ["/^flake\\.nix$/", "/^nixos/module\\.nix$/", "/^pkgs/scripts/pb-serve\\.nix$/"],
-      "matchStrings": ["ghcr\\.io/genebean/pocketbase:(?<currentValue>[^\\s\"\\\\]+)"],
-      "depNameTemplate": "ghcr.io/genebean/pocketbase",
+      "matchStrings": ["ghcr\\.io/genebean/cup-collector-pocketbase:(?<currentValue>[^\\s\"\\\\]+)"],
+      "depNameTemplate": "ghcr.io/genebean/cup-collector-pocketbase",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the upstream pocketbase/pocketbase release that pocketbase-image/Dockerfile builds from. This is the actual source of truth — bumping it (and resetting REVISION to 1) triggers a rebuild+publish of ghcr.io/genebean/cup-collector-pocketbase on merge, which is what the manager above then picks up as a follow-up PR.",
+      "managerFilePatterns": ["/^pocketbase-image/VERSION$/"],
+      "matchStrings": ["(?<currentValue>.+)"],
+      "depNameTemplate": "pocketbase/pocketbase",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.+)$"
     },
     {
       "customType": "regex",
