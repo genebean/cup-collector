@@ -1,0 +1,19 @@
+ignore:
+  # No PocketBase release fixes this yet: the advisory (HTTP/2 server-stream
+  # double flow-control refund DoS, CVE-2026-78663) needs golang.org/x/net
+  # v0.60.0; PocketBase v0.40.5 — the latest release as of 2026-10-14 — ships
+  # v0.59.0. Published 2026-10-08, the same day PocketBase cut v0.40.5, so
+  # that release didn't have a chance to pick up the fix.
+  #
+  # Risk accepted for now: PocketBase is not publicly exposed in this app's
+  # deployment model (nixos/module.nix binds it to 127.0.0.1 by default,
+  # reached only through the authenticated Next.js proxy; pbDomain, which
+  # would expose it directly, is off unless explicitly configured).
+  #
+  # Revisit and remove this entry once PocketBase ships a release built
+  # against golang.org/x/net >= v0.60.0 — check https://github.com/pocketbase/pocketbase/releases
+  - vulnerability: GO-2026-6612
+    package:
+      name: golang.org/x/net
+      type: go-module
+    reason: "No PocketBase release available yet with the fix (x/net >= v0.60.0); PocketBase isn't publicly exposed in this deployment. See comment above."

@@ -130,9 +130,11 @@ jobs:
         run: npm run check:tsc-scripts
         working-directory: app
 
-  container-scan:
-    name: container image scan (PocketBase)
+  build-pocketbase-image:
+    name: build PocketBase image
     runs-on: ubuntu-latest
+    outputs:
+      image-ref: ${{ steps.image.outputs.ref }}
     steps:
       - uses: actions/checkout@v7
       - name: Extract PocketBase image reference
@@ -142,25 +144,71 @@ jobs:
           # the flake.nix dev shell was aligned to the same version.
           REF=$(grep -oP 'default = "\Kghcr\.io/[^"]+' nixos/module.nix | grep pocketbase | head -1)
           echo "ref=${REF}" >> "$GITHUB_OUTPUT"
+      - name: Read PB_VERSION
+        id: version
+        run: echo "version=$(cat pocketbase-image/VERSION)" >> "$GITHUB_OUTPUT"
+      # Built fresh from this PR's own Dockerfile and VERSION file rather than
+      # pulled from GHCR. A PR that bumps the PocketBase version (or edits the
+      # Dockerfile) must be able to validate itself on its own — the real image
+      # is only published by publish-pocketbase-image.yml *after* merge, so a
+      # pull-based approach here could never give a PR changing this image a
+      # real pass/fail signal regardless of whether the change was correct.
+      - name: Build image from source
+        env:
+          PB_VERSION: ${{ steps.version.outputs.version }}
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
+        run: |
+          docker build --pull \
+            --build-arg "PB_VERSION=${PB_VERSION}" \
+            --tag "${IMAGE_REF}" \
+            --file pocketbase-image/Dockerfile \
+            .
+      - name: Save image artifact
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
+        run: docker save "${IMAGE_REF}" -o /tmp/pocketbase-image.tar
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pocketbase-image
+          path: /tmp/pocketbase-image.tar
+          retention-days: 1
+
+  container-scan:
+    name: container image scan (PocketBase)
+    needs: build-pocketbase-image
+    runs-on: ubuntu-latest
+    steps:
+      # Needed so anchore/scan-action can auto-discover .grype.yaml at the repo
+      # root (its ignore list for tracked, no-fix-yet advisories) — without
+      # this the config simply isn't present in the job's working directory.
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          name: pocketbase-image
+          path: /tmp
+      - name: Load image
+        run: docker load -i /tmp/pocketbase-image.tar
       - uses: anchore/scan-action@v7
         with:
-          image: ${{ steps.image.outputs.ref }}
+          image: ${{ needs.build-pocketbase-image.outputs.image-ref }}
           fail-build: true
           severity-cutoff: critical
 
   pb-migrations:
     name: PocketBase migrations (fresh instance)
+    needs: build-pocketbase-image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Extract PocketBase image reference
-        id: image
-        run: |
-          REF=$(grep -oP 'default = "\Kghcr\.io/[^"]+' nixos/module.nix | grep pocketbase | head -1)
-          echo "ref=${REF}" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v7
+        with:
+          name: pocketbase-image
+          path: /tmp
+      - name: Load image
+        run: docker load -i /tmp/pocketbase-image.tar
       - name: Start PocketBase on a fresh instance with migrations
         env:
-          IMAGE_REF: ${{ steps.image.outputs.ref }}
+          IMAGE_REF: ${{ needs.build-pocketbase-image.outputs.image-ref }}
         run: |
           mkdir -p /tmp/pb_data
           docker run -d --name pb-test \
@@ -199,9 +247,25 @@ jobs:
 
   playwright:
     name: playwright e2e tests
+    needs: build-pocketbase-image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          name: pocketbase-image
+          path: /tmp
+      # global-setup.ts reads the image ref from nixos/module.nix and starts it
+      # via whichever of podman/docker it finds first (podman preferred — see
+      # detectRuntime() in global-setup.ts). GitHub-hosted runners have both
+      # installed, with separate image stores, so the tarball must be loaded
+      # into both or podman silently falls through to a registry pull.
+      - name: Load PocketBase image
+        run: |
+          docker load -i /tmp/pocketbase-image.tar
+          if command -v podman >/dev/null; then
+            podman load -i /tmp/pocketbase-image.tar
+          fi
       - uses: actions/setup-node@v7
         with:
           node-version: "24"

@@ -1,6 +1,6 @@
 FROM alpine:3.24 AS downloader
 
-ARG PB_VERSION=0.39.11
+ARG PB_VERSION=0.40.5
 ARG PB_ARCH=amd64
 
 RUN apk add --no-cache ca-certificates curl unzip
