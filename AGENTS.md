@@ -413,44 +413,10 @@ server-side only, personal use stays in free tier.
 
 ## Release Workflow
 
-Patch and minor releases follow this exact sequence. Do not deviate.
-
-### Before opening the PR
-1. **Bump versions** in three files — all must match:
-   - `app/package.json` → `"version"` field
-   - `app/package-lock.json` → top-level `"version"` and the `""` package entry (two spots)
-   - `pkgs/app.nix` → `version` attribute
-2. **Update `npmDepsHash`** in `pkgs/app.nix` — bumping the version in
-   `package-lock.json` changes the hash. Compute the new hash directly:
-   ```
-   nix run nixpkgs#prefetch-npm-deps app/package-lock.json
-   ```
-   Copy the printed `sha256-...` value into `pkgs/app.nix`.
-3. **Generate the changelog**: `cc-gen-changelog --tag vX.Y.Z` — rewrites
-   `CHANGELOG.md` in place. Run `cc-check` after to fix the trailing-newline
-   hook if it fires.
-4. **Commit** everything as a single `chore: release vX.Y.Z` commit.
-5. **Tag locally only**: `git tag vX.Y.Z` — do NOT push the tag yet.
-6. **Open the PR** and wait for CI. If nix build fails with a hash mismatch,
-   re-run `prefetch-npm-deps`, amend the commit with the correct hash,
-   re-tag with `git tag -f vX.Y.Z`, and force-push.
-
-### After the PR merges
-7. **Pull main**: `git checkout main && git pull`
-8. **Push the tag**: `git push origin vX.Y.Z`
-9. **Create the GitHub release** using the changelog entry as release notes:
-   ```
-   awk '/^## \[X\.Y\.Z\]/{found=1} found && /^## \[PREV\]/{exit} found{print}' CHANGELOG.md \
-     | gh release create vX.Y.Z --title "vX.Y.Z" --notes-file -
-   ```
-   Replace `X.Y.Z` with the new version and `PREV` with the previous version in both the awk pattern and the `gh` command.
-10. **Clean up** the local release branch: `git branch -d release/vX.Y.Z`
-
-### Key gotchas
-- `package-lock.json` has the version in **two places** — root and the `""` packages entry
-- `npmDepsHash` must always be recomputed after any `package-lock.json` change
-- Tag stays local until after merge — pushing it early triggers CI/CD on a moving target
-- Do not `git push --tags` — push the specific tag by name to avoid accidentally pushing stale tags
+The full, authoritative step-by-step process lives in
+`.claude/skills/release/SKILL.md` — follow it exactly, do not deviate, and do
+not duplicate its steps here. Edit that file (not this section) when the
+process changes.
 
 ---
 
