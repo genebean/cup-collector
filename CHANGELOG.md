@@ -2,6 +2,84 @@
 
 All notable changes to Cup Collector are documented here.
 
+## [1.1.5] - 2026-11-22
+
+### Bug Fixes
+
+- Pin npm overrides for transitive high/medium security advisories
+
+- Bump PocketBase to 0.40.5 to clear critical CVEs; fix Renovate tracking
+
+- Build PocketBase image from source in CI instead of pulling GHCR
+
+- **deps:** Update dependency pocketbase to ^0.29.0
+
+
+### Miscellaneous
+
+- Update Nix dependencies
+
+- **deps:** Update npm non-breaking updates
+
+- Refresh npm dependency hash
+
+- **deps:** Update actions/download-artifact action to v8
+
+- **deps:** Update dependency fast-uri to v4
+
+- Refresh npm dependency hash
+
+- Update Nix dependencies
+
+- **deps:** Update npm non-breaking updates
+
+- Refresh npm dependency hash
+
+- **deps:** Update dependency node-html-parser to v9.0.5
+
+- Refresh npm dependency hash
+
+- Update Nix dependencies
+
+- Update Nix dependencies
+
+- Update Nix dependencies
+
+- **deps:** Update dependency next to v16.4.5 [security]
+
+- Refresh npm dependency hash
+
+- **deps:** Update dependency node to v26
+
+- **deps:** Update dependency serialize-javascript to v7.1.3 [security]
+
+- Refresh npm dependency hash
+
+- **deps:** Update dependency pocketbase/pocketbase to v0.40.6
+
+- **deps:** Update actions/dependency-review-action action to v5.0.1
+
+- **deps:** Update dependency fast-uri to v4.2.3 [security]
+
+- Refresh npm dependency hash
+
+- **deps:** Update npm non-breaking updates
+
+- Refresh npm dependency hash
+
+- Refresh npm dependency hash
+
+- **deps:** Update dependency @types/node to v26
+
+- Refresh npm dependency hash
+
+- **deps:** Update npm non-breaking updates
+
+- Refresh npm dependency hash
+
+- **deps:** Update ghcr.io/genebean/cup-collector-pocketbase docker tag to v0.40.6
+
+
 ## [1.1.4] - 2026-10-09
 
 ### Bug Fixes
@@ -61,6 +139,8 @@ All notable changes to Cup Collector are documented here.
 - Refresh npm dependency hash
 
 - Update Nix dependencies
+
+- Release v1.1.4
 
 
 ### Other Changes
