@@ -9,6 +9,7 @@ jobs:
 
   nix-build:
     uses: genebean/.github/.github/workflows/nix-build.yml@main
+    secrets: inherit
     with:
       npmDepsHash-glob: flake.nix
       nixos-config-test: true
