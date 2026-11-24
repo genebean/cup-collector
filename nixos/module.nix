@@ -81,6 +81,29 @@ in
       description = "Public domain for the Next.js app (used for nginx vhost and ACME cert)";
     };
 
+    enableACME = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Whether this module's own nginx vhosts request their own ACME
+        certificate. Set to false when something else terminates TLS for
+        `domain`/`pbDomain` (e.g. a separate reverse-proxy host) - the
+        vhost still needs a `listen` override pointing it at that proxy
+        instead of the public interface in that case.
+      '';
+    };
+
+    forceSSL = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Whether this module's own nginx vhosts force-redirect to HTTPS.
+        Set to false alongside enableACME when something else (e.g. a
+        separate reverse-proxy host) already terminates TLS for this
+        traffic before it reaches this host.
+      '';
+    };
+
     pbDomain = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -268,8 +291,8 @@ in
     services.nginx.virtualHosts = lib.mkMerge [
       {
         ${cfg.domain} = {
-          enableACME = true;
-          forceSSL = true;
+          enableACME = cfg.enableACME;
+          forceSSL = cfg.forceSSL;
           extraConfig = ''
             client_max_body_size ${cfg.maxBodySize};
           '';
@@ -296,8 +319,8 @@ in
       # Access the admin UI without this via: ssh -L 8090:localhost:8090 yourserver
       (lib.mkIf (cfg.pbDomain != null) {
         ${cfg.pbDomain} = {
-          enableACME = true;
-          forceSSL = true;
+          enableACME = cfg.enableACME;
+          forceSSL = cfg.forceSSL;
           extraConfig = ''
             client_max_body_size ${cfg.maxBodySize};
           '';
