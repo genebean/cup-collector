@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import type { JWT as _JWT } from "next-auth/jwt"; // import required for module augmentation below
 import { getAdminPocketBase } from "@/lib/pocketbase";
 import { parseHouseholdGroups } from "@/lib/roles";
+import { pocketIdProvider } from "@/lib/pocketid-provider";
 
 export interface HouseholdOption {
   id: string;
@@ -72,17 +73,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           },
         }),
       ]
-    : [
-        {
-          id: "pocketid",
-          name: "PocketID",
-          type: "oidc",
-          issuer: process.env.POCKETID_ISSUER_URL,
-          clientId: process.env.POCKETID_CLIENT_ID,
-          clientSecret: process.env.POCKETID_CLIENT_SECRET,
-          authorization: { params: { scope: "openid profile email groups" } },
-        },
-      ],
+    : [pocketIdProvider],
   callbacks: {
     authorized({ auth: session, request }) {
       // Unauthenticated: let Auth.js redirect to /sign-in (return false).
