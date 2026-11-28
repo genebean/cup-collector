@@ -34,9 +34,9 @@
   "overrides": {
     "serialize-javascript": "7.1.4",
     "sharp": "0.35.5",
-    "source-map-js": "1.2.3",
+    "source-map-js": "1.2.4",
     "postcss-selector-parser": "7.2.1",
-    "fast-uri": "4.2.3",
+    "fast-uri": "4.2.4",
     "minimatch": {
       "brace-expansion": "1.1.22"
     },
